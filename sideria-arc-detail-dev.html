@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arc 2 — Timeline détaillée</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --parch: #F2EBD9; --parch-mid: #E6DCC0; --parch-dark: #C4A96A;
+  --ink: #18140C; --ink-mid: #3D3020; --ink-light: #6B6050;
+  --blue: #1A2E4A; --gold: #9A6E1A; --gold-light: #C8960E;
+  --arc: #8B1A1A; --arc-light: #B83030;
+  --acte1: #6B1010; --acte2: #8B2020; --acte3: #A83030;
+}
+body { background: var(--parch); color: var(--ink); font-family: 'Crimson Pro', Georgia, serif; font-size: 15px; line-height: 1.6; }
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+.header { background: var(--arc); padding: 1.2rem 2rem 0.9rem; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 100; display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+.header-badge { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.15em; color: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.22); padding: 2px 8px; border-radius: 2px; }
+.header h1 { font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 600; color: #fff; letter-spacing: 0.06em; }
+.header-sub { font-style: italic; color: rgba(255,255,255,0.4); font-size: 0.88rem; flex-basis: 100%; margin-top: 0.1rem; }
+
+.page { display: flex; height: calc(100vh - 76px); }
+
+.sidebar { width: 190px; flex-shrink: 0; border-right: 1px solid var(--parch-dark); overflow-y: auto; padding: 1rem 0; background: var(--parch); position: sticky; top: 76px; height: calc(100vh - 76px); }
+.sidebar-section { padding: 0 1rem; margin-bottom: 1.2rem; }
+.sidebar-title { font-family: 'Cinzel', serif; font-size: 0.56rem; letter-spacing: 0.14em; color: var(--ink-light); text-transform: uppercase; border-bottom: 1px solid var(--parch-dark); padding-bottom: 4px; margin-bottom: 0.6rem; }
+
+.acte-legend { display: flex; flex-direction: column; gap: 5px; }
+.acte-leg-item { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 6px; border-radius: 2px; transition: background 0.12s; }
+.acte-leg-item:hover { background: var(--parch-mid); }
+.acte-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.acte-leg-label { font-size: 0.78rem; color: var(--ink-mid); line-height: 1.3; }
+.acte-leg-sub { font-size: 0.68rem; color: var(--ink-light); font-style: italic; }
+
+.pnj-legend { display: flex; flex-direction: column; gap: 4px; }
+.pnj-leg-item { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 2px; cursor: pointer; transition: background 0.12s; }
+.pnj-leg-item:hover { background: var(--parch-mid); }
+.pnj-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.pnj-leg-name { font-size: 0.78rem; color: var(--ink-mid); }
+.pnj-leg-role { font-size: 0.66rem; color: var(--ink-light); font-style: italic; }
+
+.canvas-wrap { flex: 1; overflow-x: auto; overflow-y: auto; padding: 1.2rem 2rem 3rem; }
+
+.ruler-row { display: flex; align-items: stretch; margin-bottom: 0.7rem; position: sticky; top: 0; background: var(--parch); z-index: 50; padding-top: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--parch-dark); }
+.row-label { width: 120px; flex-shrink: 0; font-family: 'Cinzel', serif; font-size: 0.56rem; letter-spacing: 0.1em; color: var(--ink-light); display: flex; align-items: flex-end; padding-bottom: 4px; }
+.ruler-ticks { flex: 1; display: flex; height: 28px; align-items: flex-end; min-width: 600px; }
+.tick { flex: 1; text-align: center; font-family: 'Cinzel', serif; font-size: 0.56rem; color: var(--ink-light); border-left: 1px solid var(--parch-dark); display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px; }
+.tick.major { color: var(--gold); border-left-color: var(--gold); }
+.tick-mark { width: 1px; height: 6px; background: currentColor; margin: 0 auto 2px; }
+.tick.major .tick-mark { height: 12px; }
+
+.acte-bands-row { display: flex; margin-bottom: 5px; height: 20px; }
+.acte-bands-track { flex: 1; position: relative; min-width: 600px; }
+.acte-band { position: absolute; height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 0.52rem; letter-spacing: 0.1em; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.25); }
+.acte-band span { color: rgba(255,255,255,0.82); pointer-events: none; }
+
+.section-sep { display: flex; align-items: center; gap: 10px; margin: 10px 0 5px; }
+.section-sep-label { font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.13em; color: var(--ink-light); text-transform: uppercase; white-space: nowrap; }
+.section-sep-line { flex: 1; height: 1px; background: var(--parch-dark); min-width: 600px; }
+
+.quete-row { display: flex; align-items: center; margin-bottom: 5px; min-height: 36px; }
+.quete-row-label { width: 120px; flex-shrink: 0; padding-right: 8px; text-align: right; }
+.quete-id { font-family: 'Cinzel', serif; font-size: 0.56rem; letter-spacing: 0.06em; color: var(--ink-light); display: block; }
+.quete-name { font-size: 0.72rem; color: var(--ink-mid); font-weight: 600; display: block; line-height: 1.2; }
+.quete-track { flex: 1; position: relative; height: 36px; min-width: 600px; }
+.quete-bar { position: absolute; height: 24px; top: 50%; transform: translateY(-50%); border-radius: 3px; cursor: pointer; display: flex; align-items: center; padding: 0 7px; transition: filter 0.12s, transform 0.12s; }
+.quete-bar:hover { filter: brightness(1.12); transform: translateY(-50%) scaleY(1.08); }
+.quete-bar-text { font-family: 'Crimson Pro', serif; font-size: 0.68rem; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+
+.pnj-row { display: flex; align-items: center; margin-bottom: 4px; min-height: 30px; }
+.pnj-row-label { width: 120px; flex-shrink: 0; padding-right: 8px; text-align: right; }
+.pnj-row-name { font-size: 0.75rem; color: var(--ink-mid); font-weight: 600; display: block; }
+.pnj-row-role { font-size: 0.62rem; color: var(--ink-light); font-style: italic; display: block; }
+.pnj-track { flex: 1; position: relative; height: 30px; min-width: 600px; }
+.pnj-presence { position: absolute; height: 8px; top: 50%; transform: translateY(-50%); border-radius: 4px; opacity: 0.72; cursor: pointer; transition: opacity 0.12s, height 0.12s; }
+.pnj-presence:hover { opacity: 1; height: 12px; }
+.pnj-presence.latent { opacity: 0.28; background-image: repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,0.45) 4px,rgba(255,255,255,0.45) 6px); }
+.pnj-event { position: absolute; width: 11px; height: 11px; border-radius: 50%; top: 50%; transform: translate(-50%,-50%); border: 2px solid var(--parch); cursor: pointer; z-index: 3; transition: transform 0.1s; }
+.pnj-event:hover { transform: translate(-50%,-50%) scale(1.5); }
+
+.tooltip { position: fixed; background: var(--blue); color: #fff; padding: 0.5rem 0.8rem; border-radius: 3px; font-size: 0.8rem; max-width: 240px; pointer-events: none; z-index: 999; opacity: 0; transition: opacity 0.12s; border-left: 3px solid var(--gold); line-height: 1.5; }
+.tooltip.visible { opacity: 1; }
+.tooltip strong { display: block; font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.06em; color: var(--gold-light); margin-bottom: 3px; }
+
+.panel-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(24,20,12,0.48); align-items: flex-start; justify-content: flex-end; padding-top: 76px; }
+.panel-overlay.open { display: flex; }
+.panel { width: 380px; max-height: calc(100vh - 96px); overflow-y: auto; background: var(--parch); border-left: 3px solid var(--arc); padding: 1.4rem; position: relative; }
+.panel-close { position: absolute; top: 1rem; right: 1rem; background: none; border: 1px solid var(--parch-dark); color: var(--ink-light); width: 26px; height: 26px; border-radius: 2px; cursor: pointer; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; }
+.panel-close:hover { background: var(--parch-mid); }
+.panel-badge { display: inline-block; font-family: 'Cinzel', serif; font-size: 0.56rem; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 2px; margin-bottom: 0.5rem; color: white; }
+.panel h2 { font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 600; color: var(--arc); margin-bottom: 0.2rem; }
+.panel-lvl { font-style: italic; font-size: 0.8rem; color: var(--ink-light); margin-bottom: 0.8rem; }
+.panel-sec-title { font-family: 'Cinzel', serif; font-size: 0.56rem; letter-spacing: 0.12em; color: var(--gold); border-bottom: 1px solid var(--parch-dark); padding-bottom: 3px; margin-bottom: 0.4rem; margin-top: 0.9rem; }
+.panel p, .panel li { font-size: 0.86rem; color: var(--ink-mid); line-height: 1.6; }
+.panel ul { padding-left: 1.2rem; }
+.panel li { margin-bottom: 3px; }
+.placeholder-block { background: var(--parch-mid); border-radius: 3px; padding: 8px 10px; font-style: italic; font-size: 0.82rem; color: var(--ink-light); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-badge">ARC · A02</span>
+  <h1>Arc 2</h1>
+  <div class="header-sub">Justice sociale · Niveaux 1–20</div>
+</div>
+
+<div class="page">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Actes</div>
+      <div class="acte-legend">
+        <div class="acte-leg-item" onclick="flashActe(1)">
+          <div class="acte-swatch" style="background:var(--acte1)"></div>
+          <div><div class="acte-leg-label">Acte I</div><div class="acte-leg-sub">Niv. 1–7</div></div>
+        </div>
+        <div class="acte-leg-item" onclick="flashActe(2)">
+          <div class="acte-swatch" style="background:var(--acte2)"></div>
+          <div><div class="acte-leg-label">Acte II</div><div class="acte-leg-sub">Niv. 8–14</div></div>
+        </div>
+        <div class="acte-leg-item" onclick="flashActe(3)">
+          <div class="acte-swatch" style="background:var(--acte3)"></div>
+          <div><div class="acte-leg-label">Acte III</div><div class="acte-leg-sub">Niv. 15–20</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Personnages</div>
+      <div class="pnj-legend" id="pnj-legend"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Légende</div>
+      <div style="font-size:0.7rem;color:var(--ink-light);display:flex;flex-direction:column;gap:5px;margin-top:3px;">
+        <div style="display:flex;align-items:center;gap:7px;"><div style="width:20px;height:6px;border-radius:3px;background:#8B1A1A;opacity:0.72"></div>Présence active</div>
+        <div style="display:flex;align-items:center;gap:7px;"><div style="width:20px;height:6px;border-radius:3px;background:#8B1A1A;opacity:0.28;background-image:repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(255,255,255,0.5) 3px,rgba(255,255,255,0.5) 5px)"></div>Présence latente</div>
+        <div style="display:flex;align-items:center;gap:7px;"><div style="width:9px;height:9px;border-radius:50%;background:#8B1A1A;border:2px solid var(--parch)"></div>Événement pivot</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+
+    <!-- Ruler -->
+    <div class="ruler-row">
+      <div class="row-label">Niveaux</div>
+      <div class="ruler-ticks" id="ruler-ticks"></div>
+    </div>
+
+    <!-- Acte bands -->
+    <div class="acte-bands-row">
+      <div style="width:120px;flex-shrink:0"></div>
+      <div class="acte-bands-track" id="acte-bands"></div>
+    </div>
+
+    <!-- Quêtes -->
+    <div class="section-sep">
+      <div class="row-label" style="font-family:'Cinzel',serif;font-size:0.56rem;letter-spacing:0.13em;color:var(--ink-light);">Quêtes</div>
+      <div class="section-sep-line"></div>
+    </div>
+    <div id="quetes-container"></div>
+
+    <!-- Personnages -->
+    <div class="section-sep" style="margin-top:1.2rem;">
+      <div class="row-label" style="font-family:'Cinzel',serif;font-size:0.56rem;letter-spacing:0.13em;color:var(--ink-light);">Personnages</div>
+      <div class="section-sep-line"></div>
+    </div>
+    <div id="pnj-container"></div>
+
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="panel-overlay" id="panel-overlay">
+  <div class="panel">
+    <button class="panel-close" onclick="closePanel()">✕</button>
+    <div id="panel-content"></div>
+  </div>
+</div>
+
+<script>
+const MIN = 1, MAX = 20;
+function pct(l) { return ((l - MIN) / (MAX - MIN)) * 100; }
+
+const ACTES = [
+  { num:1, label:'Acte I',   start:1,  end:7,  color:'#6B1010' },
+  { num:2, label:'Acte II',  start:8,  end:14, color:'#8B2020' },
+  { num:3, label:'Acte III', start:15, end:20, color:'#A83030' },
+];
+
+const QUETES = [
+  { id:'A02-01', titre:'Quête 1', acte:1, start:1,  end:4  },
+  { id:'A02-02', titre:'Quête 2', acte:1, start:3,  end:7  },
+  { id:'A02-03', titre:'Quête 3', acte:2, start:5,  end:10 },
+  { id:'A02-04', titre:'Quête 4', acte:2, start:8,  end:14 },
+  { id:'A02-05', titre:'Quête 5', acte:3, start:12, end:18 },
+  { id:'A02-06', titre:'Quête 6', acte:3, start:15, end:20 },
+];
+
+const PNJS = [
+  { id:'P1', name:'Perso 1', role:'Rôle A', color:'#2A4A35',
+    presences:[{s:1,e:20,latent:false}],
+    events:[{n:3,label:'Événement 1'},{n:8,label:'Événement 2'},{n:14,label:'Événement 3'},{n:20,label:'Événement 4'}] },
+  { id:'P2', name:'Perso 2', role:'Rôle B', color:'#1A2E4A',
+    presences:[{s:1,e:7,latent:true},{s:8,e:20,latent:false}],
+    events:[{n:8,label:'Événement 1'},{n:14,label:'Événement 2'},{n:18,label:'Événement 3'}] },
+  { id:'P3', name:'Perso 3', role:'Rôle C', color:'#7B3F2A',
+    presences:[{s:3,e:7,latent:true},{s:8,e:20,latent:false}],
+    events:[{n:7,label:'Événement 1'},{n:12,label:'Événement 2'},{n:17,label:'Événement 3'}] },
+  { id:'P4', name:'Perso 4', role:'Rôle D', color:'#5A2A5A',
+    presences:[{s:4,e:14,latent:false},{s:15,e:20,latent:true}],
+    events:[{n:4,label:'Événement 1'},{n:10,label:'Événement 2'},{n:14,label:'Événement 3'}] },
+  { id:'P5', name:'Perso 5', role:'Rôle E', color:'#4A4A1A',
+    presences:[{s:4,e:12,latent:false}],
+    events:[{n:4,label:'Événement 1'},{n:9,label:'Événement 2'},{n:12,label:'Événement 3'}] },
+  { id:'P6', name:'Perso 6', role:'Rôle F', color:'#1A4A4A',
+    presences:[{s:5,e:10,latent:true},{s:10,e:20,latent:false}],
+    events:[{n:10,label:'Événement 1'},{n:16,label:'Événement 2'},{n:20,label:'Événement 3'}] },
+];
+
+// Ruler
+const rulerEl = document.getElementById('ruler-ticks');
+for (let l = 1; l <= 20; l++) {
+  const t = document.createElement('div');
+  const major = l % 5 === 0 || l === 1;
+  t.className = 'tick' + (major ? ' major' : '');
+  const m = document.createElement('div'); m.className = 'tick-mark'; t.appendChild(m);
+  if (major || l === 1) t.append(String(l));
+  rulerEl.appendChild(t);
+}
+
+// Acte bands
+const acteEl = document.getElementById('acte-bands');
+ACTES.forEach(a => {
+  const b = document.createElement('div');
+  b.className = 'acte-band';
+  b.style.cssText = `left:${pct(a.start)}%;width:${pct(a.end+1)-pct(a.start)}%;background:${a.color};opacity:0.88;`;
+  b.innerHTML = `<span>${a.label}</span>`;
+  b.onclick = () => flashActe(a.num);
+  acteEl.appendChild(b);
+});
+
+// PNJ legend
+const legEl = document.getElementById('pnj-legend');
+PNJS.forEach(p => {
+  const item = document.createElement('div'); item.className = 'pnj-leg-item';
+  item.innerHTML = `<div class="pnj-dot" style="background:${p.color}"></div><div><div class="pnj-leg-name">${p.name}</div><div class="pnj-leg-role">${p.role}</div></div>`;
+  item.onclick = () => openPnjPanel(p);
+  legEl.appendChild(item);
+});
+
+// Quêtes
+const quetesEl = document.getElementById('quetes-container');
+QUETES.forEach((q, qi) => {
+  const acte = ACTES.find(a => a.num === q.acte);
+  const row = document.createElement('div'); row.className = 'quete-row'; row.dataset.acte = q.acte;
+  const lbl = document.createElement('div'); lbl.className = 'quete-row-label';
+  lbl.innerHTML = `<span class="quete-id">${q.id}</span><span class="quete-name">${q.titre}</span>`;
+  const track = document.createElement('div'); track.className = 'quete-track';
+  const bar = document.createElement('div'); bar.className = 'quete-bar';
+  bar.style.cssText = `left:${pct(q.start)}%;width:${pct(q.end+1)-pct(q.start)}%;background:${acte.color};`;
+  bar.innerHTML = `<span class="quete-bar-text">${q.id} — ${q.titre}</span>`;
+  bar.onclick = () => openQuetePanel(q, acte);
+  track.appendChild(bar); row.appendChild(lbl); row.appendChild(track);
+  quetesEl.appendChild(row);
+});
+
+// PNJ rows
+const pnjEl = document.getElementById('pnj-container');
+PNJS.forEach(p => {
+  const row = document.createElement('div'); row.className = 'pnj-row';
+  const lbl = document.createElement('div'); lbl.className = 'pnj-row-label';
+  lbl.innerHTML = `<span class="pnj-row-name">${p.name}</span><span class="pnj-row-role">${p.role}</span>`;
+  const track = document.createElement('div'); track.className = 'pnj-track';
+
+  p.presences.forEach(pr => {
+    const bar = document.createElement('div');
+    bar.className = 'pnj-presence' + (pr.latent ? ' latent' : '');
+    bar.style.cssText = `left:${pct(pr.s)}%;width:${pct(pr.e+1)-pct(pr.s)}%;background:${p.color};`;
+    bar.onclick = () => openPnjPanel(p);
+    track.appendChild(bar);
+  });
+
+  p.events.forEach(ev => {
+    const dot = document.createElement('div'); dot.className = 'pnj-event';
+    dot.style.cssText = `left:${pct(ev.n)}%;background:${p.color};`;
+    dot.addEventListener('mouseenter', e => showTooltip(e, `<strong>${p.name} · Niv. ${ev.n}</strong>${ev.label}`));
+    dot.addEventListener('mouseleave', hideTooltip);
+    dot.onclick = () => openPnjPanel(p, ev);
+    track.appendChild(dot);
+  });
+
+  row.appendChild(lbl); row.appendChild(track);
+  pnjEl.appendChild(row);
+});
+
+// Tooltip
+const tip = document.getElementById('tooltip');
+function showTooltip(e, html) { tip.innerHTML = html; tip.classList.add('visible'); moveTip(e); }
+function moveTip(e) { tip.style.left = Math.min(e.clientX+12, window.innerWidth-260)+'px'; tip.style.top = Math.min(e.clientY+12, window.innerHeight-80)+'px'; }
+function hideTooltip() { tip.classList.remove('visible'); }
+document.addEventListener('mousemove', e => { if (tip.classList.contains('visible')) moveTip(e); });
+
+// Panel
+const overlay = document.getElementById('panel-overlay');
+function closePanel() { overlay.classList.remove('open'); }
+overlay.onclick = e => { if (e.target === overlay) closePanel(); };
+
+function openQuetePanel(q, acte) {
+  document.getElementById('panel-content').innerHTML = `
+    <span class="panel-badge" style="background:${acte.color}">${q.id} · Acte ${acte.num}</span>
+    <h2>${q.titre}</h2>
+    <div class="panel-lvl">Niveaux ${q.start}–${q.end}</div>
+    <div class="panel-sec-title">Contenu</div>
+    <div class="placeholder-block">Contenu MJ — non affiché dans cette version.</div>
+    <div class="panel-sec-title">Personnages impliqués</div>
+    <div class="placeholder-block">Contenu MJ — non affiché dans cette version.</div>
+    <div class="panel-sec-title">Connexions</div>
+    <div class="placeholder-block">Contenu MJ — non affiché dans cette version.</div>
+  `;
+  overlay.classList.add('open');
+}
+
+function openPnjPanel(p, ev) {
+  const pivot = ev ? `<div style="background:var(--parch-mid);border-left:3px solid ${p.color};padding:0.5rem 0.8rem;border-radius:0 2px 2px 0;margin-bottom:0.8rem;"><strong style="font-size:0.7rem;font-family:'Cinzel',serif;color:${p.color}">Niv. ${ev.n} — ${ev.label}</strong></div>` : '';
+  document.getElementById('panel-content').innerHTML = `
+    <span class="panel-badge" style="background:${p.color}">PNJ</span>
+    <h2>${p.name}</h2>
+    <div class="panel-lvl">${p.role}</div>
+    ${pivot}
+    <div class="panel-sec-title">Description</div>
+    <div class="placeholder-block">Contenu MJ — non affiché dans cette version.</div>
+    <div class="panel-sec-title">Présence dans l'arc</div>
+    <ul>${p.presences.map(pr => `<li>${pr.latent ? 'Latent' : 'Actif'} · Niv. ${pr.s}–${pr.e}</li>`).join('')}</ul>
+    <div class="panel-sec-title">Événements</div>
+    <ul>${p.events.map(e => `<li><strong>Niv. ${e.n}</strong> — ${e.label}</li>`).join('')}</ul>
+  `;
+  overlay.classList.add('open');
+}
+
+function flashActe(num) {
+  document.querySelectorAll('.quete-row').forEach(row => {
+    row.style.opacity = +row.dataset.acte === num ? '1' : '0.15';
+  });
+  setTimeout(() => document.querySelectorAll('.quete-row').forEach(r => r.style.opacity = '1'), 1600);
+}
+</script>
+</body>
+</html>
