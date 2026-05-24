@@ -1,0 +1,724 @@
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+:root {
+  --blue:      #1A2E4A;
+  --blue-l:    #243d63;
+  --gold:      #9A6E1A;
+  --gold-l:    #C8960E;
+  --parch-min: #F2EBD9;
+  --parch-mid: #E6DCC0;
+  --parch-dk:  #C4A96A;
+  --ink:       #18140C;
+  --gray:      #6B6050;
+  --red:       #8B1A1A;
+  --green:     #1A4A2E;
+  --purple:    #3D2A5A;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #888;
+  font-family: 'Crimson Pro', Georgia, serif;
+  color: var(--ink);
+  font-size: 11.5pt;
+}
+
+/* ── Page / layout global ── */
+.sheet-page {
+  width: 297mm;
+  min-height: 210mm;
+  background: var(--parch-min);
+  margin: 8mm auto;
+  position: relative;
+  box-shadow: 0 4px 32px #0006;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sheet-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse at 20% 30%, rgba(180,150,80,.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(120,90,30,.06) 0%, transparent 55%);
+}
+
+.sheet-header {
+  background: var(--blue);
+  padding: 0 10px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--gold-l);
+  flex-shrink: 0;
+}
+
+.sheet-header-title {
+  font-family: 'Cinzel', serif;
+  color: var(--gold-l);
+  font-size: 11pt;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.sheet-header-title span {
+  color: var(--parch-dk);
+  font-size: 9pt;
+  font-weight: 400;
+}
+
+.sheet-header-sub {
+  color: var(--parch-dk);
+  font-style: italic;
+  font-size: 8.5pt;
+}
+
+.sheet-footer {
+  background: color-mix(in srgb, var(--gold) 35%, var(--parch-mid));
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.sheet-footer-l {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5pt;
+  color: var(--blue);
+  letter-spacing: .02em;
+}
+
+.sheet-footer-r {
+  font-size: 7.5pt;
+  color: var(--gray);
+  font-style: italic;
+}
+
+.sheet-inner {
+  padding: 9mm;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Grille principale (paysage) ── */
+.sheet-grid {
+  display: grid;
+  grid-template-columns: 200px 170px 1fr 240px;
+  gap: 4px;
+  flex: 1;
+}
+
+.sheet-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Boîtes ── */
+.box {
+  border: 1px solid var(--blue);
+  background: var(--parch-mid);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.box-gold   { border-color: var(--gold); }
+.box-purple { border-color: var(--purple); }
+.box-red    { border-color: var(--red); }
+
+.bt {
+  background: var(--blue);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: 9.5pt;
+  font-weight: 600;
+  padding: 3px 7px;
+  letter-spacing: .04em;
+  user-select: none;
+}
+
+.bt.gold   { background: var(--parch-mid); color: var(--blue); }
+.bt.purple { background: var(--purple); }
+.bt.red    { background: var(--red); }
+.bt.green  { background: var(--green); }
+
+.bb { padding: 4px 6px; background: var(--parch-min); }
+
+/* ── Identité ── */
+.identity-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.field {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  margin-bottom: 2px;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 8.5pt;
+  white-space: nowrap;
+  color: var(--blue);
+  flex-shrink: 0;
+}
+
+.field-input {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  background: transparent;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 10pt;
+  color: var(--ink);
+  padding: 0 2px;
+  outline: none;
+  min-width: 0;
+}
+
+.field-input:focus {
+  border-bottom-color: var(--gold);
+  background: rgba(200,150,14,.06);
+}
+
+.field-input.sm { width: 36px; }
+
+/* ── Stats (7 colonnes) ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--blue);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stat-name {
+  background: var(--blue);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: 5.5pt;
+  font-weight: 700;
+  text-align: center;
+  padding: 2px 1px;
+  letter-spacing: .02em;
+}
+
+.stat-name.ecl { background: var(--purple); }
+
+.stat-mod {
+  background: var(--parch-min);
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 14pt;
+  font-weight: 700;
+  color: var(--blue);
+  cursor: default;
+}
+
+.stat-score-wrap {
+  background: var(--parch-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+
+.stat-score {
+  width: 100%;
+  text-align: center;
+  border: none;
+  border-top: 1px solid #bbb;
+  background: transparent;
+  font-family: 'Crimson Pro', serif;
+  font-size: 9pt;
+  color: var(--ink);
+  outline: none;
+  padding: 1px 0;
+}
+
+.stat-score:focus { background: rgba(200,150,14,.1); }
+
+.stat-skills {
+  padding: 2px 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+  background: var(--parch-min);
+}
+
+/* ── Compétences et jets de sauvegarde ── */
+.skill-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 7pt;
+  border-bottom: 1px solid #d4c9a0;
+  padding-bottom: 1px;
+  min-height: 13px;
+}
+
+.skill-row.save {
+  color: var(--gray);
+  font-style: italic;
+  border-bottom: 1px dashed #ccc;
+  margin-bottom: 1px;
+}
+
+.circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.2px solid var(--blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.circle.filled       { background: var(--blue); }
+.circle.half-filled  { background: var(--gold); border-color: var(--gold); }
+.circle.purple       { border-color: var(--purple); }
+.circle.purple.filled { background: var(--purple); }
+
+.skill-value {
+  font-weight: 700;
+  width: 20px;
+  text-align: right;
+  flex-shrink: 0;
+  font-size: 7pt;
+}
+
+.skill-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Combat ── */
+.combat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 0.6fr 0.7fr 1fr;
+  gap: 3px;
+}
+
+.combat-cell {
+  border: 1px solid var(--blue);
+  border-radius: 2px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.combat-cell .lb {
+  background: var(--blue);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+  font-size: 6.5pt;
+  font-weight: 700;
+  padding: 2px 0;
+  letter-spacing: .02em;
+}
+
+.combat-cell .lb.gold-bg { background: var(--gold); }
+
+.combat-cell .vl {
+  min-height: 24px;
+  background: var(--parch-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.combat-input {
+  width: 100%;
+  text-align: center;
+  border: none;
+  background: transparent;
+  font-family: 'Cinzel', serif;
+  font-size: 12pt;
+  font-weight: 700;
+  color: var(--blue);
+  outline: none;
+  padding: 2px 0;
+}
+
+.combat-input:focus { background: rgba(200,150,14,.08); }
+
+/* ── Ressources Sideria ── */
+.resource-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.resource-cell {
+  border: 1px solid var(--blue);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.resource-cell .lb {
+  background: var(--parch-mid);
+  color: var(--blue);
+  font-family: 'Cinzel', serif;
+  font-size: 7.5pt;
+  font-weight: 700;
+  padding: 2px 5px;
+}
+
+.resource-cell .lb.gold { background: var(--gold); color: #fff; }
+.resource-cell .lb.purple { background: var(--purple); color: #fff; }
+
+.resource-cell .vl {
+  min-height: 22px;
+  padding: 2px 5px;
+  display: flex;
+  align-items: center;
+  background: var(--parch-min);
+}
+
+/* ── Fragments (cases à cocher) ── */
+.fragments-grid {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  padding: 3px 5px;
+}
+
+.fragment-box {
+  width: 14px;
+  height: 16px;
+  border: 1.2px solid var(--purple);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--parch-min);
+  font-size: 5.5pt;
+  color: var(--gray);
+  transition: background .1s;
+  user-select: none;
+}
+
+.fragment-box.used { background: var(--purple); color: #fff; }
+
+/* ── Features de classe ── */
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.feature-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 7.5pt;
+  border-bottom: 1px solid #d4c9a0;
+  padding: 2px 0;
+  min-height: 16px;
+}
+
+.feature-row.locked { opacity: .45; }
+
+.feature-check {
+  width: 9px;
+  height: 9px;
+  border: 1.2px solid var(--blue);
+  border-radius: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+  background: var(--parch-min);
+  transition: background .1s;
+}
+
+.feature-check.used { background: var(--blue); }
+
+.feature-name {
+  font-weight: 600;
+  font-size: 7.5pt;
+  flex-shrink: 0;
+}
+
+.feature-cost {
+  color: var(--gold-l);
+  font-size: 7pt;
+  flex-shrink: 0;
+}
+
+.feature-desc {
+  color: var(--gray);
+  font-size: 7pt;
+  flex: 1;
+  font-style: italic;
+}
+
+.feature-level-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 6pt;
+  color: var(--gray);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Subclasse header ── */
+.subclass-header {
+  background: color-mix(in srgb, var(--blue) 15%, var(--parch-mid));
+  border-top: 1.5px solid var(--blue);
+  padding: 2px 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 7.5pt;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: .03em;
+}
+
+/* ── Factions ── */
+.factions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+}
+
+.factions-table th {
+  font-family: 'Cinzel', serif;
+  font-size: 7pt;
+  font-weight: 600;
+  color: var(--blue);
+  padding: 1px 3px;
+  text-align: left;
+  border-bottom: 1px solid var(--blue);
+}
+
+.factions-table td {
+  padding: 1px 3px;
+  border-bottom: 1px solid #d8ceaa;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.faction-stepper {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.faction-btn {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--blue);
+  background: var(--parch-mid);
+  color: var(--blue);
+  font-size: 10pt;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  padding: 0;
+}
+
+.faction-btn:hover { background: var(--blue); color: #fff; }
+
+.faction-value {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 9pt;
+  width: 22px;
+  text-align: center;
+  color: var(--blue);
+}
+
+.faction-value.positive { color: var(--green); }
+.faction-value.negative { color: var(--red); }
+
+/* ── Attaques ── */
+.attacks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+}
+
+.attacks-table th {
+  background: var(--parch-mid);
+  font-family: 'Cinzel', serif;
+  font-size: 7pt;
+  font-weight: 700;
+  color: var(--blue);
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--gold);
+  text-align: left;
+}
+
+.attacks-table td {
+  padding: 1px 3px;
+  border-bottom: 1px solid #d4c9a0;
+  height: 15px;
+}
+
+.atk-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: 'Crimson Pro', serif;
+  font-size: 8pt;
+  color: var(--ink);
+  outline: none;
+}
+
+.atk-input:focus { background: rgba(200,150,14,.06); }
+
+/* ── Traits de personnalité ── */
+.trait-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trait-label {
+  font-family: 'Cinzel', serif;
+  font-size: 7pt;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .04em;
+  margin-bottom: 1px;
+}
+
+.trait-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #c5b888;
+  background: transparent;
+  font-family: 'Crimson Pro', serif;
+  font-size: 8.5pt;
+  color: var(--ink);
+  outline: none;
+  resize: none;
+  padding: 1px 2px;
+  min-height: 18px;
+}
+
+.trait-input:focus { background: rgba(200,150,14,.05); }
+
+/* ── Jets de mort ── */
+.death-saves {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 5px;
+}
+
+.death-circles {
+  display: flex;
+  gap: 3px;
+}
+
+.death-circle {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--red);
+  cursor: pointer;
+  background: var(--parch-min);
+  transition: background .1s;
+}
+
+.death-circle.success { border-color: var(--green); }
+.death-circle.filled.success { background: var(--green); }
+.death-circle.filled { background: var(--red); }
+
+/* ── Indicateur de sauvegarde ── */
+.save-indicator {
+  font-size: 7pt;
+  color: var(--gray);
+  font-style: italic;
+  padding: 2px 8px;
+  text-align: right;
+  transition: color .3s;
+}
+
+.save-indicator.saving { color: var(--gold); }
+.save-indicator.saved  { color: var(--green); }
+
+/* ── Inventaire ── */
+.inventory-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 8pt;
+  border-bottom: 1px solid #d4c9a0;
+  min-height: 15px;
+}
+
+.currency-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.currency-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.currency-label {
+  font-family: 'Cinzel', serif;
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.currency-input {
+  width: 100%;
+  text-align: center;
+  border: 1px solid var(--blue);
+  border-radius: 2px;
+  background: var(--parch-min);
+  font-family: 'Cinzel', serif;
+  font-size: 9pt;
+  color: var(--ink);
+  outline: none;
+  padding: 1px 0;
+}
+
+.currency-input:focus { border-color: var(--gold); }
+
+@media print {
+  body { background: none; margin: 0; }
+  .sheet-page { margin: 0; box-shadow: none; width: 297mm; min-height: 210mm; }
+  @page { size: A4 landscape; margin: 0; }
+}
