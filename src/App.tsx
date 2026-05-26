@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useCharacter } from './hooks/useCharacter'
 import { useClasses }   from './hooks/useClasses'
-import { useSpells }    from './hooks/useSpells'
 import Header           from './components/character/sections/Header'
 import CoreStats        from './components/character/sections/CoreStats'
 import Combat           from './components/character/sections/Combat'
@@ -11,7 +10,7 @@ import Factions         from './components/character/sections/Factions'
 import PersonalityTraits from './components/character/sections/PersonalityTraits'
 import ClassFeatures    from './components/character/sections/ClassFeatures'
 import ClassPicker      from './components/character/ClassPicker'
-import SpellList        from './components/character/SpellList'
+import SpellBrowser     from './components/SpellBrowser'
 import './components/character/CharacterSheet.css'
 
 const TEST_CHARACTER_ID = 'c6eeff55-4151-4641-92e8-ad00a5c34fe5'
@@ -21,7 +20,6 @@ type Tab = 'session' | 'lore'
 function App() {
   const { character, loading, error, saved, update, updateJson, updateArray } = useCharacter(TEST_CHARACTER_ID)
   const { classes } = useClasses()
-  const { spells }  = useSpells()
   const [showClassPicker, setShowClassPicker] = useState(false)
   const [classLocked, setClassLocked] = useState(false)
   const [tab, setTab] = useState<Tab>('session')
@@ -238,11 +236,7 @@ function App() {
                 <div className="box" style={{ flex: 1 }}>
                   <div className="bt">Sorts — Compendium Éthérique</div>
                   <div className="bb" style={{ padding: '4px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <SpellList
-                      spells={spells}
-                      knownSpellIds={knownSpellIds}
-                      onToggle={toggleSpell}
-                    />
+                    <SpellBrowser />
                   </div>
                 </div>
               </div>
