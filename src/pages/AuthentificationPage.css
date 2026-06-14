@@ -1,0 +1,226 @@
+/* Page auth : layout fluide (la fiche personnage garde 297mm fixe) */
+.auth-page {
+  width: 100%;
+  max-width: 520px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  box-shadow: none;
+}
+
+.auth-page .sheet-inner {
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  padding: clamp(12px, 4vw, 28px);
+}
+
+.auth-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.auth-page .sheet-header-title span {
+  display: inline;
+}
+
+.auth-page .sheet-header-title {
+  font-size: clamp(15pt, 4.2vw, 19pt);
+  color: #f0c55a;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+.auth-page .sheet-header-title span {
+  font-size: clamp(11pt, 3.2vw, 13.5pt);
+  color: #f7e2ad;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 720px;
+}
+
+.auth-page .box .bt {
+  font-size: clamp(11pt, 3vw, 13.5pt);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.auth-page .box .bb {
+  color: #111;
+}
+
+.auth-intro {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: rgba(26, 46, 74, 0.12);
+  border: 1px solid rgba(26, 46, 74, 0.35);
+  border-radius: 4px;
+  color: #132238;
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(12pt, 3.9vw, 13.5pt);
+  line-height: 1.55;
+  font-weight: 600;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-form .field label {
+  font-size: clamp(12pt, 3.8vw, 13.5pt);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #121212;
+}
+
+.auth-form .field-input {
+  font-size: clamp(13.5pt, 4vw, 15pt);
+  line-height: 1.5;
+  padding-bottom: 5px;
+  color: #0b0b0b;
+  font-weight: 600;
+}
+
+.auth-field {
+  width: 100%;
+}
+
+.auth-alert {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 3px;
+  font-size: clamp(10.5pt, 3.7vw, 12pt);
+  line-height: 1.45;
+  word-break: break-word;
+  font-weight: 600;
+}
+
+.auth-alert--error {
+  background: rgba(120, 0, 0, 0.16);
+  border: 1px solid rgba(120, 0, 0, 0.5);
+  color: #4e0000;
+}
+
+.auth-alert--success {
+  background: rgba(0, 80, 0, 0.14);
+  border: 1px solid rgba(0, 80, 0, 0.45);
+  color: #00492b;
+}
+
+.auth-submit {
+  margin-top: 10px;
+  align-self: stretch;
+  border: 1px solid var(--blue);
+  background: var(--blue);
+  color: #fff;
+  font-family: Cinzel, serif;
+  font-size: clamp(10.5pt, 3.7vw, 12pt);
+  padding: 14px 18px;
+  cursor: pointer;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-height: 58px;
+  font-weight: 700;
+}
+
+.auth-submit:disabled {
+  background: rgba(0, 0, 0, 0.1);
+  cursor: wait;
+  color: var(--ink);
+}
+
+.auth-switch {
+  margin-top: 14px;
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(10.5pt, 3.5vw, 12pt);
+  line-height: 1.55;
+  color: #2a2010;
+  text-align: center;
+  font-weight: 600;
+}
+
+.auth-switch-link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.auth-switch-link:hover {
+  color: var(--gold);
+}
+
+.auth-switch-link:focus-visible {
+  outline: 2px solid var(--gold-l);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.auth-hint {
+  margin-top: 12px;
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(12pt, 3.9vw, 12.8pt);
+  color: #2a2010;
+  text-align: center;
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+.auth-page .sheet-footer {
+  height: auto;
+  min-height: 18px;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 6px 10px;
+}
+
+.auth-page .sheet-footer-l,
+.auth-page .sheet-footer-r {
+  font-size: clamp(8.5pt, 2.9vw, 10pt);
+  color: #12233a;
+  font-weight: 600;
+}
+
+@media (min-width: 600px) {
+  .auth-page {
+    margin: 8mm auto;
+    min-height: min(100dvh, 210mm);
+    box-shadow: 0 4px 32px #0006;
+  }
+
+  .auth-submit {
+    align-self: flex-end;
+    min-height: auto;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page .sheet-header {
+    height: auto;
+    min-height: 28px;
+    padding: 6px 10px;
+  }
+
+  .auth-page .sheet-header-title {
+    font-size: clamp(12pt, 4.7vw, 15pt);
+    line-height: 1.25;
+  }
+
+  .auth-page .sheet-header-title span {
+    display: block;
+    margin-top: 2px;
+  }
+}
