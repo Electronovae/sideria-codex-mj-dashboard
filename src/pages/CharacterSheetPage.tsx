@@ -11,13 +11,16 @@ import ClassFeatures from '../components/character/sections/ClassFeatures'
 import ClassPicker from '../components/character/ClassPicker'
 import SpellBrowser from '../components/SpellBrowser'
 import '../components/character/CharacterSheet.css'
-
-const TEST_CHARACTER_ID = 'c6eeff55-4151-4641-92e8-ad00a5c34fe5'
+import './CharacterSheetPage.css'
 
 type Tab = 'session' | 'lore'
 
-export default function CharacterSheetPage() {
-  const { character, loading, error, saved, update, updateJson, updateArray } = useCharacter(TEST_CHARACTER_ID)
+type Props = {
+  characterId: string
+}
+
+export default function CharacterSheetPage({ characterId }: Props) {
+  const { character, loading, error, saved, update, updateJson, updateArray } = useCharacter(characterId)
   const { classes } = useClasses()
   const [showClassPicker, setShowClassPicker] = useState(false)
   const [classLocked, setClassLocked] = useState(false)
@@ -29,151 +32,142 @@ export default function CharacterSheetPage() {
   const primaryClass = classes.find(c => c.id === character.class_primary_id) ?? character.class_primary ?? null
   const subclasses = primaryClass?.subclasses ?? []
 
-  const knownSpellIds = (character.active_features ?? [])
-    .filter((f: any) => f.feature_id?.startsWith('spell-'))
-    .map((f: any) => f.feature_id.replace('spell-', ''))
-
-  const toggleSpell = (spellId: string) => {
-    const current = character.active_features ?? []
-    const key = `spell-${spellId}`
-    if (knownSpellIds.includes(spellId)) {
-      updateArray('active_features', current.filter((f: any) => f.feature_id !== key))
-    } else {
-      updateArray('active_features', [...current, { feature_id: key, class_id: null, is_subclass: false, used: false }])
-    }
-  }
-
   return (
     <>
-      <div className="sheet-page">
+      <div className="sheet-page character-sheet-page">
         <div className="sheet-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="sheet-header-actions">
             <span className="sheet-header-title">
               The Sideria Codex <span>— Fiche de Personnage</span>
             </span>
-            {(['session', 'lore'] as Tab[]).map(t => (
-              <button key={t} onClick={() => setTab(t)} style={{
-                border: `1px solid ${tab === t ? 'var(--gold-l)' : 'rgba(255,255,255,.3)'}`,
-                background: tab === t ? 'rgba(200,150,14,.2)' : 'transparent',
-                color: tab === t ? 'var(--gold-l)' : 'rgba(255,255,255,.6)',
-                fontFamily: 'Cinzel,serif', fontSize: '7pt', padding: '2px 8px',
-                cursor: 'pointer', borderRadius: '2px', letterSpacing: '.04em',
-              }}>
-                {t === 'session' ? '⚔ Session' : '📖 Lore & Sorts'}
-              </button>
-            ))}
+            <div className="sheet-tabs" role="tablist" aria-label="Sections de la fiche">
+              {(['session', 'lore'] as Tab[]).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t}
+                  className={`sheet-tab${tab === t ? ' active' : ''}`}
+                  onClick={() => setTab(t)}
+                >
+                  {t === 'session' ? '⚔ Session' : '📖 Lore & Sorts'}
+                </button>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className={`sheet-header-sub ${saved ? 'saved' : 'saving'}`}>
-              {saved ? 'Enregistré ✓' : 'Enregistrement…'}
-            </span>
-          </div>
+          <span className={`sheet-header-sub ${saved ? 'saved' : 'saving'}`}>
+            {saved ? 'Enregistré ✓' : 'Enregistrement…'}
+          </span>
         </div>
 
         <div className="sheet-inner">
-          <div className="box" style={{ marginBottom: '2px' }}>
+          <div className="box identity-box">
             <div className="bt">Identité</div>
             <div className="bb">
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                <div className="field" style={{ flex: 2, minWidth: '120px' }}>
-                  <label>Nom :</label>
-                  <input className="field-input" style={{ fontSize: '12pt', fontWeight: 600 }}
-                    value={character.name || ''} onChange={e => update('name', e.target.value)} />
+              <div className="identity-row">
+                <div className="field identity-name">
+                  <label htmlFor="char-name">Nom</label>
+                  <input
+                    id="char-name"
+                    className="field-input"
+                    value={character.name || ''}
+                    onChange={e => update('name', e.target.value)}
+                  />
                 </div>
 
-                <div className="field" style={{ flex: 1, minWidth: '120px', alignItems: 'center' }}>
-                  <label>Classe :</label>
+                <div className="field identity-field">
+                  <label htmlFor="char-class">Classe</label>
                   <select
+                    id="char-class"
+                    className="sheet-select"
                     disabled={classLocked}
                     value={character.class_primary_id ?? ''}
                     onChange={e => update('class_primary_id', e.target.value || null)}
-                    style={{
-                      flex: 1, border: 'none', borderBottom: '1px solid var(--ink)',
-                      background: 'transparent', fontFamily: 'Crimson Pro,serif', fontSize: '10pt',
-                      color: 'var(--blue)', fontWeight: 600, outline: 'none', cursor: classLocked ? 'not-allowed' : 'pointer',
-                    }}>
+                  >
                     <option value="">— Choisir —</option>
                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
 
                 {subclasses.length > 0 && (
-                  <div className="field" style={{ flex: 1, minWidth: '120px' }}>
-                    <label>Subclasse :</label>
+                  <div className="field identity-field">
+                    <label htmlFor="char-subclass">Subclasse</label>
                     <select
+                      id="char-subclass"
+                      className="sheet-select sheet-select--gold"
                       disabled={classLocked}
                       value={character.subclass_primary_id ?? ''}
                       onChange={e => update('subclass_primary_id', e.target.value || null)}
-                      style={{
-                        flex: 1, border: 'none', borderBottom: '1px solid var(--ink)',
-                        background: 'transparent', fontFamily: 'Crimson Pro,serif', fontSize: '10pt',
-                        color: 'var(--gold)', outline: 'none', cursor: classLocked ? 'not-allowed' : 'pointer',
-                      }}>
+                    >
                       <option value="">— Choisir —</option>
-                      {subclasses.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      {subclasses.map((s: { id: string; name: string }) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
                     </select>
                   </div>
                 )}
 
-                <button
-                  onClick={() => setClassLocked(!classLocked)}
-                  title={classLocked ? 'Déverrouiller la classe' : 'Verrouiller la classe'}
-                  style={{
-                    border: '1px solid var(--blue)', borderRadius: '2px',
-                    background: classLocked ? 'var(--blue)' : 'var(--parch-mid)',
-                    color: classLocked ? '#fff' : 'var(--blue)',
-                    fontSize: '10pt', padding: '2px 6px', cursor: 'pointer', flexShrink: 0,
-                  }}>
-                  {classLocked ? '🔒' : '🔓'}
-                </button>
+                <div className="identity-actions">
+                  <button
+                    type="button"
+                    className={`sheet-btn sheet-btn--lock${classLocked ? ' locked' : ''}`}
+                    onClick={() => setClassLocked(!classLocked)}
+                    title={classLocked ? 'Déverrouiller la classe' : 'Verrouiller la classe'}
+                    aria-label={classLocked ? 'Déverrouiller la classe' : 'Verrouiller la classe'}
+                  >
+                    {classLocked ? '🔒 Verrouillé' : '🔓 Classe'}
+                  </button>
 
-                {!classLocked && (
-                  <button onClick={() => setShowClassPicker(true)} style={{
-                    border: '1px solid var(--gold)', background: 'var(--parch-mid)',
-                    color: 'var(--gold)', fontFamily: 'Cinzel,serif', fontSize: '7pt',
-                    padding: '3px 8px', cursor: 'pointer', borderRadius: '2px', flexShrink: 0,
-                  }}>◆ Fiche détaillée</button>
-                )}
+                  {!classLocked && (
+                    <button
+                      type="button"
+                      className="sheet-btn sheet-btn--gold"
+                      onClick={() => setShowClassPicker(true)}
+                    >
+                      ◆ Fiche détaillée
+                    </button>
+                  )}
+                </div>
 
-                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <div className="identity-stats">
                   {[
-                    { label: 'NIV.', field: 'level', type: 'number' as const },
-                    { label: 'XP', field: 'xp', type: 'number' as const },
-                  ].map(({ label, field, type }) => (
-                    <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}>
-                      <span style={{ fontFamily: 'Cinzel,serif', fontSize: '6pt', fontWeight: 700, color: 'var(--gray)' }}>{label}</span>
-                      <input type={type}
+                    { label: 'NIV.', field: 'level' as const },
+                    { label: 'XP', field: 'xp' as const },
+                  ].map(({ label, field }) => (
+                    <div key={label} className="identity-stat">
+                      <span className="identity-stat-label">{label}</span>
+                      <input
+                        type="number"
+                        className="identity-stat-input"
                         value={character[field] ?? 0}
                         onChange={e => update(field, parseInt(e.target.value) || 0)}
-                        style={{
-                          width: '40px', textAlign: 'center', border: '1px solid var(--blue)',
-                          borderRadius: '2px', background: 'var(--parch-mid)',
-                          fontFamily: 'Cinzel,serif', fontWeight: 700, fontSize: '10pt',
-                          color: 'var(--blue)', outline: 'none', padding: '1px 0',
-                        }} />
+                        aria-label={label}
+                      />
                     </div>
                   ))}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}>
-                    <span style={{ fontFamily: 'Cinzel,serif', fontSize: '6pt', fontWeight: 700, color: 'var(--gray)' }}>DR</span>
-                    <span style={{
-                      width: '40px', textAlign: 'center', border: '1px solid var(--blue)',
-                      borderRadius: '2px', background: 'var(--parch-mid)',
-                      fontFamily: 'Cinzel,serif', fontWeight: 700, fontSize: '10pt', color: 'var(--blue)',
-                      padding: '1px 0', display: 'block',
-                    }}>+{character.proficiency_bonus ?? 2}</span>
+                  <div className="identity-stat">
+                    <span className="identity-stat-label">DR</span>
+                    <span className="identity-stat-value">
+                      +{character.proficiency_bonus ?? 2}
+                    </span>
                   </div>
                 </div>
 
-                <div className="field" style={{ flex: 1, minWidth: '80px' }}>
-                  <label>Origine :</label>
-                  <input className="field-input" value={character.origin || ''} onChange={e => update('origin', e.target.value)} />
+                <div className="field identity-field">
+                  <label htmlFor="char-origin">Origine</label>
+                  <input
+                    id="char-origin"
+                    className="field-input"
+                    value={character.origin || ''}
+                    onChange={e => update('origin', e.target.value)}
+                  />
                 </div>
               </div>
             </div>
           </div>
 
           {tab === 'session' && (
-            <div className="sheet-grid" style={{ flex: 1, minHeight: 0 }}>
+            <div className="sheet-grid sheet-grid--session">
               <div className="sheet-col">
                 <CoreStats
                   stats={character.stats ?? {}}
@@ -202,7 +196,7 @@ export default function CharacterSheetPage() {
           )}
 
           {tab === 'lore' && (
-            <div className="sheet-grid" style={{ flex: 1, minHeight: 0, gridTemplateColumns: '1fr 1.4fr' }}>
+            <div className="sheet-grid sheet-grid--lore">
               <div className="sheet-col">
                 <ClassFeatures
                   classData={primaryClass}
@@ -219,9 +213,9 @@ export default function CharacterSheetPage() {
                 />
               </div>
               <div className="sheet-col">
-                <div className="box" style={{ flex: 1 }}>
+                <div className="box spell-browser-box">
                   <div className="bt">Sorts — Compendium Éthérique</div>
-                  <div className="bb" style={{ padding: '4px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div className="bb">
                     <SpellBrowser />
                   </div>
                 </div>

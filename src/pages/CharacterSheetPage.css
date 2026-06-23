@@ -1,0 +1,472 @@
+/* Fiche personnage : layout fluide et lisible */
+.character-sheet-page {
+  width: 100%;
+  max-width: 1400px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.character-sheet-page .sheet-inner {
+  overflow: auto;
+  padding: clamp(10px, 2.5vw, 28px);
+  gap: clamp(6px, 1.5vw, 12px);
+}
+
+.character-sheet-page .sheet-header {
+  height: auto;
+  min-height: 48px;
+  padding: 8px 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.character-sheet-page .sheet-header-title {
+  font-size: clamp(12pt, 3.2vw, 15pt);
+  color: #f0c55a;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.character-sheet-page .sheet-header-title span {
+  font-size: clamp(9pt, 2.6vw, 11pt);
+  color: #f7e2ad;
+}
+
+.character-sheet-page .sheet-header-sub {
+  font-size: clamp(9pt, 2.4vw, 10.5pt);
+  font-weight: 600;
+}
+
+.sheet-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sheet-tab {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: Cinzel, serif;
+  font-size: clamp(9pt, 2.4vw, 10.5pt);
+  padding: 8px 14px;
+  cursor: pointer;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  min-height: 40px;
+  font-weight: 600;
+}
+
+.sheet-tab:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+
+.sheet-tab.active {
+  border-color: var(--gold-l);
+  background: rgba(200, 150, 14, 0.22);
+  color: var(--gold-l);
+}
+
+.sheet-tab:focus-visible {
+  outline: 2px solid var(--gold-l);
+  outline-offset: 2px;
+}
+
+/* ─── Identité ─── */
+.character-sheet-page .identity-box {
+  margin-bottom: 4px;
+}
+
+.character-sheet-page .identity-row {
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.character-sheet-page .field {
+  margin-bottom: 4px;
+}
+
+.character-sheet-page .field label {
+  font-size: clamp(10pt, 2.6vw, 12pt);
+  font-weight: 700;
+  color: #132238;
+}
+
+.character-sheet-page .field-input {
+  font-size: clamp(12pt, 3vw, 14pt);
+  font-weight: 600;
+  border-bottom-width: 2px;
+  padding-bottom: 3px;
+  color: #0d0d0d;
+}
+
+.character-sheet-page .identity-name {
+  flex: 2 1 180px;
+}
+
+.character-sheet-page .identity-name .field-input {
+  font-size: clamp(14pt, 3.8vw, 18pt);
+}
+
+.character-sheet-page .identity-field {
+  flex: 1 1 140px;
+}
+
+.sheet-select {
+  flex: 1;
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid var(--ink);
+  background: transparent;
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(12pt, 3vw, 13pt);
+  font-weight: 600;
+  outline: none;
+  min-width: 0;
+  padding: 4px 2px;
+  color: var(--blue);
+}
+
+.sheet-select--gold {
+  color: #7a5200;
+}
+
+.sheet-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.sheet-select:focus {
+  border-bottom-color: var(--gold-l);
+  background: rgba(200, 150, 14, 0.06);
+}
+
+.identity-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sheet-btn {
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: Cinzel, serif;
+  font-size: clamp(9pt, 2.4vw, 10pt);
+  padding: 8px 12px;
+  min-height: 40px;
+  flex-shrink: 0;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.sheet-btn--lock {
+  border: 1px solid var(--blue);
+  background: var(--parch-mid);
+  color: var(--blue);
+}
+
+.sheet-btn--lock.locked {
+  background: var(--blue);
+  color: #fff;
+}
+
+.sheet-btn--gold {
+  border: 1px solid var(--gold);
+  background: var(--parch-mid);
+  color: #563800;
+}
+
+.sheet-btn--gold:hover,
+.sheet-btn--lock:hover:not(.locked) {
+  background: rgba(200, 150, 14, 0.15);
+}
+
+.identity-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.character-sheet-page .identity-stat-label {
+  font-size: clamp(8pt, 2.2vw, 9.5pt);
+  color: #2a2010;
+}
+
+.character-sheet-page .identity-stat-value {
+  font-size: clamp(11pt, 3vw, 13pt);
+  min-width: 44px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+}
+
+.identity-stat-input {
+  width: 52px;
+  min-height: 36px;
+  text-align: center;
+  border: 1px solid var(--blue);
+  border-radius: 3px;
+  background: var(--parch-mid);
+  font-family: Cinzel, serif;
+  font-weight: 700;
+  font-size: clamp(11pt, 3vw, 13pt);
+  color: var(--blue);
+  outline: none;
+  padding: 4px 0;
+}
+
+.identity-stat-input:focus {
+  border-color: var(--gold-l);
+  background: rgba(200, 150, 14, 0.1);
+}
+
+/* ─── Grilles ─── */
+.character-sheet-page .sheet-grid {
+  display: grid;
+  gap: clamp(8px, 1.5vw, 14px);
+  flex: 1;
+  min-height: 0;
+}
+
+.character-sheet-page .sheet-grid--session {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.character-sheet-page .sheet-grid--lore {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+}
+
+.character-sheet-page .sheet-col {
+  gap: clamp(6px, 1.2vw, 10px);
+  min-width: 0;
+}
+
+.character-sheet-page .box {
+  border-width: 1.5px;
+}
+
+.character-sheet-page .bt {
+  font-size: clamp(10pt, 2.6vw, 12pt);
+  padding: 6px 10px;
+  font-weight: 700;
+}
+
+.character-sheet-page .bb {
+  padding: 8px 10px;
+  color: #111;
+}
+
+/* Lisibilité sections enfants */
+.character-sheet-page .stat-name {
+  font-size: clamp(7pt, 2vw, 8.5pt);
+  padding: 4px 2px;
+}
+
+.character-sheet-page .stat-mod {
+  font-size: clamp(12pt, 3.2vw, 15pt);
+  min-height: 28px;
+}
+
+.character-sheet-page .stat-score {
+  font-size: clamp(9pt, 2.4vw, 11pt);
+}
+
+.character-sheet-page .skill-row,
+.character-sheet-page .skill-name,
+.character-sheet-page .skill-value {
+  font-size: clamp(8.5pt, 2.3vw, 10pt);
+  min-height: 22px;
+}
+
+.character-sheet-page .circle {
+  width: 11px;
+  height: 11px;
+}
+
+.character-sheet-page .combat-cell .lb {
+  font-size: clamp(7pt, 2vw, 8.5pt);
+  padding: 4px 2px;
+}
+
+.character-sheet-page .combat-input,
+.character-sheet-page .resource-input {
+  font-size: clamp(11pt, 3vw, 13pt);
+}
+
+.character-sheet-page .combat-cell .vl,
+.character-sheet-page .resource-cell .vl {
+  min-height: 32px;
+}
+
+.character-sheet-page .resource-cell .lb {
+  font-size: clamp(8pt, 2.2vw, 9.5pt);
+}
+
+.character-sheet-page .attacks-table th,
+.character-sheet-page .attacks-table td,
+.character-sheet-page .atk-input {
+  font-size: clamp(9pt, 2.4vw, 10.5pt);
+}
+
+.character-sheet-page .attacks-table td {
+  height: auto;
+  min-height: 28px;
+}
+
+.character-sheet-page .trait-label {
+  font-size: clamp(8.5pt, 2.3vw, 10pt);
+}
+
+.character-sheet-page .trait-input {
+  font-size: clamp(10pt, 2.6vw, 11.5pt);
+  line-height: 1.45;
+}
+
+.character-sheet-page .feature-row,
+.character-sheet-page .feature-name,
+.character-sheet-page .feature-desc,
+.character-sheet-page .feature-cost {
+  font-size: clamp(9pt, 2.4vw, 10.5pt);
+}
+
+.character-sheet-page .factions-table th,
+.character-sheet-page .factions-table td {
+  font-size: clamp(9pt, 2.4vw, 10.5pt);
+  height: auto;
+  min-height: 26px;
+}
+
+.character-sheet-page .faction-value {
+  font-size: clamp(10pt, 2.6vw, 11.5pt);
+}
+
+.character-sheet-page .add-btn {
+  font-size: clamp(8.5pt, 2.3vw, 10pt);
+  padding: 6px 10px;
+  min-height: 36px;
+}
+
+.character-sheet-page .sheet-footer {
+  height: auto;
+  min-height: 22px;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 8px 12px;
+}
+
+.character-sheet-page .sheet-footer-l,
+.character-sheet-page .sheet-footer-r {
+  font-size: clamp(8.5pt, 2.4vw, 10pt);
+  font-weight: 600;
+}
+
+.character-sheet-page .spell-browser-box .bb {
+  min-height: 200px;
+}
+
+/* ─── Breakpoints ─── */
+@media (min-width: 900px) {
+  .character-sheet-page {
+    margin: 8mm auto;
+    box-shadow: 0 4px 32px #0006;
+  }
+}
+
+@media (max-width: 1100px) {
+  .character-sheet-page .sheet-grid--session {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .character-sheet-page .sheet-grid--session,
+  .character-sheet-page .sheet-grid--lore {
+    grid-template-columns: 1fr;
+  }
+
+  .character-sheet-page .sheet-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .character-sheet-page .sheet-header-title span {
+    display: block;
+    margin-top: 2px;
+  }
+
+  .character-sheet-page .identity-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .character-sheet-page .identity-field,
+  .character-sheet-page .identity-name {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .identity-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .identity-stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .character-sheet-page .combat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .character-sheet-page .status-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .character-sheet-page .resource-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .character-sheet-page .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .character-sheet-page .combat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .character-sheet-page .currency-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sheet-tabs {
+    width: 100%;
+  }
+
+  .sheet-tab {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .character-sheet-page .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 import '../components/character/CharacterSheet.css'
 import './AuthentificationPage.css'
 import './SelectionCharacterPage.css'
@@ -11,48 +12,158 @@ type CharacterSummary = {
   origin: string
 }
 
-const MOCK_CHARACTERS: CharacterSummary[] = [
-  { id: 'c6eeff55-4151-4641-92e8-ad00a5c34fe5', name: 'Aldric Vorn', className: 'Sentinelle', level: 3, origin: 'Brumes de Khar' },
-  { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', name: 'Lyra Duskmere', className: 'Éveilleur', level: 5, origin: 'Cité d\'Étheris' },
-]
+type PlayerRow = {
+  id: number
+  name_player: string
+  role: string
+}
 
-export default function SelectionCharacterPage() {
-  const [characters, setCharacters] = useState<CharacterSummary[]>(MOCK_CHARACTERS)
+type Props = {
+  onOpenCharacter?: (characterId: string) => void
+}
+
+async function getOrCreatePlayer(authUserId: string, email: string): Promise<PlayerRow> {
+  const { data: existing, error: fetchError } = await supabase
+    .from('Player')
+    .select('id, name_player, role')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+
+  if (fetchError) throw fetchError
+  if (existing) return existing
+
+  const { data: created, error: createError } = await supabase
+    .from('Player')
+    .insert({
+      auth_user_id: authUserId,
+      name_player: email.split('@')[0],
+      role: 'player',
+    })
+    .select('id, name_player, role')
+    .single()
+
+  if (createError) throw createError
+  return created
+}
+
+function mapCharacterRow(row: {
+  id: string
+  name: string | null
+  level: number | null
+  origin: string | null
+  class_primary: { name: string } | null
+}): CharacterSummary {
+  return {
+    id: row.id,
+    name: row.name?.trim() || 'Sans nom',
+    className: row.class_primary?.name ?? '—',
+    level: row.level ?? 1,
+    origin: row.origin?.trim() || '—',
+  }
+}
+
+export default function SelectionCharacterPage({ onOpenCharacter }: Props) {
+  const [player, setPlayer] = useState<PlayerRow | null>(null)
+  const [characters, setCharacters] = useState<CharacterSummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newOrigin, setNewOrigin] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+
+  const loadCharacters = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+      if (!user) throw new Error('Session introuvable. Veuillez vous reconnecter.')
+
+      const playerRow = await getOrCreatePlayer(user.id, user.email ?? 'voyageur')
+      setPlayer(playerRow)
+
+      const isStaff = playerRow.role === 'admin' || playerRow.role === 'mj'
+
+      let query = supabase
+        .from('characters')
+        .select('id, name, level, origin, class_primary:class_primary_id(name)')
+        .order('name')
+
+      if (!isStaff) {
+        query = query.eq('player_id', playerRow.id)
+      }
+
+      const { data, error: charactersError } = await query
+      if (charactersError) throw charactersError
+
+      setCharacters((data ?? []).map(mapCharacterRow))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Impossible de charger vos personnages.'
+      setError(msg)
+      setCharacters([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCharacters()
+  }, [loadCharacters])
 
   const handleSelect = (id: string) => {
     setSelectedId(id)
     setMessage(null)
+    setError(null)
   }
 
   const handleOpenSheet = () => {
     if (!selectedId) return
-    const character = characters.find(c => c.id === selectedId)
-    setMessage(`Fiche sélectionnée : ${character?.name ?? 'Inconnue'} (connexion back à venir).`)
+    onOpenCharacter?.(selectedId)
   }
 
-  const handleCreate = (e: { preventDefault(): void }) => {
+  const handleCreate = async (e: { preventDefault(): void }) => {
     e.preventDefault()
-    if (!newName.trim()) return
+    if (!newName.trim() || !player) return
 
-    const newCharacter: CharacterSummary = {
-      id: crypto.randomUUID(),
-      name: newName.trim(),
-      className: '—',
-      level: 1,
-      origin: newOrigin.trim() || 'À définir',
+    setCreating(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const { data, error: insertError } = await supabase
+        .from('characters')
+        .insert({
+          name: newName.trim(),
+          origin: newOrigin.trim() || null,
+          level: 1,
+          player_id: player.id,
+        })
+        .select('id, name, level, origin, class_primary:class_primary_id(name)')
+        .single()
+
+      if (insertError) throw insertError
+
+      const created = mapCharacterRow(data)
+      setCharacters(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
+      setSelectedId(created.id)
+      setNewName('')
+      setNewOrigin('')
+      setShowCreateForm(false)
+      setMessage(`Fiche créée : ${created.name}.`)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Impossible de créer la fiche.'
+      setError(msg)
+    } finally {
+      setCreating(false)
     }
+  }
 
-    setCharacters(prev => [...prev, newCharacter])
-    setSelectedId(newCharacter.id)
-    setNewName('')
-    setNewOrigin('')
-    setShowCreateForm(false)
-    setMessage(`Nouvelle fiche créée : ${newCharacter.name} (enregistrement back à venir).`)
+  if (loading) {
+    return <div className="sheet-loading">Chargement de vos personnages…</div>
   }
 
   return (
@@ -70,8 +181,16 @@ export default function SelectionCharacterPage() {
           <div className="bt">Archives des Voyageurs</div>
           <div className="bb">
             <p className="auth-intro">
-              Choisissez une fiche existante ou forgez un nouveau personnage pour entrer dans le Codex.
+              {player
+                ? `Bienvenue, ${player.name_player}. Choisissez une fiche existante ou forgez un nouveau personnage.`
+                : 'Choisissez une fiche existante ou forgez un nouveau personnage pour entrer dans le Codex.'}
             </p>
+
+            {error && (
+              <div className="auth-alert auth-alert--error" role="alert">
+                {error}
+              </div>
+            )}
 
             <div className="selection-list" role="list" aria-label="Fiches personnage disponibles">
               {characters.length === 0 ? (
@@ -112,6 +231,7 @@ export default function SelectionCharacterPage() {
                 onClick={() => {
                   setShowCreateForm(prev => !prev)
                   setMessage(null)
+                  setError(null)
                 }}
               >
                 {showCreateForm ? 'Annuler la création' : '+ Créer une nouvelle fiche'}
@@ -130,6 +250,7 @@ export default function SelectionCharacterPage() {
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Ex. Aldric Vorn"
                     required
+                    disabled={creating}
                   />
                 </div>
 
@@ -142,11 +263,12 @@ export default function SelectionCharacterPage() {
                     value={newOrigin}
                     onChange={(e) => setNewOrigin(e.target.value)}
                     placeholder="Ex. Brumes de Khar"
+                    disabled={creating}
                   />
                 </div>
 
-                <button type="submit" className="auth-submit">
-                  Forger la fiche
+                <button type="submit" className="auth-submit" disabled={creating}>
+                  {creating ? 'Création…' : 'Forger la fiche'}
                 </button>
               </form>
             )}
@@ -158,7 +280,7 @@ export default function SelectionCharacterPage() {
             )}
 
             <p className="auth-hint">
-              Les fiches affichées sont des données de démonstration. La liaison Supabase sera ajoutée ensuite.
+              Vos fiches sont enregistrées dans le Codex et liées à votre compte Sidéria.
             </p>
           </div>
         </div>
