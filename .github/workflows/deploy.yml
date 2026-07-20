@@ -1,7 +1,7 @@
 name: Deploy sur GitHub Pages
 on:
   push:
-    branches: [main]
+    branches: [electronovae]
 permissions:
   contents: read
   pages: write
