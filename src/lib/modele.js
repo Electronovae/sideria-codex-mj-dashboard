@@ -32,7 +32,22 @@ export const nouvelleFaction = () => ({
 export const nouvelEvenement = () => ({
   id: uid('evt'), titre: 'Nouvel événement', desc: '', debut: versJour(312), fin: null,
   participants: [], factionId: null, importance: 2, campagneId: null,
+  arcId: null, symbole: 'losange', couleur: null,
 })
+
+export const nouvelArc = () => ({
+  id: uid('arc'), nom: 'Nouvel arc', couleur: '#6b5b95', description: '',
+  debut: versJour(312), fin: versJour(314),
+})
+
+export const SYMBOLES = ['losange', 'cercle', 'carre', 'etoile', 'triangle']
+
+// Migration douce : garantit les champs ajoutés au fil des versions.
+export const normaliser = (u) => {
+  u.arcs ||= []
+  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.couleur ??= null })
+  return u
+}
 
 export const nouvelleCampagne = () => ({
   id: uid('cmp'), code: '', titre: 'Nouvelle campagne', factionId: null, saison: 1,
