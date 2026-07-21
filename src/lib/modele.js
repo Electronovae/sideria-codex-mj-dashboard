@@ -32,7 +32,7 @@ export const nouvelleFaction = () => ({
 export const nouvelEvenement = () => ({
   id: uid('evt'), titre: 'Nouvel événement', desc: '', debut: versJour(312), fin: null,
   participants: [], factionId: null, importance: 2, campagneId: null,
-  arcId: null, symbole: 'losange', couleur: null,
+  arcId: null, symbole: 'losange', couleur: null, sessionId: null,
 })
 
 export const nouvelArc = () => ({
@@ -45,7 +45,8 @@ export const SYMBOLES = ['losange', 'cercle', 'carre', 'etoile', 'triangle']
 // Migration douce : garantit les champs ajoutés au fil des versions.
 export const normaliser = (u) => {
   u.arcs ||= []
-  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.couleur ??= null })
+  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.couleur ??= null; e.sessionId ??= null })
+  u.campagnes.forEach(c => { c.sessions ||= [] })
   return u
 }
 
@@ -53,7 +54,12 @@ export const nouvelleCampagne = () => ({
   id: uid('cmp'), code: '', titre: 'Nouvelle campagne', factionId: null, saison: 1,
   pitch: '', ton: '', depart: 'M0', duree: '', niveaux: '',
   actes: [],            // { id, titre, resume, pivot }
+  sessions: [],         // { id, code, titre, date, resume }
   pnjIds: [], issues: '',
+})
+
+export const nouvelleSession = () => ({
+  id: uid('ses'), code: '', titre: 'Nouvelle session', date: null, resume: '',
 })
 
 // ── Univers de départ (seed minimal, tout est éditable) ─────

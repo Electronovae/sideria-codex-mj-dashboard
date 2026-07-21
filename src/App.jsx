@@ -13,19 +13,19 @@ import Codex from './modules/Codex.jsx'
 export const Ctx = React.createContext(null)
 
 const MODULES = [
+  ['codex', 'Codex', Codex],
   ['tableau', 'Tableau de bord', Tableau],
   ['campagnes', 'Méta & Campagnes', Campagnes],
+  ['evenements', 'Événements', Evenements],
+  ['factions', 'Factions', Factions],
   ['pnjs', 'PNJ & Arbres', Pnjs],
   ['joueurs', 'Joueurs', Joueurs],
-  ['factions', 'Factions', Factions],
-  ['evenements', 'Événements', Evenements],
   ['frise', 'Frise chronologique', Frise],
-  ['codex', 'Codex', Codex],
 ]
 
 export default function App() {
   const [univers, setUnivers] = useState(chargerLocal)
-  const [onglet, setOnglet] = useState('tableau')
+  const [onglet, setOnglet] = useState('codex')
   const [statut, setStatut] = useState('local')
   const [idSupabase, setIdSupabase] = useState(null)
   const fichierRef = useRef(null)

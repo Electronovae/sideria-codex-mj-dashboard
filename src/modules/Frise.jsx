@@ -1,25 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useStudio } from './communs.jsx'
-import { nouvelArc, SYMBOLES } from '../lib/modele.js'
+import { nouvelArc } from '../lib/modele.js'
 import { fmtDate, versJour, depuisJour, JPA, JPS, SAISONS } from '../lib/calendrier.js'
 
 const H_LIGNE = 32, H_AXE = 46, MARGE_G = 185
-
-function Forme({ symbole, x, y, t, fill, creux, ...reste }) {
-  const st = { fill: creux ? 'none' : fill, stroke: creux ? fill : 'rgba(0,0,0,.4)', strokeWidth: creux ? 2 : 1 }
-  if (symbole === 'cercle') return <circle cx={x} cy={y} r={t} {...st} {...reste} />
-  if (symbole === 'carre') return <rect x={x - t} y={y - t} width={2 * t} height={2 * t} {...st} {...reste} />
-  if (symbole === 'triangle') return <path d={`M${x},${y - t} L${x + t},${y + t} L${x - t},${y + t} Z`} {...st} {...reste} />
-  if (symbole === 'etoile') {
-    const p = []
-    for (let i = 0; i < 10; i++) {
-      const r = i % 2 ? t / 2.2 : t, a = -Math.PI / 2 + i * Math.PI / 5
-      p.push(`${x + r * Math.cos(a)},${y + r * Math.sin(a)}`)
-    }
-    return <polygon points={p.join(' ')} {...st} {...reste} />
-  }
-  return <path d={`M${x},${y - t} L${x + t},${y} L${x},${y + t} L${x - t},${y} Z`} {...st} {...reste} />
-}
 
 export default function Frise() {
   const { univers, maj } = useStudio()
@@ -49,7 +33,7 @@ export default function Frise() {
       const ox = ev.clientX - el.getBoundingClientRect().left
       setVue(v => {
         const jCurseur = v.t0 + ox / v.ech
-        const ech = Math.min(6, Math.max(0.0008, v.ech * facteur))
+        const ech = Math.min(24, Math.max(0.0008, v.ech * facteur))
         return { ech, t0: jCurseur - ox / ech }
       })
     }
@@ -80,25 +64,50 @@ export default function Frise() {
   if (vue.ech < 0.004) { pas = 100 * JPA; pasMajeur = 500 * JPA; precision = 'an' }
   else if (vue.ech < 0.03) { pas = 10 * JPA; pasMajeur = 100 * JPA; precision = 'an' }
   else if (vue.ech < 0.35) { pas = JPA; pasMajeur = 10 * JPA; precision = 'an' }
-  else { pas = JPS; pasMajeur = JPA; precision = 'saison' }
+  else if (vue.ech < 3) { pas = JPS; pasMajeur = JPA; precision = 'saison' }
+  else { pas = 7; pasMajeur = JPS; precision = 'jour' }
   const ticks = []
   for (let j = Math.floor(jDe(MARGE_G) / pas) * pas; xDe(j) < largeur; j += pas) if (xDe(j) >= MARGE_G - 4) ticks.push(j)
 
   const couleurEvt = (e) => e.couleur || arc(e.arcId)?.couleur || faction(e.factionId)?.couleur || '#8a8272'
-  const marques = []
+  const texteClair = (hex) => {
+    const n = parseInt((hex || '#888888').slice(1), 16)
+    const lum = 0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)
+    return lum < 150
+  }
+  // Pastilles titrées, placées sur deux sous-rangées par ligne pour limiter les chevauchements.
+  const H_PASTILLE = 15
+  const parLigne = {}
+  const poserItem = (it) => { (parLigne[it.ligne] ||= []).push(it) }
   univers.evenements.forEach(e => {
-    e.participants.filter(id => id in indexLigne).forEach(id =>
-      marques.push({ obj: e, ligne: indexLigne[id], x: xDe(e.debut), xFin: e.fin != null ? xDe(e.fin) : null,
-        coul: couleurEvt(e), taille: 3 + (e.importance || 1) * 2, symbole: e.symbole }))
+    e.participants.filter(id => id in indexLigne).forEach(id => {
+      const x = xDe(e.debut)
+      const larg = e.fin != null && xDe(e.fin) > x
+        ? Math.max(24, xDe(e.fin) - x)
+        : Math.min(170, Math.max(26, 12 + e.titre.length * 5.2))
+      poserItem({ obj: e, ligne: indexLigne[id], x, larg, coul: couleurEvt(e), creux: false, titre: e.titre })
+    })
   })
   univers.joueurs.forEach(j => {
     if (!(j.id in indexLigne)) return
     j.interactions.forEach(it => {
       if (it.date == null) return
-      const pnj = univers.pnjs.find(p => p.id === it.pnjId)
-      marques.push({ obj: { titre: `${j.personnage} × ${pnj?.nom || '?'}`, desc: it.resume, debut: it.date, fin: null },
-        ligne: indexLigne[j.id], x: xDe(it.date), xFin: null,
-        coul: faction(pnj?.faction)?.couleur || '#8a8272', taille: 5, symbole: 'losange', creux: true })
+      const pnjX = univers.pnjs.find(p => p.id === it.pnjId)
+      const titre = pnjX?.nom || 'interaction'
+      const x = xDe(it.date)
+      poserItem({ obj: { titre: `${j.personnage} × ${titre}`, desc: it.resume, debut: it.date, fin: null },
+        ligne: indexLigne[j.id], x, larg: Math.min(140, Math.max(24, 12 + titre.length * 5.2)),
+        coul: faction(pnjX?.faction)?.couleur || '#8a8272', creux: true, titre })
+    })
+  })
+  const marques = []
+  Object.values(parLigne).forEach(items => {
+    items.sort((a, b) => a.x - b.x)
+    const finRangee = [-Infinity, -Infinity]
+    items.forEach(it => {
+      const r = it.x >= finRangee[0] + 4 ? 0 : (it.x >= finRangee[1] + 4 ? 1 : 0)
+      finRangee[r] = it.x + it.larg
+      marques.push({ ...it, rangee: r })
     })
   })
   const liens = []
@@ -119,8 +128,10 @@ export default function Frise() {
         <button className="btn clair" onClick={() => setPanneauArcs(v => !v)}>Arcs ({univers.arcs.length})</button>
         {['PJ', 'PNJ'].map(t => <span key={t} className={'puce' + (filtreTypes.has(t) ? '' : ' off')}
           style={{ borderColor: 'var(--or)' }} onClick={() => bascule(filtreTypes, setFiltreTypes, t)}>{t}</span>)}
+        <button className="btn clair" onClick={() => setFiltreFac(new Set(univers.factions.map(f => f.id)))}>toutes</button>
         {univers.factions.map(f => <span key={f.id} className={'puce' + (filtreFac.has(f.id) ? '' : ' off')}
-          style={{ borderColor: f.couleur }} onClick={() => bascule(filtreFac, setFiltreFac, f.id)}>
+          style={{ borderColor: f.couleur }} title="Ctrl+Clic : isoler cette faction"
+          onClick={(ev) => (ev.ctrlKey || ev.metaKey) ? setFiltreFac(new Set([f.id])) : bascule(filtreFac, setFiltreFac, f.id)}>
           <span className="rond" style={{ background: f.couleur }} />{f.nom}</span>)}
         <span className="aide" style={{ marginLeft: 'auto' }}>molette : défiler · Ctrl+molette : zoom · glisser : naviguer</span>
       </div>
@@ -167,24 +178,33 @@ export default function Frise() {
                 stroke={majr ? '#7a6a3f' : 'rgba(122,106,63,.2)'} strokeWidth={majr ? 1.4 : 1} />
               {(majr || pas >= JPA) && <text x={x + 4} y={H_AXE - 18}
                 style={{ font: (majr ? '700 12px' : '11px') + ' monospace', fill: majr ? '#3d3319' : '#5c5232' }}>
-                {precision === 'saison' && !majr ? SAISONS[depuisJour(j).sais] : fmtDate(j, 'an')}</text>}
+                {precision === 'jour' && !majr ? String(depuisJour(j).jour)
+                  : precision === 'saison' && !majr ? SAISONS[depuisJour(j).sais]
+                  : precision === 'jour' && majr ? fmtDate(j, 'saison') : fmtDate(j, 'an')}</text>}
             </g>
           })}
           <line x1="0" y1={H_AXE} x2={largeur} y2={H_AXE} stroke="#7a6a3f" strokeWidth="2" />
           {liens.map((l, i) => (l.x > MARGE_G - 10 && l.x < largeur + 10) &&
             <line key={i} x1={l.x} y1={l.y1} x2={l.x} y2={l.y2} stroke="rgba(38,34,26,.35)" strokeDasharray="2 3" />)}
           {marques.map((m, i) => {
-            if (m.x < MARGE_G - 20 || m.x > largeur + 20) return null
-            const y = H_AXE + 8 + m.ligne * H_LIGNE + H_LIGNE / 2
+            if (m.x + m.larg < MARGE_G - 10 || m.x > largeur + 10) return null
+            const yC = H_AXE + 8 + m.ligne * H_LIGNE + H_LIGNE / 2
+            const y = m.rangee === 0 ? yC - H_PASTILLE + 1 : yC + 1
+            const clair = texteClair(m.coul)
             const props = {
               style: { cursor: 'pointer' },
               onMouseMove: (ev) => setSurvol({ x: ev.clientX, y: ev.clientY, obj: m.obj }),
               onMouseLeave: () => setSurvol(null),
             }
-            if (m.xFin != null && m.xFin > m.x)
-              return <rect key={i} {...props} x={m.x} y={y - m.taille / 1.5} width={Math.max(6, m.xFin - m.x)}
-                height={m.taille * 1.3} rx="3" fill={m.coul} stroke="rgba(0,0,0,.4)" />
-            return <Forme key={i} {...props} symbole={m.symbole} x={m.x} y={y} t={m.taille} fill={m.coul} creux={m.creux} />
+            const nbCar = Math.floor((m.larg - 10) / 5.2)
+            const txt = m.titre.length > nbCar ? (nbCar > 2 ? m.titre.slice(0, nbCar - 1) + '…' : '') : m.titre
+            return <g key={i} {...props}>
+              <rect x={m.x} y={y} width={m.larg} height={H_PASTILLE} rx="7"
+                fill={m.creux ? 'var(--parch)' : m.coul} stroke={m.creux ? m.coul : 'rgba(0,0,0,.35)'}
+                strokeWidth={m.creux ? 1.6 : 1} />
+              {txt && <text x={m.x + 6} y={y + 11}
+                style={{ font: '9.5px "Palatino Linotype", serif', fill: m.creux ? '#3d3319' : (clair ? '#f2ead6' : '#26221a'), pointerEvents: 'none' }}>{txt}</text>}
+            </g>
           })}
         </svg>
         <div style={{ position: 'absolute', left: 0, top: 0, height: hauteur, width: MARGE_G, pointerEvents: 'none',

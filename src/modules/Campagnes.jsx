@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
 import { useStudio, Champ, SelecteurFaction, PucesPnjs } from './communs.jsx'
-import { nouvelleCampagne, uid } from '../lib/modele.js'
+import { nouvelleCampagne, nouvelleSession, uid } from '../lib/modele.js'
+import { DateSiderienne } from './communs.jsx'
+import { fmtDate } from '../lib/calendrier.js'
 
 export default function Campagnes() {
   const { univers, maj } = useStudio()
   const [selId, setSelId] = useState(null) // null = méta-campagne
   const [tri, setTri] = useState('saison')
+  const [sessionSel, setSessionSel] = useState(null)
   const c = univers.campagnes.find(x => x.id === selId)
 
   const ajouter = () => {
@@ -27,7 +30,7 @@ export default function Campagnes() {
   return (
     <>
       <div className="liste">
-        <div className={'item' + (selId === null ? ' sel' : '')} onClick={() => setSelId(null)}>
+        <div className={'item' + (selId === null ? ' sel' : '')} onClick={() => { setSelId(null); setSessionSel(null) }}>
           <span className="rond" style={{ background: 'var(--or)' }} />
           <span>Méta-campagne<div className="sous">thèse et saisons</div></span>
         </div>
@@ -51,15 +54,39 @@ export default function Campagnes() {
         }).map(x => {
           const f = univers.factions.find(ff => ff.id === x.factionId)
           return (
-            <div key={x.id} className={'item' + (x.id === selId ? ' sel' : '')} onClick={() => setSelId(x.id)}>
+            <div key={x.id} className={'item' + (x.id === selId ? ' sel' : '')} onClick={() => { setSelId(x.id); setSessionSel(null) }}>
               <span className="rond" style={{ background: f?.couleur || '#888' }} />
               <span>{x.code ? x.code + ' · ' : ''}{x.titre}<div className="sous">Saison {x.saison} · {f?.nom || 'faction ?'}</div></span>
             </div>
           )
-        })}
+        }).reduce((acc, el, i) => {
+          const camp = [...univers.campagnes].sort((a, b) => {
+            if (tri === 'titre') return a.titre.localeCompare(b.titre, 'fr')
+            if (tri === 'faction') {
+              const fa = univers.factions.find(f => f.id === a.factionId)?.nom || 'zzz'
+              const fb = univers.factions.find(f => f.id === b.factionId)?.nom || 'zzz'
+              return fa.localeCompare(fb, 'fr')
+            }
+            return (a.saison - b.saison) || a.titre.localeCompare(b.titre, 'fr')
+          })[i]
+          acc.push(el)
+          camp.sessions.forEach(s => acc.push(
+            <div key={s.id} className={'item' + (sessionSel === s.id ? ' sel' : '')}
+              style={{ paddingLeft: 34, fontSize: '.82rem' }}
+              onClick={() => { setSelId(camp.id); setSessionSel(s.id) }}>
+              <span style={{ color: 'var(--gris)' }}>└</span>
+              <span>{s.code ? s.code + ' · ' : ''}{s.titre}
+                <div className="sous">{s.date != null ? fmtDate(s.date) : 'sans date'}</div></span>
+            </div>))
+          return acc
+        }, [])}
       </div>
       <div className="fiche">
-        {selId === null ? <Meta meta={univers.meta} modifier={modifierMeta} /> : c && (
+        {selId === null ? <Meta meta={univers.meta} modifier={modifierMeta} />
+        : (c && sessionSel && c.sessions.some(s => s.id === sessionSel))
+          ? <EditeurSession campagne={c} sessionId={sessionSel} maj={maj} univers={univers}
+              retour={() => setSessionSel(null)} />
+        : c && (
           <div key={c.id}>
             <h2>{c.titre}</h2>
             <div className="rangee">
@@ -97,6 +124,15 @@ export default function Campagnes() {
             <button className="btn clair" onClick={() => modifier(x => {
               x.actes.push({ id: uid('acte'), titre: '', resume: '', pivot: '' })
             })}>+ acte</button>
+
+            <h3>Sessions</h3>
+            {c.sessions.map(s => (
+              <div className="carte" key={s.id} style={{ cursor: 'pointer' }} onClick={() => setSessionSel(s.id)}>
+                <strong>{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
+                <span className="aide"> · {s.date != null ? fmtDate(s.date) : 'sans date'} · {univers.evenements.filter(e => e.sessionId === s.id).length} événement(s) · cliquer pour éditer</span>
+              </div>
+            ))}
+            <button className="btn clair" onClick={() => modifier(x => { x.sessions.push(nouvelleSession()) })}>+ session</button>
 
             <h3>PNJ clés</h3>
             <PucesPnjs ids={c.pnjIds} surChange={v => modifier(x => { x.pnjIds = v })} />
@@ -145,6 +181,61 @@ function Meta({ meta, modifier }) {
         m.saisons.push({ num: m.saisons.length + 1, titre: '', question: '', horloge: '', niveaux: '' })
       })}>+ saison</button>
       <p className="aide">Les campagnes se rattachent aux saisons définies ici. La thèse est la boussole : tout arc qui la contredit mérite discussion.</p>
+    </div>
+  )
+}
+
+
+function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
+  const s = campagne.sessions.find(x => x.id === sessionId)
+  const modifier = (fn) => maj(u => {
+    const c = u.campagnes.find(x => x.id === campagne.id)
+    fn(c.sessions.find(x => x.id === sessionId), c, u)
+  })
+  const basculerEvt = (evtId) => maj(u => {
+    const e = u.evenements.find(x => x.id === evtId)
+    if (e.sessionId === sessionId) { e.sessionId = null }
+    else { e.sessionId = sessionId; e.campagneId = campagne.id }
+  })
+  const evtsSession = univers.evenements.filter(e => e.sessionId === sessionId)
+  const evtsDispo = univers.evenements
+    .filter(e => e.sessionId == null || e.sessionId === sessionId)
+    .sort((a, b) => a.debut - b.debut)
+  return (
+    <div>
+      <button className="btn clair" onClick={retour}>← retour à {campagne.titre}</button>
+      <h2 style={{ marginTop: 10 }}>{s.code ? s.code + ' · ' : ''}{s.titre}</h2>
+      <div className="rangee">
+        <span className="etroit"><label>Code</label>
+          <input placeholder="S01" value={s.code} onChange={e => modifier(x => { x.code = e.target.value })} /></span>
+        <span><label>Titre</label>
+          <input value={s.titre} onChange={e => modifier(x => { x.titre = e.target.value })} /></span>
+        <DateSiderienne label="Date en jeu" optionnel valeur={s.date}
+          surChange={v => modifier(x => { x.date = v })} />
+      </div>
+      <span><label>Résumé / préparation</label>
+        <textarea value={s.resume} onChange={e => modifier(x => { x.resume = e.target.value })} /></span>
+
+      <h3>Événements de la session ({evtsSession.length})</h3>
+      <p className="aide">Coche les événements qui se produisent pendant cette session. Un événement rattaché ici est aussi rattaché à la campagne. Les événements se créent dans l'onglet Événements.</p>
+      {evtsDispo.map(e => (
+        <div key={e.id} className={'puce' + (e.sessionId === sessionId ? '' : ' off')}
+          style={{ borderColor: 'var(--or)', display: 'inline-flex', margin: 3 }}
+          onClick={() => basculerEvt(e.id)}>
+          {fmtDate(e.debut)} · {e.titre}
+        </div>
+      ))}
+      <div style={{ marginTop: 20 }}>
+        <button className="btn danger" onClick={() => {
+          if (!confirm(`Supprimer la session "${s.titre}" ? Ses événements redeviennent non rattachés.`)) return
+          maj(u => {
+            const c = u.campagnes.find(x => x.id === campagne.id)
+            c.sessions = c.sessions.filter(x => x.id !== sessionId)
+            u.evenements.forEach(e => { if (e.sessionId === sessionId) e.sessionId = null })
+          })
+          retour()
+        }}>Supprimer cette session</button>
+      </div>
     </div>
   )
 }

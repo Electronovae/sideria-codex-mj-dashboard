@@ -108,9 +108,18 @@ export default function Codex() {
           <strong>Acte {i + 1}{a.titre && ' : ' + a.titre}</strong>
           <p>{a.resume}</p>
           {a.pivot && <p><em>Point pivot : {a.pivot}</em></p>}</div>)}
+        {(x.sessions || []).length > 0 && <Bloc titre="Sessions">{x.sessions.map(s => {
+          const es = univers.evenements.filter(e => e.sessionId === s.id).sort((a, b) => a.debut - b.debut)
+          return <div className="carte" key={s.id}>
+            <strong>{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
+            {s.date != null && <span className="aide"> · {fmtDate(s.date)}</span>}
+            {s.resume && <p>{s.resume}</p>}
+            {es.map(e => <div key={e.id} style={{ paddingLeft: 10 }}>· <L type="evenement" id={e.id}>{e.titre}</L></div>)}
+          </div>
+        })}</Bloc>}
         {x.pnjIds.length > 0 && <Bloc titre="PNJ clés">{x.pnjIds.map(pid => pnj(pid)).filter(Boolean)
           .map(p => <span key={p.id} style={{ marginRight: 12 }}><L type="pnj" id={p.id}>{p.nom}</L></span>)}</Bloc>}
-        {evts.length > 0 && <Bloc titre="Événements de la campagne">{evts.map(e =>
+        {evts.length > 0 && <Bloc titre="Autres événements de la campagne">{evts.filter(e => !e.sessionId).map(e =>
           <div key={e.id}>{fmtDate(e.debut)} · <L type="evenement" id={e.id}>{e.titre}</L></div>)}</Bloc>}
         {x.issues && <Bloc titre="Issues possibles"><p>{x.issues}</p></Bloc>}
       </>
