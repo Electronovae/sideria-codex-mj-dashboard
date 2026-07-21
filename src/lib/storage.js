@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js'
-import { universInitial } from './modele.js'
+import { universInitial, normaliser } from './modele.js'
 
 const CLE = 'sideria-studio-univers'
 
@@ -7,7 +7,7 @@ const CLE = 'sideria-studio-univers'
 export function chargerLocal() {
   try {
     const brut = localStorage.getItem(CLE)
-    if (brut) return JSON.parse(brut)
+    if (brut) return normaliser(JSON.parse(brut))
   } catch (e) { console.warn('localStorage indisponible', e) }
   return universInitial()
 }
@@ -33,7 +33,7 @@ export function importerJson(fichier) {
       try {
         const d = JSON.parse(lecteur.result)
         if (!d.meta || !d.pnjs) throw new Error('structure inattendue')
-        resoudre(d)
+        resoudre(normaliser(d))
       } catch (e) { rejeter(e) }
     }
     lecteur.onerror = rejeter
@@ -64,5 +64,5 @@ export async function tirerSupabase() {
     .order('updated_at', { ascending: false }).limit(1)
   if (error) throw error
   if (!data.length) return null
-  return { id: data[0].id, univers: data[0].data }
+  return { id: data[0].id, univers: normaliser(data[0].data) }
 }
