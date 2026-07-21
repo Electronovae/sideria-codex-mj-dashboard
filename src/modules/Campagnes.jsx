@@ -5,6 +5,7 @@ import { nouvelleCampagne, uid } from '../lib/modele.js'
 export default function Campagnes() {
   const { univers, maj } = useStudio()
   const [selId, setSelId] = useState(null) // null = méta-campagne
+  const [tri, setTri] = useState('saison')
   const c = univers.campagnes.find(x => x.id === selId)
 
   const ajouter = () => {
@@ -31,7 +32,23 @@ export default function Campagnes() {
           <span>Méta-campagne<div className="sous">thèse et saisons</div></span>
         </div>
         <button className="btn clair ajout" onClick={ajouter}>+ Nouvelle campagne</button>
-        {[...univers.campagnes].sort((a, b) => (a.saison - b.saison) || a.titre.localeCompare(b.titre)).map(x => {
+        <div style={{ padding: '0 14px 8px' }}>
+          <label>Trier par</label>
+          <select value={tri} onChange={e => setTri(e.target.value)}>
+            <option value="saison">saison</option>
+            <option value="titre">titre</option>
+            <option value="faction">faction</option>
+          </select>
+        </div>
+        {[...univers.campagnes].sort((a, b) => {
+          if (tri === 'titre') return a.titre.localeCompare(b.titre, 'fr')
+          if (tri === 'faction') {
+            const fa = univers.factions.find(f => f.id === a.factionId)?.nom || 'zzz'
+            const fb = univers.factions.find(f => f.id === b.factionId)?.nom || 'zzz'
+            return fa.localeCompare(fb, 'fr')
+          }
+          return (a.saison - b.saison) || a.titre.localeCompare(b.titre, 'fr')
+        }).map(x => {
           const f = univers.factions.find(ff => ff.id === x.factionId)
           return (
             <div key={x.id} className={'item' + (x.id === selId ? ' sel' : '')} onClick={() => setSelId(x.id)}>

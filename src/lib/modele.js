@@ -83,7 +83,8 @@ export const universInitial = () => ({
     { id: 'kael', nom: 'Kaël', role: 'Officier de terrain', faction: 'monde', description: '', secrets: '', repliques: [], arbre: null },
     { id: 'maret', nom: 'Maret', role: 'Organisatrice, Aile du Piston', faction: 'mouvement', description: '', secrets: '', repliques: [], arbre: null },
   ],
-  joueurs: [],arcs:[],
+  joueurs: [],
+  arcs: [],
   evenements: [
     { id: 'evt_s0', titre: 'Saison 0 : Convergence', desc: 'La table ouverte au Dragon Blanc.', debut: versJour(312, 0, 16), fin: null, participants: ['silas', 'ryn', 'maret'], factionId: 'dragon', importance: 3, campagneId: null },
   ],

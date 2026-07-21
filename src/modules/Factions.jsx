@@ -33,6 +33,10 @@ export default function Factions() {
     <ListeFiche
       items={univers.factions} selId={selId} surSel={setSelId} surAjout={ajouter}
       libelleAjout="+ Nouvelle faction"
+      tris={{
+        nom: f => f.nom,
+        'nb PNJ': f => -univers.pnjs.filter(p => p.faction === f.id).length,
+      }}
       rendu={x => (<><span className="rond" style={{ background: x.couleur }} />
         <span>{x.nom}<div className="sous">{univers.pnjs.filter(p => p.faction === x.id).length} PNJ</div></span></>)}
       enfants={f && (

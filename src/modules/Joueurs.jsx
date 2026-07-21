@@ -24,6 +24,11 @@ export default function Joueurs() {
     <ListeFiche
       items={univers.joueurs} selId={selId} surSel={setSelId} surAjout={ajouter}
       libelleAjout="+ Nouveau personnage joueur"
+      tris={{
+        personnage: j => j.personnage,
+        joueur: j => j.joueur,
+        faction: j => univers.factions.find(f => f.id === j.faction)?.nom || 'zzz',
+      }}
       rendu={p => {
         const f = univers.factions.find(x => x.id === p.faction)
         return (<><span className="rond" style={{ background: f?.couleur || '#888' }} />

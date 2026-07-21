@@ -5,8 +5,8 @@ import { fmtDate, versJour, depuisJour, JPA, JPS, SAISONS } from '../lib/calendr
 
 const H_LIGNE = 32, H_AXE = 46, MARGE_G = 185
 
-function Forme({ symbole, x, y, t, fill, stroke, creux, ...reste }) {
-  const st = { fill: creux ? 'none' : fill, stroke: creux ? fill : (stroke || 'rgba(0,0,0,.4)'), strokeWidth: creux ? 2 : 1 }
+function Forme({ symbole, x, y, t, fill, creux, ...reste }) {
+  const st = { fill: creux ? 'none' : fill, stroke: creux ? fill : 'rgba(0,0,0,.4)', strokeWidth: creux ? 2 : 1 }
   if (symbole === 'cercle') return <circle cx={x} cy={y} r={t} {...st} {...reste} />
   if (symbole === 'carre') return <rect x={x - t} y={y - t} width={2 * t} height={2 * t} {...st} {...reste} />
   if (symbole === 'triangle') return <path d={`M${x},${y - t} L${x + t},${y + t} L${x - t},${y + t} Z`} {...st} {...reste} />
@@ -32,19 +32,18 @@ export default function Frise() {
   const [panneauArcs, setPanneauArcs] = useState(false)
   const drag = useRef(null)
 
-  // Largeur réactive.
   useEffect(() => {
     const majL = () => conteneur.current && setLargeur(conteneur.current.clientWidth)
     majL(); window.addEventListener('resize', majL)
     return () => window.removeEventListener('resize', majL)
   }, [])
 
-  // Zoom : Ctrl+molette, écouteur NON passif (c'était la source des à-coups).
+  // Zoom : Ctrl+molette, écouteur NON passif (la molette seule défile verticalement).
   useEffect(() => {
     const el = conteneur.current
     if (!el) return
     const surMolette = (ev) => {
-      if (!ev.ctrlKey) return               // molette simple = scroll vertical natif
+      if (!ev.ctrlKey) return
       ev.preventDefault()
       const facteur = ev.deltaY < 0 ? 1.18 : 1 / 1.18
       const ox = ev.clientX - el.getBoundingClientRect().left
@@ -58,7 +57,7 @@ export default function Frise() {
     return () => el.removeEventListener('wheel', surMolette)
   }, [])
 
-  // Glisser : écouté sur window, plus de drag fantôme.
+  // Glisser : écouté sur la fenêtre, plus de drag fantôme.
   useEffect(() => {
     const move = (ev) => { if (drag.current) setVue(v => ({ ...v, t0: drag.current.t0 - (ev.clientX - drag.current.x) / v.ech })) }
     const up = () => { drag.current = null }

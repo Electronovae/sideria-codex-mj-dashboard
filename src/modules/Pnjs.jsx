@@ -30,6 +30,10 @@ export default function Pnjs() {
     <ListeFiche
       items={univers.pnjs} selId={selId} surSel={setSelId} surAjout={ajouter}
       libelleAjout="+ Nouveau PNJ"
+      tris={{
+        nom: p => p.nom,
+        faction: p => univers.factions.find(f => f.id === p.faction)?.nom || 'zzz',
+      }}
       rendu={p => {
         const f = univers.factions.find(x => x.id === p.faction)
         return (<><span className="rond" style={{ background: f?.couleur || '#888' }} />

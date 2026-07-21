@@ -77,23 +77,30 @@ export const DateSiderienne = ({ label, valeur, surChange, optionnel = false }) 
   )
 }
 
-// Cadre générique liste (gauche) + fiche (droite).
+// Cadre générique liste (gauche) + fiche (droite), avec tri optionnel.
+// tris : { libellé: (item) => valeur } ; le premier est le tri par défaut.
 export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, libelleAjout = '+ Ajouter', tris = null }) => {
   const cles = tris ? Object.keys(tris) : []
   const [tri, setTri] = React.useState(cles[0] || null)
   const affiches = tri && tris
-    ? [...items].sort((a, b) => String(tris[tri](a) ?? '').localeCompare(String(tris[tri](b) ?? ''), 'fr'))
+    ? [...items].sort((a, b) => {
+        const va = tris[tri](a), vb = tris[tri](b)
+        if (typeof va === 'number' && typeof vb === 'number') return va - vb
+        return String(va ?? '').localeCompare(String(vb ?? ''), 'fr')
+      })
     : items
   return (
     <>
       <div className="liste">
         <button className="btn clair ajout" onClick={surAjout}>{libelleAjout}</button>
-        {tris && <div style={{ padding: '0 14px 8px' }}>
-          <label>Trier par</label>
-          <select value={tri} onChange={e => setTri(e.target.value)}>
-            {cles.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>}
+        {tris && (
+          <div style={{ padding: '0 14px 8px' }}>
+            <label>Trier par</label>
+            <select value={tri} onChange={e => setTri(e.target.value)}>
+              {cles.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        )}
         {affiches.map(it => (
           <div key={it.id} className={'item' + (it.id === selId ? ' sel' : '')} onClick={() => surSel(it.id)}>
             {rendu(it)}
