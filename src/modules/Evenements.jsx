@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useStudio, Champ, SelecteurFaction, ListeFiche, PucesPnjs, DateSiderienne } from './communs.jsx'
 import { nouvelEvenement } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
+import { SYMBOLES } from '..lib/modele.js'
 
 export default function Evenements() {
   const { univers, maj } = useStudio()
@@ -52,6 +53,21 @@ export default function Evenements() {
                 {univers.campagnes.map(c => <option key={c.id} value={c.id}>{c.titre}</option>)}
               </select></span>
           </div>
+          <div className="rangee">
+  <span><label>Arc</label>
+    <select value={e.arcId || ''} onChange={ev => modifier(x => { x.arcId = ev.target.value || null })}>
+      <option value="">—</option>
+      {univers.arcs.map(a => <option key={a.id} value={a.id}>{a.nom}</option>)}
+    </select></span>
+  <span><label>Symbole</label>
+    <select value={e.symbole} onChange={ev => modifier(x => { x.symbole = ev.target.value })}>
+      {SYMBOLES.map(s => <option key={s}>{s}</option>)}
+    </select></span>
+  <span><label>Couleur (vide = arc/faction)</label>
+    <input type="color" value={e.couleur || '#888888'} style={{ height: 34, padding: 2 }}
+      onChange={ev => modifier(x => { x.couleur = ev.target.value })} />
+    <button className="btn clair" onClick={() => modifier(x => { x.couleur = null })}>hériter</button></span>
+</div>
           <h3>Participants (PNJ)</h3>
           <PucesPnjs ids={e.participants} surChange={v => modifier(x => { x.participants = v })} />
           <p className="aide">Ce fichier JSON est directement importable dans l'outil de frises (chroniques_sideria.html) : même schéma de dates.</p>
