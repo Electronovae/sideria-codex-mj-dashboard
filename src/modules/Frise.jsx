@@ -41,9 +41,23 @@ export default function Frise() {
     return () => el.removeEventListener('wheel', surMolette)
   }, [])
 
-  // Glisser : écouté sur la fenêtre.
+  // Glisser : écouté sur la fenêtre, avec seuil de 4 px et limitation par requestAnimationFrame.
   useEffect(() => {
-    const move = (ev) => { if (drag.current) setVue(v => ({ ...v, t0: drag.current.t0 - (ev.clientX - drag.current.x) / v.ech })) }
+    let rafDemande = false, dernierX = 0
+    const move = (ev) => {
+      if (!drag.current) return
+      dernierX = ev.clientX
+      if (!drag.current.actif) {
+        if (Math.abs(ev.clientX - drag.current.x) < 4) return
+        drag.current.actif = true
+      }
+      if (rafDemande) return
+      rafDemande = true
+      requestAnimationFrame(() => {
+        rafDemande = false
+        if (drag.current) setVue(v => ({ ...v, t0: drag.current.t0 - (dernierX - drag.current.x) / v.ech }))
+      })
+    }
     const up = () => { drag.current = null }
     window.addEventListener('mousemove', move); window.addEventListener('mouseup', up)
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
@@ -167,8 +181,8 @@ export default function Frise() {
           <span className="aide" style={{ marginLeft: 10 }}>Un arc = une bande de fond. Rattache les événements à un arc dans l'onglet Événements.</span>
         </div>
       )}
-      <div ref={conteneur} style={{ flex: 1, position: 'relative', overflowY: 'auto', overflowX: 'hidden', cursor: 'grab' }}
-        onMouseDown={(ev) => { drag.current = { x: ev.clientX, t0: vue.t0 } }} onMouseLeave={() => setSurvol(null)}>
+      <div ref={conteneur} style={{ flex: 1, position: 'relative', overflowY: 'auto', overflowX: 'hidden', cursor: 'grab', userSelect: 'none' }}
+        onMouseDown={(ev) => { if (ev.button !== 0) return; ev.preventDefault(); drag.current = { x: ev.clientX, t0: vue.t0, actif: false } }} onMouseLeave={() => setSurvol(null)}>
         <svg width={largeur} height={hauteur} style={{ display: 'block' }}>
           {univers.arcs.map(a => {
             const x1 = Math.max(MARGE_G, xDe(a.debut)), x2 = Math.min(largeur, xDe(a.fin))

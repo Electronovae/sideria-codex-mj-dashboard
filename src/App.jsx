@@ -9,6 +9,7 @@ import Evenements from './modules/Evenements.jsx'
 import Campagnes from './modules/Campagnes.jsx'
 import Frise from './modules/Frise.jsx'
 import Codex from './modules/Codex.jsx'
+import Graphe from './modules/Graphe.jsx'
 
 export const Ctx = React.createContext(null)
 
@@ -21,11 +22,13 @@ const MODULES = [
   ['pnjs', 'PNJ & Arbres', Pnjs],
   ['joueurs', 'Joueurs', Joueurs],
   ['frise', 'Frise chronologique', Frise],
+  ['graphe', 'Graphe', Graphe],
 ]
 
 export default function App() {
   const [univers, setUnivers] = useState(chargerLocal)
   const [onglet, setOnglet] = useState('codex')
+  const [codexCible, setCodexCible] = useState(null)
   const [statut, setStatut] = useState('local')
   const [idSupabase, setIdSupabase] = useState(null)
   const fichierRef = useRef(null)
@@ -45,7 +48,7 @@ export default function App() {
     return copie
   })
 
-  const ctx = useMemo(() => ({ univers, maj, setOnglet }), [univers])
+  const ctx = useMemo(() => ({ univers, maj, setOnglet, codexCible, setCodexCible }), [univers, codexCible])
 
   const surImport = async (e) => {
     const f = e.target.files[0]

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiches Personnages : Sidéria</title>
+<style>
+  :root{--bleu:#1c2b45;--bleu-nuit:#131e31;--or:#c9a227;--or-clair:#e6c96a;
+    --parch:#f2ead6;--parch-mid:#e4d8bd;--encre:#26221a;--gris:#8a8272;--mono:"Consolas",monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--parch);color:var(--encre);font:14px/1.5 "Palatino Linotype",Palatino,serif;min-height:100vh}
+  header{background:var(--bleu);color:var(--parch);padding:12px 20px;display:flex;gap:14px;
+    align-items:center;flex-wrap:wrap;border-bottom:3px solid var(--or)}
+  header h1{font-size:1.1rem;font-variant:small-caps;letter-spacing:.08em}
+  .btn{background:transparent;color:var(--parch);border:1px solid var(--or);padding:4px 12px;
+    font:inherit;font-size:.8rem;cursor:pointer;border-radius:2px}
+  .btn:hover{background:rgba(201,162,39,.2)}
+  select{background:var(--bleu-nuit);color:var(--parch);border:1px solid var(--gris);padding:4px 8px;font:inherit}
+  main{max-width:860px;margin:20px auto;padding:0 16px}
+  .fiche{background:#fbf6e9;border:2px solid var(--or);border-radius:4px;padding:24px 30px;
+    box-shadow:0 3px 12px rgba(0,0,0,.12)}
+  .entete{display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:2px solid var(--or);padding-bottom:10px;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .entete h2{font-variant:small-caps;font-size:1.7rem;color:var(--bleu)}
+  .entete .meta{color:var(--gris);font-style:italic}
+  .badge-faction{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;
+    border:1.5px solid;border-radius:12px;font-size:.82rem}
+  .badge-faction .rond{width:10px;height:10px;border-radius:50%}
+  h3{font-variant:small-caps;color:var(--bleu);border-bottom:1px solid var(--parch-mid);
+    margin:18px 0 8px;padding-bottom:3px;font-size:1rem}
+  .reps{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 18px}
+  .rep{display:flex;align-items:center;gap:8px;font-size:.86rem}
+  .rep .barre{flex:1;height:8px;background:var(--parch-mid);border-radius:4px;position:relative;overflow:hidden}
+  .rep .barre span{position:absolute;top:0;bottom:0;border-radius:4px}
+  .rep .val{width:28px;text-align:right;font:11px var(--mono)}
+  .interaction{border-left:3px solid var(--or);padding:4px 10px;margin:6px 0;font-size:.88rem}
+  .interaction .date{font:11px var(--mono);color:var(--gris)}
+  .vide{text-align:center;padding:60px 20px;color:var(--gris);font-style:italic}
+  .notes{white-space:pre-wrap;font-size:.9rem}
+  @media print{
+    header{display:none}
+    body{background:#fff}
+    .fiche{border-color:#000;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fiches Personnages · Sidéria</h1>
+  <select id="choix"></select>
+  <button class="btn" id="imprimer">Imprimer / PDF</button>
+  <button class="btn" id="recharger">Recharger depuis le Studio</button>
+  <span style="flex:1"></span>
+  <span style="font-size:.75rem;color:var(--or-clair)" id="statut"></span>
+</header>
+<main id="contenu"><div class="vide">Chargement…</div></main>
+<script>
+"use strict";
+// La page lit l'univers sauvegardé par Sidéria Studio (même origine, même clé localStorage).
+const CLE = 'sideria-studio-univers';
+const SAISONS = ["L'Éveil","La Forge","La Conjonction","La Cendre","Le Verrou"];
+const fmtDate = j => {
+  if (j == null) return '';
+  const an = Math.floor(j/350), r = j - an*350, s = Math.floor(r/70);
+  return (r - s*70 + 1) + ' ' + SAISONS[s] + ', An ' + an;
+};
+let U = null;
+
+function charger(){
+  try{
+    const brut = localStorage.getItem(CLE);
+    if (!brut) throw new Error('vide');
+    U = JSON.parse(brut);
+    document.getElementById('statut').textContent = 'univers : ' + (U.meta?.nom || '?');
+    remplirChoix();
+  }catch(e){
+    document.getElementById('contenu').innerHTML =
+      '<div class="vide">Aucun univers trouvé.<br>Ouvre d\'abord Sidéria Studio dans cet onglet ou ce navigateur<br>(la fiche lit la sauvegarde locale du Studio), puis clique sur "Recharger".</div>';
+  }
+}
+
+function remplirChoix(){
+  const sel = document.getElementById('choix');
+  sel.innerHTML = (U.joueurs||[]).map(j =>
+    `<option value="${j.id}">${j.personnage} (${j.joueur||'?'})</option>`).join('');
+  if (!U.joueurs?.length){
+    document.getElementById('contenu').innerHTML =
+      '<div class="vide">Aucun personnage joueur dans l\'univers. Crée-les dans l\'onglet Joueurs du Studio.</div>';
+    return;
+  }
+  sel.onchange = () => rendre(sel.value);
+  rendre(U.joueurs[0].id);
+}
+
+function rendre(id){
+  const j = U.joueurs.find(x => x.id === id);
+  if (!j) return;
+  const f = U.factions.find(x => x.id === j.faction);
+  const reps = Object.entries(j.reputations||{}).filter(([,v]) => v !== 0);
+  const pnj = pid => U.pnjs.find(p => p.id === pid);
+  document.getElementById('contenu').innerHTML = `
+  <div class="fiche">
+    <div class="entete">
+      <div>
+        <h2>${j.personnage}</h2>
+        <div class="meta">${j.joueur||''} · ${j.classe||'classe à définir'} · niveau ${j.niveau}</div>
+      </div>
+      ${f ? `<span class="badge-faction" style="border-color:${f.couleur}">
+        <span class="rond" style="background:${f.couleur}"></span>${f.nom}</span>` : ''}
+    </div>
+    ${j.notes ? `<h3>Notes</h3><div class="notes">${j.notes}</div>` : ''}
+    ${reps.length ? `<h3>Réputations</h3><div class="reps">` + reps.map(([fid, v]) => {
+      const fa = U.factions.find(x => x.id === fid);
+      const pct = Math.abs(v)/4*50;
+      return `<div class="rep"><span style="width:150px">${fa?.nom||fid}</span>
+        <span class="barre"><span style="background:${v>0?'#3f7d5c':'#9c3a2e'};
+          left:${v>0?50:50-pct}%;width:${pct}%"></span></span>
+        <span class="val">${v>0?'+':''}${v}</span></div>`;
+    }).join('') + '</div>' : ''}
+    ${j.interactions?.length ? `<h3>Journal des rencontres</h3>` + j.interactions.map(i => {
+      const p = pnj(i.pnjId);
+      return `<div class="interaction">
+        <span class="date">${i.date!=null?fmtDate(i.date):'sans date'}</span> ·
+        <strong>${p?p.nom:'?'}</strong> : ${i.resume||''}
+        ${i.effet?`<em> (${i.effet})</em>`:''}</div>`;
+    }).join('') : ''}
+  </div>`;
+}
+
+document.getElementById('imprimer').onclick = () => window.print();
+document.getElementById('recharger').onclick = charger;
+charger();
+</script>
+</body>
+</html>

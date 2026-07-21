@@ -5,8 +5,11 @@ import { fmtDate } from '../lib/calendrier.js'
 // Le Codex : l'Obsidian embarqué. Chaque entité saisie dans le Studio a sa page,
 // naviguable par liens, avec les vues agrégées par faction, arc, PNJ, PJ.
 export default function Codex() {
-  const { univers } = useStudio()
+  const { univers, codexCible, setCodexCible } = useStudio()
   const [page, setPage] = useState({ type: 'accueil' })
+  React.useEffect(() => {
+    if (codexCible) { setPage(codexCible); setCodexCible(null) }
+  }, [codexCible])
   const L = ({ type, id, children }) => (
     <span onClick={() => setPage({ type, id })}
       style={{ color: '#7a5c14', cursor: 'pointer', borderBottom: '1px dashed #c9a227' }}>{children}</span>
