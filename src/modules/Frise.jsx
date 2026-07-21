@@ -3,7 +3,7 @@ import { useStudio } from './communs.jsx'
 import { nouvelArc } from '../lib/modele.js'
 import { fmtDate, versJour, depuisJour, JPA, JPS, SAISONS } from '../lib/calendrier.js'
 
-const H_LIGNE = 32, H_AXE = 46, MARGE_G = 185
+const H_AXE = 46, MARGE_G = 185, H_PASTILLE = 15, ECART = 3, H_MIN = 32
 
 export default function Frise() {
   const { univers, maj } = useStudio()
@@ -41,7 +41,7 @@ export default function Frise() {
     return () => el.removeEventListener('wheel', surMolette)
   }, [])
 
-  // Glisser : écouté sur la fenêtre, plus de drag fantôme.
+  // Glisser : écouté sur la fenêtre.
   useEffect(() => {
     const move = (ev) => { if (drag.current) setVue(v => ({ ...v, t0: drag.current.t0 - (ev.clientX - drag.current.x) / v.ech })) }
     const up = () => { drag.current = null }
@@ -56,10 +56,10 @@ export default function Frise() {
     ...(filtreTypes.has('PNJ') ? univers.pnjs.map(p => ({ id: p.id, nom: p.nom, type: 'PNJ', faction: p.faction })) : []),
   ].filter(l => l.faction == null || filtreFac.has(l.faction))
   const indexLigne = Object.fromEntries(lignes.map((l, i) => [l.id, i]))
-  const hauteur = H_AXE + 14 + Math.max(1, lignes.length) * H_LIGNE
   const xDe = (j) => (j - vue.t0) * vue.ech
   const jDe = (x) => vue.t0 + x / vue.ech
 
+  // ── Axe adaptatif ──
   let pas, pasMajeur, precision
   if (vue.ech < 0.004) { pas = 100 * JPA; pasMajeur = 500 * JPA; precision = 'an' }
   else if (vue.ech < 0.03) { pas = 10 * JPA; pasMajeur = 100 * JPA; precision = 'an' }
@@ -69,23 +69,21 @@ export default function Frise() {
   const ticks = []
   for (let j = Math.floor(jDe(MARGE_G) / pas) * pas; xDe(j) < largeur; j += pas) if (xDe(j) >= MARGE_G - 4) ticks.push(j)
 
+  // ── Pastilles : collecte par ligne ──
   const couleurEvt = (e) => e.couleur || arc(e.arcId)?.couleur || faction(e.factionId)?.couleur || '#8a8272'
   const texteClair = (hex) => {
     const n = parseInt((hex || '#888888').slice(1), 16)
-    const lum = 0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)
-    return lum < 150
+    return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) < 150
   }
-  // Pastilles titrées, placées sur deux sous-rangées par ligne pour limiter les chevauchements.
-  const H_PASTILLE = 15
   const parLigne = {}
-  const poserItem = (it) => { (parLigne[it.ligne] ||= []).push(it) }
+  const poser = (it) => { (parLigne[it.ligne] ||= []).push(it) }
   univers.evenements.forEach(e => {
     e.participants.filter(id => id in indexLigne).forEach(id => {
       const x = xDe(e.debut)
       const larg = e.fin != null && xDe(e.fin) > x
         ? Math.max(24, xDe(e.fin) - x)
         : Math.min(170, Math.max(26, 12 + e.titre.length * 5.2))
-      poserItem({ obj: e, ligne: indexLigne[id], x, larg, coul: couleurEvt(e), creux: false, titre: e.titre })
+      poser({ obj: e, ligne: indexLigne[id], x, larg, coul: couleurEvt(e), creux: false, titre: e.titre })
     })
   })
   univers.joueurs.forEach(j => {
@@ -94,25 +92,40 @@ export default function Frise() {
       if (it.date == null) return
       const pnjX = univers.pnjs.find(p => p.id === it.pnjId)
       const titre = pnjX?.nom || 'interaction'
-      const x = xDe(it.date)
-      poserItem({ obj: { titre: `${j.personnage} × ${titre}`, desc: it.resume, debut: it.date, fin: null },
-        ligne: indexLigne[j.id], x, larg: Math.min(140, Math.max(24, 12 + titre.length * 5.2)),
+      poser({ obj: { titre: `${j.personnage} × ${titre}`, desc: it.resume, debut: it.date, fin: null },
+        ligne: indexLigne[j.id], x: xDe(it.date), larg: Math.min(140, Math.max(24, 12 + titre.length * 5.2)),
         coul: faction(pnjX?.faction)?.couleur || '#8a8272', creux: true, titre })
     })
   })
+
+  // ── Rangées illimitées par ligne : la ligne grandit avec les chevauchements ──
   const marques = []
-  Object.values(parLigne).forEach(items => {
-    items.sort((a, b) => a.x - b.x)
-    const finRangee = [-Infinity, -Infinity]
+  const nbRangees = lignes.map(() => 1)
+  Object.entries(parLigne).forEach(([lg, items]) => {
+    items.sort((a, b) => a.x - b.x || b.larg - a.larg)
+    const finRangee = []
     items.forEach(it => {
-      const r = it.x >= finRangee[0] + 4 ? 0 : (it.x >= finRangee[1] + 4 ? 1 : 0)
+      let r = finRangee.findIndex(fin => it.x >= fin + 4)
+      if (r === -1) { r = finRangee.length; finRangee.push(-Infinity) }
       finRangee[r] = it.x + it.larg
       marques.push({ ...it, rangee: r })
     })
+    nbRangees[+lg] = Math.max(1, finRangee.length)
   })
+
+  // Géométrie verticale cumulative.
+  const geo = []
+  let curseurY = H_AXE + 8
+  lignes.forEach((l, i) => {
+    const h = Math.max(H_MIN, 6 + nbRangees[i] * (H_PASTILLE + ECART))
+    geo.push({ top: curseurY, h, centre: curseurY + h / 2 })
+    curseurY += h
+  })
+  const hauteur = curseurY + 14
+
   const liens = []
   univers.evenements.forEach(e => {
-    const ys = e.participants.filter(id => id in indexLigne).map(id => H_AXE + 8 + indexLigne[id] * H_LIGNE + H_LIGNE / 2)
+    const ys = e.participants.filter(id => id in indexLigne).map(id => geo[indexLigne[id]].centre)
     if (ys.length > 1) liens.push({ x: xDe(e.debut), y1: Math.min(...ys), y2: Math.max(...ys) })
   })
 
@@ -133,7 +146,7 @@ export default function Frise() {
           style={{ borderColor: f.couleur }} title="Ctrl+Clic : isoler cette faction"
           onClick={(ev) => (ev.ctrlKey || ev.metaKey) ? setFiltreFac(new Set([f.id])) : bascule(filtreFac, setFiltreFac, f.id)}>
           <span className="rond" style={{ background: f.couleur }} />{f.nom}</span>)}
-        <span className="aide" style={{ marginLeft: 'auto' }}>molette : défiler · Ctrl+molette : zoom · glisser : naviguer</span>
+        <span className="aide" style={{ marginLeft: 'auto' }}>molette : défiler · Ctrl+molette : zoom · Ctrl+Clic faction : isoler</span>
       </div>
       {panneauArcs && (
         <div style={{ padding: '8px 14px', borderBottom: '2px solid var(--parch-mid)', background: '#efe6cf' }}>
@@ -166,11 +179,14 @@ export default function Frise() {
               <text x={x1 + 6} y={H_AXE + 12} style={{ font: '700 10px monospace', fill: '#fff' }}>{a.nom}</text>
             </g>
           })}
-          {lignes.map((l, i) => {
-            const y = H_AXE + 8 + i * H_LIGNE + H_LIGNE / 2
-            return <line key={l.id} x1={MARGE_G} y1={y} x2={largeur} y2={y}
+          {lignes.map((l, i) => (
+            <line key={l.id} x1={MARGE_G} y1={geo[i].centre} x2={largeur} y2={geo[i].centre}
               stroke={faction(l.faction)?.couleur || '#8a8272'} strokeWidth="1" opacity=".15" />
-          })}
+          ))}
+          {lignes.map((l, i) => i > 0 && (
+            <line key={'sep' + l.id} x1={0} y1={geo[i].top} x2={largeur} y2={geo[i].top}
+              stroke="rgba(0,0,0,.05)" strokeWidth="1" />
+          ))}
           {ticks.map(j => {
             const x = xDe(j), majr = j % pasMajeur === 0
             return <g key={j}>
@@ -188,17 +204,14 @@ export default function Frise() {
             <line key={i} x1={l.x} y1={l.y1} x2={l.x} y2={l.y2} stroke="rgba(38,34,26,.35)" strokeDasharray="2 3" />)}
           {marques.map((m, i) => {
             if (m.x + m.larg < MARGE_G - 10 || m.x > largeur + 10) return null
-            const yC = H_AXE + 8 + m.ligne * H_LIGNE + H_LIGNE / 2
-            const y = m.rangee === 0 ? yC - H_PASTILLE + 1 : yC + 1
+            const g = geo[m.ligne]
+            const y = g.top + 3 + m.rangee * (H_PASTILLE + ECART)
             const clair = texteClair(m.coul)
-            const props = {
-              style: { cursor: 'pointer' },
-              onMouseMove: (ev) => setSurvol({ x: ev.clientX, y: ev.clientY, obj: m.obj }),
-              onMouseLeave: () => setSurvol(null),
-            }
             const nbCar = Math.floor((m.larg - 10) / 5.2)
             const txt = m.titre.length > nbCar ? (nbCar > 2 ? m.titre.slice(0, nbCar - 1) + '…' : '') : m.titre
-            return <g key={i} {...props}>
+            return <g key={i} style={{ cursor: 'pointer' }}
+              onMouseMove={(ev) => setSurvol({ x: ev.clientX, y: ev.clientY, obj: m.obj })}
+              onMouseLeave={() => setSurvol(null)}>
               <rect x={m.x} y={y} width={m.larg} height={H_PASTILLE} rx="7"
                 fill={m.creux ? 'var(--parch)' : m.coul} stroke={m.creux ? m.coul : 'rgba(0,0,0,.35)'}
                 strokeWidth={m.creux ? 1.6 : 1} />
@@ -210,7 +223,7 @@ export default function Frise() {
         <div style={{ position: 'absolute', left: 0, top: 0, height: hauteur, width: MARGE_G, pointerEvents: 'none',
           background: 'linear-gradient(90deg, var(--parch) 80%, transparent)' }}>
           {lignes.map((l, i) => (
-            <div key={l.id} style={{ position: 'absolute', top: H_AXE + 8 + i * H_LIGNE, height: H_LIGNE,
+            <div key={l.id} style={{ position: 'absolute', top: geo[i].top, height: geo[i].h,
               display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', width: '100%' }}>
               <span style={{ width: 9, height: 9, borderRadius: '50%', background: faction(l.faction)?.couleur || '#8a8272',
                 flex: 'none', border: '1px solid rgba(0,0,0,.3)' }} />
