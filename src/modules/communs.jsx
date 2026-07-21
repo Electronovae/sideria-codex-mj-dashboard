@@ -78,18 +78,31 @@ export const DateSiderienne = ({ label, valeur, surChange, optionnel = false }) 
 }
 
 // Cadre générique liste (gauche) + fiche (droite).
-export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, libelleAjout = '+ Ajouter' }) => (
-  <>
-    <div className="liste">
-      <button className="btn clair ajout" onClick={surAjout}>{libelleAjout}</button>
-      {items.map(it => (
-        <div key={it.id} className={'item' + (it.id === selId ? ' sel' : '')} onClick={() => surSel(it.id)}>
-          {rendu(it)}
-        </div>
-      ))}
-    </div>
-    <div className="fiche">
-      {enfants || <div className="vide">Sélectionne un élément à gauche, ou crées-en un.</div>}
-    </div>
-  </>
-)
+export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, libelleAjout = '+ Ajouter', tris = null }) => {
+  const cles = tris ? Object.keys(tris) : []
+  const [tri, setTri] = React.useState(cles[0] || null)
+  const affiches = tri && tris
+    ? [...items].sort((a, b) => String(tris[tri](a) ?? '').localeCompare(String(tris[tri](b) ?? ''), 'fr'))
+    : items
+  return (
+    <>
+      <div className="liste">
+        <button className="btn clair ajout" onClick={surAjout}>{libelleAjout}</button>
+        {tris && <div style={{ padding: '0 14px 8px' }}>
+          <label>Trier par</label>
+          <select value={tri} onChange={e => setTri(e.target.value)}>
+            {cles.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>}
+        {affiches.map(it => (
+          <div key={it.id} className={'item' + (it.id === selId ? ' sel' : '')} onClick={() => surSel(it.id)}>
+            {rendu(it)}
+          </div>
+        ))}
+      </div>
+      <div className="fiche">
+        {enfants || <div className="vide">Sélectionne un élément à gauche, ou crées-en un.</div>}
+      </div>
+    </>
+  )
+}
