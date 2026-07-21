@@ -2,6 +2,8 @@
 
 Studio de création pour l'univers **Sidéria : L'Ère de l'Éther**. Un seul outil pour créer et maintenir la méta-campagne, les campagnes, les PNJ (avec leurs arbres de décision), les personnages joueurs (réputations, interactions), les factions et les événements, avec export vers Obsidian.
 
+Application disponible ici : https://electronovae.github.io/sideria-codex-mj-dashboard/
+
 ## Démarrage
 
 ```bash
