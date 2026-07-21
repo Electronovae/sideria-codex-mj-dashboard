@@ -66,10 +66,14 @@ src/
     └── communs.jsx        composants partagés
 ```
 
+## Pré-remplissage depuis Obsidian
+
+Un fichier `sideria_univers_prerempli.json` peut être généré depuis le vault (factions, PNJ, PJ, sessions datées, campagnes) et chargé via "Importer JSON". L'import direct du vault dans l'appli est sur la feuille de route.
+
 ## Feuille de route (à prioriser ensemble)
 
 - [ ] **Horloge de la Déchirure** : module dédié (jalons M0-M24, saisons, avancement par table)
-- [ ] **Frises intégrées** : porter chroniques_sideria dans un module (le schéma est déjà commun)
+- [x] **Frises intégrées** : module Frise chronologique (lignes PJ/PNJ, zoom multi-échelles, interactions PJ en losanges creux)
 - [ ] **Éditeur d'arbre graphique** : glisser-déposer des nœuds plutôt que le tableau
 - [ ] **Supabase normalisé** : tables par entité, temps réel, comptes joueurs en lecture seule
 - [ ] **Import Obsidian** : lire le vault existant pour amorcer la base (parsing des fiches)

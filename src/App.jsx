@@ -7,6 +7,7 @@ import Joueurs from './modules/Joueurs.jsx'
 import Factions from './modules/Factions.jsx'
 import Evenements from './modules/Evenements.jsx'
 import Campagnes from './modules/Campagnes.jsx'
+import Frise from './modules/Frise.jsx'
 
 export const Ctx = React.createContext(null)
 
@@ -17,6 +18,7 @@ const MODULES = [
   ['joueurs', 'Joueurs', Joueurs],
   ['factions', 'Factions', Factions],
   ['evenements', 'Événements', Evenements],
+  ['frise', 'Frise chronologique', Frise],
 ]
 
 export default function App() {
