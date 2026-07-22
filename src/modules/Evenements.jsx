@@ -64,16 +64,12 @@ export default function Evenements() {
                 <option value="">—</option>
                 {univers.arcs.map(a => <option key={a.id} value={a.id}>{a.nom}</option>)}
               </select></span>
-            <span><label>Symbole</label>
+            {e.fin == null && <span><label>Symbole (événement ponctuel)</label>
               <select value={e.symbole} onChange={ev => modifier(x => { x.symbole = ev.target.value })}>
                 {SYMBOLES.map(s => <option key={s}>{s}</option>)}
-              </select></span>
-            <span><label>Couleur (sinon : arc / faction)</label>
-              <span className="rangee">
-                <input type="color" value={e.couleur || '#888888'} style={{ height: 34, padding: 2 }}
-                  onChange={ev => modifier(x => { x.couleur = ev.target.value })} />
-                <button className="btn clair" onClick={() => modifier(x => { x.couleur = null })}>hériter</button>
-              </span></span>
+              </select></span>}
+            <span><label>Couleur</label>
+              <p className="aide" style={{ marginTop: 8 }}>automatique : celle de la faction (sinon de l'arc)</p></span>
           </div>
           <h3>Participants (PNJ)</h3>
           <PucesPnjs ids={e.participants} surChange={v => modifier(x => { x.participants = v })} />

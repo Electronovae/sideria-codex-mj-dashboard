@@ -50,7 +50,7 @@ export default function Graphe() {
     if (actif('pj')) univers.joueurs.forEach(j => {
       ajouter('pj', j.id, j.personnage, faction(j.faction)?.couleur || '#c9a227')
       if (actif('faction') && j.faction) lier('pj:' + j.id, 'faction:' + j.faction)
-      if (actif('pnj')) j.interactions.forEach(i => { if (i.pnjId) lier('pj:' + j.id, 'pnj:' + i.pnjId) })
+      if (actif('pnj')) (j.historique || []).forEach(i => { if (i.pnjId) lier('pj:' + j.id, 'pnj:' + i.pnjId) })
     })
     if (actif('campagne')) univers.campagnes.forEach(c => {
       ajouter('campagne', c.id, (c.code ? c.code + ' ' : '') + c.titre, faction(c.factionId)?.couleur || '#6b5b95')

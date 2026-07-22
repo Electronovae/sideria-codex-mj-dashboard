@@ -23,6 +23,7 @@ export default function Codex() {
     ['Arcs', 'arc', univers.arcs, x => x.nom],
     ['PNJ', 'pnj', [...univers.pnjs].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), x => x.nom],
     ['PJ', 'pj', univers.joueurs, x => x.personnage],
+    ['Lieux', 'lieu', univers.lieux, x => x.nom],
     ['Événements', 'evenement', [...univers.evenements].sort((a, b) => a.debut - b.debut), x => x.titre],
   ]
 
@@ -40,8 +41,8 @@ export default function Codex() {
         <h2><span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', background: x.couleur, marginRight: 8 }} />{x.nom}</h2>
         {x.devise && <p style={{ fontStyle: 'italic' }}>« {x.devise} »</p>}
         <p>{x.description}</p>
-        {x.chefIds.length > 0 && <Bloc titre="Direction">{x.chefIds.map(cid => pnj(cid)).filter(Boolean)
-          .map(c => <div key={c.id}><L type="pnj" id={c.id}>{c.nom}</L> : {c.role}</div>)}</Bloc>}
+        {x.chefId && pnj(x.chefId) && <Bloc titre="Chef">
+          <div><L type="pnj" id={x.chefId}>{pnj(x.chefId).nom}</L> : {pnj(x.chefId).poste || pnj(x.chefId).role}</div></Bloc>}
         {membres.length > 0 && <Bloc titre="Membres">{membres.map(m =>
           <div key={m.id}><L type="pnj" id={m.id}>{m.nom}</L>{m.role && <> : {m.role}</>}</div>)}</Bloc>}
         {pjs.length > 0 && <Bloc titre="PJ affiliés">{pjs.map(j =>
@@ -58,8 +59,8 @@ export default function Codex() {
       const x = pnj(id); if (!x) return null
       const evts = univers.evenements.filter(e => e.participants.includes(id)).sort((a, b) => a.debut - b.debut)
       const camps = univers.campagnes.filter(c => c.pnjIds.includes(id))
-      const dirs = univers.factions.filter(fa => fa.chefIds.includes(id))
-      const inters = univers.joueurs.flatMap(j => j.interactions.filter(i => i.pnjId === id).map(i => ({ ...i, j })))
+      const dirs = univers.factions.filter(fa => fa.chefId === id)
+      const inters = univers.joueurs.flatMap(j => (j.historique || []).filter(i => i.pnjId === id).map(i => ({ ...i, j })))
       return <>
         <h2>{x.nom}</h2>
         <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.role}
@@ -91,9 +92,14 @@ export default function Codex() {
         <p>{x.notes}</p>
         {reps.length > 0 && <Bloc titre="Réputations">{reps.map(([fid, v]) =>
           <div key={fid}><L type="faction" id={fid}>{f(fid)?.nom || fid}</L> : {v > 0 ? '+' : ''}{v}</div>)}</Bloc>}
-        {x.interactions.length > 0 && <Bloc titre="Journal des interactions">{x.interactions.map((i, k) =>
+        {x.citations?.filter(Boolean).length > 0 && <Bloc titre="Citations">{x.citations.filter(Boolean).map((c, k) =>
+          <p key={k} className="citation">{c}</p>)}</Bloc>}
+        {x.historique.length > 0 && <Bloc titre="Historique">{x.historique.map((i, k) =>
           <div key={k}>{i.date != null && <strong>{fmtDate(i.date)} · </strong>}
-            {pnj(i.pnjId) ? <L type="pnj" id={i.pnjId}>{pnj(i.pnjId).nom}</L> : '?'} : {i.resume}
+            <em>{i.type}</em>
+            {pnj(i.pnjId) && <> · <L type="pnj" id={i.pnjId}>{pnj(i.pnjId).nom}</L></>}
+            {univers.lieux.find(ll => ll.id === i.lieuId) && <> · <L type="lieu" id={i.lieuId}>{univers.lieux.find(ll => ll.id === i.lieuId).nom}</L></>}
+            {i.resume && <> : {i.resume}</>}
             {i.effet && <em> ({i.effet})</em>}</div>)}</Bloc>}
       </>
     }
@@ -140,6 +146,26 @@ export default function Codex() {
           : <p className="aide">Aucun. Rattache des événements à cet arc dans l'onglet Événements.</p>}</Bloc>
         {persos.length > 0 && <Bloc titre="Personnages impliqués">{persos.map(p =>
           <span key={p.id} style={{ marginRight: 12 }}><L type="pnj" id={p.id}>{p.nom}</L></span>)}</Bloc>}
+      </>
+    }
+    if (type === 'lieu') {
+      const x = univers.lieux.find(ll => ll.id === id); if (!x) return null
+      const enfants = univers.lieux.filter(ll => ll.parentId === id)
+      const parent = univers.lieux.find(ll => ll.id === x.parentId)
+      const passages = univers.joueurs.flatMap(jj =>
+        (jj.historique || []).filter(h => h.lieuId === id).map(h => ({ ...h, jj })))
+      return <>
+        <h2>{x.nom}</h2>
+        <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.type}
+          {parent && <> · dans <L type="lieu" id={parent.id}>{parent.nom}</L></>}
+          {x.factionId && <> · contrôlé par <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}</p>
+        <p>{x.description}</p>
+        {x.secrets && <div className="carte" style={{ borderLeftColor: 'var(--rouge)' }}>
+          <label>Secrets Maître</label><p>{x.secrets}</p></div>}
+        {enfants.length > 0 && <Bloc titre="Contient">{enfants.map(e =>
+          <div key={e.id}><L type="lieu" id={e.id}>{e.nom}</L> ({e.type})</div>)}</Bloc>}
+        {passages.length > 0 && <Bloc titre="Passages">{passages.map((p2, k) =>
+          <div key={k}><L type="pj" id={p2.jj.id}>{p2.jj.personnage}</L>{p2.date != null && <> ({fmtDate(p2.date)})</>} : {p2.resume || p2.type}</div>)}</Bloc>}
       </>
     }
     if (type === 'evenement') {

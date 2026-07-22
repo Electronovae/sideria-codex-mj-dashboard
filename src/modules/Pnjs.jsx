@@ -31,9 +31,10 @@ export default function Pnjs() {
       items={univers.pnjs} selId={selId} surSel={setSelId} surAjout={ajouter}
       libelleAjout="+ Nouveau PNJ"
       tris={{
+        faction: p => (univers.factions.find(f => f.id === p.faction)?.nom || 'zzz') + '·' + p.nom,
         nom: p => p.nom,
-        faction: p => univers.factions.find(f => f.id === p.faction)?.nom || 'zzz',
       }}
+      groupe={p => univers.factions.find(f => f.id === p.faction)?.nom || 'Sans faction'}
       rendu={p => {
         const f = univers.factions.find(x => x.id === p.faction)
         return (<><span className="rond" style={{ background: f?.couleur || '#888' }} />
@@ -47,6 +48,16 @@ export default function Pnjs() {
             <Champ label="Rôle" value={pnj.role} onChange={e => modifier(p => { p.role = e.target.value })} />
             <span><label>Faction</label>
               <SelecteurFaction valeur={pnj.faction} surChange={v => modifier(p => { p.faction = v })} /></span>
+          </div>
+          <div className="rangee">
+            <Champ label="Poste (organigramme)" placeholder="Chef de l'Aile du Piston"
+              value={pnj.poste} onChange={e => modifier(p => { p.poste = e.target.value })} />
+            <span><label>Supérieur hiérarchique</label>
+              <select value={pnj.superieurId || ''} onChange={e => modifier(p => { p.superieurId = e.target.value || null })}>
+                <option value="">—</option>
+                {univers.pnjs.filter(x => x.id !== pnj.id && x.faction === pnj.faction)
+                  .map(x => <option key={x.id} value={x.id}>{x.nom}</option>)}
+              </select></span>
           </div>
           <Champ label="Description" zone value={pnj.description}
             onChange={e => modifier(p => { p.description = e.target.value })} />

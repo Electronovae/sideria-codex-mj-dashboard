@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useStudio, Champ, SelecteurFaction, PucesPnjs } from './communs.jsx'
-import { nouvelleCampagne, nouvelleSession, uid } from '../lib/modele.js'
+import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid } from '../lib/modele.js'
 import { DateSiderienne } from './communs.jsx'
 import { fmtDate } from '../lib/calendrier.js'
 
@@ -96,12 +96,15 @@ export default function Campagnes() {
               <span><label>Faction</label>
                 <SelecteurFaction valeur={c.factionId} surChange={v => modifier(x => { x.factionId = v })} /></span>
               <span className="etroit"><label>Saison</label>
-                <select value={c.saison} onChange={e => modifier(x => { x.saison = +e.target.value })}>
-                  {univers.meta.saisons.map(s => <option key={s.num} value={s.num}>Saison {s.num}</option>)}
-                </select></span>
+                <input type="number" min="0" value={c.saison}
+                  onChange={e => modifier(x => { x.saison = +e.target.value || 0 })} /></span>
             </div>
             <div className="rangee">
-              <Champ label="Départ (Horloge)" placeholder="M0" value={c.depart} onChange={e => modifier(x => { x.depart = e.target.value })} />
+              <span><label>Arc narratif</label>
+                <select value={c.arcId || ''} onChange={e => modifier(x => { x.arcId = e.target.value || null })}>
+                  <option value="">—</option>
+                  {univers.arcs.map(a => <option key={a.id} value={a.id}>{a.nom}</option>)}
+                </select></span>
               <Champ label="Durée (sessions)" placeholder="10-12" value={c.duree} onChange={e => modifier(x => { x.duree = e.target.value })} />
               <Champ label="Niveaux" placeholder="8-22" value={c.niveaux} onChange={e => modifier(x => { x.niveaux = e.target.value })} />
             </div>
@@ -192,14 +195,25 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
     const c = u.campagnes.find(x => x.id === campagne.id)
     fn(c.sessions.find(x => x.id === sessionId), c, u)
   })
+  const evtsSession = univers.evenements.filter(e => e.sessionId === sessionId).sort((a, b) => a.debut - b.debut)
+  const creerEvenement = () => maj(u => {
+    const e = nouvelEvenement()
+    const base = s.date != null ? s.date : e.debut
+    e.debut = base + evtsSession.length          // continuité : jour suivant à chaque ajout
+    e.sessionId = sessionId
+    e.campagneId = campagne.id
+    e.factionId = campagne.factionId
+    e.titre = 'Événement ' + (evtsSession.length + 1)
+    u.evenements.push(e)
+  })
   const basculerEvt = (evtId) => maj(u => {
     const e = u.evenements.find(x => x.id === evtId)
     if (e.sessionId === sessionId) { e.sessionId = null }
     else { e.sessionId = sessionId; e.campagneId = campagne.id }
   })
-  const evtsSession = univers.evenements.filter(e => e.sessionId === sessionId)
+  const modifierEvt = (evtId, fn) => maj(u => { fn(u.evenements.find(x => x.id === evtId)) })
   const evtsDispo = univers.evenements
-    .filter(e => e.sessionId == null || e.sessionId === sessionId)
+    .filter(e => e.sessionId == null)
     .sort((a, b) => a.debut - b.debut)
   return (
     <div>
@@ -213,18 +227,58 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
         <DateSiderienne label="Date en jeu" optionnel valeur={s.date}
           surChange={v => modifier(x => { x.date = v })} />
       </div>
-      <span><label>Résumé / préparation</label>
+      <span><label>Résumé</label>
         <textarea value={s.resume} onChange={e => modifier(x => { x.resume = e.target.value })} /></span>
 
-      <h3>Événements de la session ({evtsSession.length})</h3>
-      <p className="aide">Coche les événements qui se produisent pendant cette session. Un événement rattaché ici est aussi rattaché à la campagne. Les événements se créent dans l'onglet Événements.</p>
-      {evtsDispo.map(e => (
-        <div key={e.id} className={'puce' + (e.sessionId === sessionId ? '' : ' off')}
-          style={{ borderColor: 'var(--or)', display: 'inline-flex', margin: 3 }}
-          onClick={() => basculerEvt(e.id)}>
-          {fmtDate(e.debut)} · {e.titre}
+      <h3>Préparation (les sections à lire en session)</h3>
+      {s.sections.map((sec, i) => (
+        <div className="carte" key={sec.id}>
+          <span><label>Titre de la section</label>
+            <input value={sec.titre} placeholder="Scène 1 : la gargote"
+              onChange={e => modifier(x => { x.sections[i].titre = e.target.value })} /></span>
+          <span><label>Contenu</label>
+            <textarea style={{ minHeight: 110 }} value={sec.contenu}
+              onChange={e => modifier(x => { x.sections[i].contenu = e.target.value })} /></span>
+          <div className="rangee" style={{ marginTop: 6 }}>
+            <button className="btn clair" disabled={i === 0}
+              onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i - 1, 0, m) })}>↑</button>
+            <button className="btn clair" disabled={i === s.sections.length - 1}
+              onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i + 1, 0, m) })}>↓</button>
+            <button className="btn clair" onClick={() => modifier(x => { x.sections.splice(i, 1) })}>retirer</button>
+          </div>
         </div>
       ))}
+      <button className="btn clair" onClick={() => modifier(x => {
+        x.sections.push({ id: uid('sec'), titre: '', contenu: '' })
+      })}>+ section</button>
+
+      <h3>Événements de la session ({evtsSession.length})</h3>
+      <p className="aide">Chaque nouvel événement se pré-remplit au jour suivant le précédent (à partir de la date de session). Faction et campagne sont héritées, tout reste modifiable ici ou dans l'onglet Événements.</p>
+      {evtsSession.map(e => (
+        <div className="carte" key={e.id}>
+          <div className="rangee">
+            <span><label>Titre</label>
+              <input value={e.titre} onChange={ev => modifierEvt(e.id, x => { x.titre = ev.target.value })} /></span>
+            <DateSiderienne label="Date" valeur={e.debut}
+              surChange={v => modifierEvt(e.id, x => { x.debut = v ?? x.debut })} />
+          </div>
+          <span><label>Description</label>
+            <textarea style={{ minHeight: 50 }} value={e.desc}
+              onChange={ev => modifierEvt(e.id, x => { x.desc = ev.target.value })} /></span>
+          <button className="btn clair" style={{ marginTop: 6 }} onClick={() => basculerEvt(e.id)}>détacher de la session</button>
+        </div>
+      ))}
+      <button className="btn clair" onClick={creerEvenement}>+ nouvel événement (jour suivant)</button>
+
+      {evtsDispo.length > 0 && <>
+        <h3>Rattacher un événement existant</h3>
+        {evtsDispo.map(e => (
+          <div key={e.id} className="puce off" style={{ borderColor: 'var(--or)', display: 'inline-flex', margin: 3 }}
+            onClick={() => basculerEvt(e.id)}>
+            {fmtDate(e.debut)} · {e.titre}
+          </div>
+        ))}
+      </>}
       <div style={{ marginTop: 20 }}>
         <button className="btn danger" onClick={() => {
           if (!confirm(`Supprimer la session "${s.titre}" ? Ses événements redeviennent non rattachés.`)) return

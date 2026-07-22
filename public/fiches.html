@@ -117,11 +117,14 @@ function rendre(id){
           left:${v>0?50:50-pct}%;width:${pct}%"></span></span>
         <span class="val">${v>0?'+':''}${v}</span></div>`;
     }).join('') + '</div>' : ''}
-    ${j.interactions?.length ? `<h3>Journal des rencontres</h3>` + j.interactions.map(i => {
+    ${j.citations?.filter(Boolean).length ? `<h3>Citations</h3>` + j.citations.filter(Boolean).map(c =>
+      `<div class="interaction" style="font-style:italic">${c}</div>`).join('') : ''}
+    ${(j.historique||[]).length ? `<h3>Historique</h3>` + j.historique.map(i => {
       const p = pnj(i.pnjId);
+      const l = (U.lieux||[]).find(x => x.id === i.lieuId);
       return `<div class="interaction">
-        <span class="date">${i.date!=null?fmtDate(i.date):'sans date'}</span> ·
-        <strong>${p?p.nom:'?'}</strong> : ${i.resume||''}
+        <span class="date">${i.date!=null?fmtDate(i.date):'sans date'} · ${i.type||''}</span> ·
+        <strong>${p?p.nom:(l?l.nom:'')}</strong> : ${i.resume||''}
         ${i.effet?`<em> (${i.effet})</em>`:''}</div>`;
     }).join('') : ''}
   </div>`;

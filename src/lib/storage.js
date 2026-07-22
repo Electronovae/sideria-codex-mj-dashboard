@@ -50,11 +50,24 @@ export async function pousserSupabase(univers, idLigne) {
   if (idLigne) {
     const { error } = await supabase.from('univers').update(ligne).eq('id', idLigne)
     if (error) throw error
+    await archiver(univers, idLigne)
     return idLigne
   }
   const { data, error } = await supabase.from('univers').insert(ligne).select('id').single()
   if (error) throw error
+  await archiver(univers, data.id)
   return data.id
+}
+
+// Conserve un instantané dans la table historique (les 20 plus récents).
+async function archiver(univers, universId) {
+  try {
+    await supabase.from('historique').insert({ univers_id: universId, data: univers })
+    const { data } = await supabase.from('historique')
+      .select('id').eq('univers_id', universId)
+      .order('created_at', { ascending: false }).range(20, 200)
+    if (data?.length) await supabase.from('historique').delete().in('id', data.map(x => x.id))
+  } catch (e) { /* l'archivage ne doit jamais bloquer la sauvegarde */ }
 }
 
 export async function tirerSupabase() {

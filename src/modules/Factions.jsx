@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, ListeFiche, PucesPnjs } from './communs.jsx'
+import { useStudio, Champ, ListeFiche } from './communs.jsx'
 import { nouvelleFaction } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
 
@@ -53,13 +53,22 @@ export default function Factions() {
           <Champ label="Objectifs" zone value={f.objectifs} onChange={e => modifier(x => { x.objectifs = e.target.value })} />
           <Champ label="Ressources et moyens" zone value={f.ressources} onChange={e => modifier(x => { x.ressources = e.target.value })} />
 
-          <h3>Direction</h3>
-          <PucesPnjs ids={f.chefIds} surChange={v => modifier(x => { x.chefIds = v })} />
+          <h3>Chef de la faction</h3>
+          <select value={f.chefId || ''} onChange={e => modifier(x => { x.chefId = e.target.value || null })}>
+            <option value="">— aucun —</option>
+            {membres.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+          </select>
+          <p className="aide">Le chef se choisit parmi les membres (PNJ rattachés à cette faction).</p>
 
-          <h3>Membres (PNJ rattachés)</h3>
+          <h3>Membres</h3>
           {membres.length
-            ? <ul style={{ marginLeft: 18 }}>{membres.map(m => <li key={m.id}>{m.nom} : {m.role || 'rôle à définir'}</li>)}</ul>
+            ? <ul style={{ marginLeft: 18 }}>{membres.map(m => <li key={m.id}>{m.nom}{m.poste ? ` : ${m.poste}` : m.role ? ` : ${m.role}` : ''}</li>)}</ul>
             : <p className="aide">Aucun PNJ. Le rattachement se fait depuis la fiche du PNJ.</p>}
+
+          <h3>Organigramme</h3>
+          {membres.length
+            ? <Organigramme faction={f} membres={membres} />
+            : <p className="aide">L'organigramme se construit avec les champs "poste" et "supérieur" des fiches PNJ.</p>}
           {pjs.length > 0 && <>
             <h3>Personnages joueurs affiliés</h3>
             <ul style={{ marginLeft: 18 }}>{pjs.map(p => <li key={p.id}>{p.personnage} ({p.joueur})</li>)}</ul>
@@ -78,4 +87,32 @@ export default function Factions() {
       )}
     />
   )
+}
+
+
+// Organigramme : arbre hiérarchique déduit des champs superieurId des PNJ.
+function Organigramme({ faction, membres }) {
+  const enfants = (id) => membres.filter(m => (m.superieurId || null) === id && m.id !== id)
+  // racines : le chef, puis les membres sans supérieur (ou dont le supérieur est hors faction)
+  const idsMembres = new Set(membres.map(m => m.id))
+  const racines = membres.filter(m =>
+    m.id === faction.chefId || !m.superieurId || !idsMembres.has(m.superieurId))
+    .filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i)
+    .sort((a, b) => (a.id === faction.chefId ? -1 : b.id === faction.chefId ? 1 : 0))
+  const Noeud = ({ m, prof, vus }) => {
+    if (vus.has(m.id)) return null
+    const suiv = new Set(vus); suiv.add(m.id)
+    return (
+      <div style={{ marginLeft: prof * 22 }}>
+        <div className="carte" style={{ padding: '6px 12px', margin: '4px 0',
+          borderLeftColor: m.id === faction.chefId ? 'var(--or)' : faction.couleur,
+          display: 'inline-block', minWidth: 220 }}>
+          <strong>{m.nom}</strong>{m.id === faction.chefId && ' ★'}
+          <div className="aide" style={{ marginTop: 0 }}>{m.poste || m.role || 'poste à définir'}</div>
+        </div>
+        {enfants(m.id).map(e => <Noeud key={e.id} m={e} prof={prof + 1} vus={suiv} />)}
+      </div>
+    )
+  }
+  return <div>{racines.map(m => <Noeud key={m.id} m={m} prof={0} vus={new Set()} />)}</div>
 }

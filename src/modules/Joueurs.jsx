@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useStudio, Champ, SelecteurFaction, ListeFiche, DateSiderienne } from './communs.jsx'
-import { nouveauJoueur, uid } from '../lib/modele.js'
+import { nouveauJoueur, nouvelleEntreeHistorique, TYPES_HISTORIQUE } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
 
 export default function Joueurs() {
@@ -25,9 +25,10 @@ export default function Joueurs() {
       items={univers.joueurs} selId={selId} surSel={setSelId} surAjout={ajouter}
       libelleAjout="+ Nouveau personnage joueur"
       tris={{
-        personnage: j => j.personnage,
-        joueur: j => j.joueur,
-        faction: j => univers.factions.find(f => f.id === j.faction)?.nom || 'zzz',
+        personnage: x => x.personnage,
+        joueur: x => x.joueur,
+        niveau: x => -x.niveau,
+        faction: x => univers.factions.find(f => f.id === x.faction)?.nom || 'zzz',
       }}
       rendu={p => {
         const f = univers.factions.find(x => x.id === p.faction)
@@ -55,44 +56,67 @@ export default function Joueurs() {
           <Champ label="Notes MJ (fils personnels, secrets, dettes)" zone value={j.notes}
             onChange={e => modifier(x => { x.notes = e.target.value })} />
 
+          <h3>Citations</h3>
+          <p className="aide">Les phrases mémorables prononcées à la table.</p>
+          {j.citations.map((c, i) => (
+            <div className="rangee" key={i}>
+              <input value={c} placeholder="« ... »"
+                onChange={e => modifier(x => { x.citations[i] = e.target.value })} />
+              <button className="btn clair etroit" onClick={() => modifier(x => { x.citations.splice(i, 1) })}>retirer</button>
+            </div>
+          ))}
+          <button className="btn clair" onClick={() => modifier(x => { x.citations.push('') })}>+ citation</button>
+
           <h3>Réputations par faction (−4 à +4)</h3>
           {univers.factions.filter(f => f.id !== 'monde').map(f => (
             <div className="jauge-rep" key={f.id}>
-              <span className="nom"><span className="rond" style={{ background: f.couleur, display: 'inline-block', width: 9, height: 9, borderRadius: '50%', marginRight: 6 }} />{f.nom}</span>
+              <span className="nom"><span style={{ background: f.couleur, display: 'inline-block', width: 9, height: 9, borderRadius: '50%', marginRight: 6 }} />{f.nom}</span>
               <input type="range" min="-4" max="4" step="1" value={j.reputations[f.id] ?? 0}
                 onChange={e => modifier(x => { x.reputations[f.id] = +e.target.value })} />
               <span className="val">{(j.reputations[f.id] ?? 0) > 0 ? '+' : ''}{j.reputations[f.id] ?? 0}</span>
             </div>
           ))}
 
-          <h3>Interactions avec les PNJ</h3>
-          <p className="aide">Le journal de qui a parlé à qui, quand, et ce que ça a changé. C'est lui qui nourrit les compteurs des arbres et les réputations.</p>
-          {j.interactions.map((it, i) => {
+          <h3>Historique</h3>
+          <p className="aide">Tout ce que le personnage a vécu : rencontres, combats, lieux traversés, révélations. Les entrées datées apparaissent sur sa ligne de la frise.</p>
+          {j.historique.map((it, i) => {
             const p = univers.pnjs.find(x => x.id === it.pnjId)
+            const l = univers.lieux.find(x => x.id === it.lieuId)
             return (
               <div className="carte" key={it.id}>
                 <div className="rangee">
-                  <span><label>PNJ</label>
-                    <select value={it.pnjId || ''} onChange={e => modifier(x => { x.interactions[i].pnjId = e.target.value })}>
+                  <span className="etroit"><label>Type</label>
+                    <select value={it.type} onChange={e => modifier(x => { x.historique[i].type = e.target.value })}>
+                      {TYPES_HISTORIQUE.map(t => <option key={t}>{t}</option>)}
+                    </select></span>
+                  <DateSiderienne label="Date" optionnel valeur={it.date}
+                    surChange={v => modifier(x => { x.historique[i].date = v })} />
+                </div>
+                <div className="rangee">
+                  <span><label>PNJ concerné</label>
+                    <select value={it.pnjId || ''} onChange={e => modifier(x => { x.historique[i].pnjId = e.target.value || null })}>
                       <option value="">—</option>
                       {univers.pnjs.map(pp => <option key={pp.id} value={pp.id}>{pp.nom}</option>)}
                     </select></span>
-                  <DateSiderienne label="Date" optionnel valeur={it.date}
-                    surChange={v => modifier(x => { x.interactions[i].date = v })} />
+                  <span><label>Lieu</label>
+                    <select value={it.lieuId || ''} onChange={e => modifier(x => { x.historique[i].lieuId = e.target.value || null })}>
+                      <option value="">—</option>
+                      {univers.lieux.map(ll => <option key={ll.id} value={ll.id}>{ll.nom}</option>)}
+                    </select></span>
                 </div>
                 <Champ label="Ce qui s'est passé" zone value={it.resume}
-                  onChange={e => modifier(x => { x.interactions[i].resume = e.target.value })} />
+                  onChange={e => modifier(x => { x.historique[i].resume = e.target.value })} />
                 <Champ label="Effet (compteur, réputation, promesse...)" value={it.effet}
-                  onChange={e => modifier(x => { x.interactions[i].effet = e.target.value })} />
-                <div className="aide">{p ? `${p.nom} · ` : ''}{it.date != null ? fmtDate(it.date) : 'sans date'}</div>
+                  onChange={e => modifier(x => { x.historique[i].effet = e.target.value })} />
+                <div className="aide">{it.type}{p ? ` · ${p.nom}` : ''}{l ? ` · ${l.nom}` : ''} · {it.date != null ? fmtDate(it.date) : 'sans date'}</div>
                 <button className="btn clair" style={{ marginTop: 6 }}
-                  onClick={() => modifier(x => { x.interactions.splice(i, 1) })}>retirer</button>
+                  onClick={() => modifier(x => { x.historique.splice(i, 1) })}>retirer</button>
               </div>
             )
           })}
           <button className="btn clair" onClick={() => modifier(x => {
-            x.interactions.push({ id: uid('int'), date: null, pnjId: univers.pnjs[0]?.id || '', resume: '', effet: '' })
-          })}>+ interaction</button>
+            x.historique.push(nouvelleEntreeHistorique())
+          })}>+ entrée d'historique</button>
 
           <div style={{ marginTop: 24 }}>
             <button className="btn danger" onClick={supprimer}>Supprimer ce personnage</button>

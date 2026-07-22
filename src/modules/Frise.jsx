@@ -84,7 +84,7 @@ export default function Frise() {
   for (let j = Math.floor(jDe(MARGE_G) / pas) * pas; xDe(j) < largeur; j += pas) if (xDe(j) >= MARGE_G - 4) ticks.push(j)
 
   // ── Pastilles : collecte par ligne ──
-  const couleurEvt = (e) => e.couleur || arc(e.arcId)?.couleur || faction(e.factionId)?.couleur || '#8a8272'
+  const couleurEvt = (e) => faction(e.factionId)?.couleur || arc(e.arcId)?.couleur || '#8a8272'
   const texteClair = (hex) => {
     const n = parseInt((hex || '#888888').slice(1), 16)
     return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) < 150
@@ -94,21 +94,24 @@ export default function Frise() {
   univers.evenements.forEach(e => {
     e.participants.filter(id => id in indexLigne).forEach(id => {
       const x = xDe(e.debut)
-      const larg = e.fin != null && xDe(e.fin) > x
-        ? Math.max(24, xDe(e.fin) - x)
-        : Math.min(170, Math.max(26, 12 + e.titre.length * 5.2))
-      poser({ obj: e, ligne: indexLigne[id], x, larg, coul: couleurEvt(e), creux: false, titre: e.titre })
+      const ponctuel = !(e.fin != null && xDe(e.fin) > x)
+      const larg = ponctuel
+        ? Math.min(180, 16 + Math.max(20, e.titre.length * 5.2))
+        : Math.max(24, xDe(e.fin) - x)
+      poser({ obj: e, ligne: indexLigne[id], x, larg, coul: couleurEvt(e), creux: false, titre: e.titre,
+        ponctuel, symbole: e.symbole || 'losange', taille: 4 + (e.importance || 1) * 1.6 })
     })
   })
   univers.joueurs.forEach(j => {
     if (!(j.id in indexLigne)) return
-    j.interactions.forEach(it => {
+    ;(j.historique || []).forEach(it => {
       if (it.date == null) return
       const pnjX = univers.pnjs.find(p => p.id === it.pnjId)
-      const titre = pnjX?.nom || 'interaction'
+      const lieuX = univers.lieux.find(l => l.id === it.lieuId)
+      const titre = pnjX?.nom || lieuX?.nom || it.type || 'entrée'
       poser({ obj: { titre: `${j.personnage} × ${titre}`, desc: it.resume, debut: it.date, fin: null },
         ligne: indexLigne[j.id], x: xDe(it.date), larg: Math.min(140, Math.max(24, 12 + titre.length * 5.2)),
-        coul: faction(pnjX?.faction)?.couleur || '#8a8272', creux: true, titre })
+        coul: faction(pnjX?.faction)?.couleur || '#8a8272', creux: true, titre, ponctuel: false })
     })
   })
 
@@ -205,15 +208,15 @@ export default function Frise() {
             const x = xDe(j), majr = j % pasMajeur === 0
             return <g key={j}>
               <line x1={x} y1={H_AXE - 12} x2={x} y2={majr ? hauteur : H_AXE}
-                stroke={majr ? '#7a6a3f' : 'rgba(122,106,63,.2)'} strokeWidth={majr ? 1.4 : 1} />
+                stroke={majr ? 'var(--axe)' : 'rgba(122,106,63,.25)'} strokeWidth={majr ? 1.4 : 1} />
               {(majr || pas >= JPA) && <text x={x + 4} y={H_AXE - 18}
-                style={{ font: (majr ? '700 12px' : '11px') + ' monospace', fill: majr ? '#3d3319' : '#5c5232' }}>
+                style={{ font: (majr ? '700 12px' : '11px') + ' monospace', fill: majr ? 'var(--svg-texte-fort)' : 'var(--svg-texte)' }}>
                 {precision === 'jour' && !majr ? String(depuisJour(j).jour)
                   : precision === 'saison' && !majr ? SAISONS[depuisJour(j).sais]
                   : precision === 'jour' && majr ? fmtDate(j, 'saison') : fmtDate(j, 'an')}</text>}
             </g>
           })}
-          <line x1="0" y1={H_AXE} x2={largeur} y2={H_AXE} stroke="#7a6a3f" strokeWidth="2" />
+          <line x1="0" y1={H_AXE} x2={largeur} y2={H_AXE} stroke="var(--axe)" strokeWidth="2" />
           {liens.map((l, i) => (l.x > MARGE_G - 10 && l.x < largeur + 10) &&
             <line key={i} x1={l.x} y1={l.y1} x2={l.x} y2={l.y2} stroke="rgba(38,34,26,.35)" strokeDasharray="2 3" />)}
           {marques.map((m, i) => {
@@ -221,16 +224,38 @@ export default function Frise() {
             const g = geo[m.ligne]
             const y = g.top + 3 + m.rangee * (H_PASTILLE + ECART)
             const clair = texteClair(m.coul)
+            const zoomMax = () => setVue({ ech: 6, t0: m.obj.debut - (largeur + MARGE_G) / 2 / 6 })
+            const props = {
+              style: { cursor: 'pointer' },
+              onMouseMove: (ev) => setSurvol({ x: ev.clientX, y: ev.clientY, obj: m.obj }),
+              onMouseLeave: () => setSurvol(null),
+              onDoubleClick: zoomMax,
+            }
+            if (m.ponctuel) {
+              const cy = y + H_PASTILLE / 2, tS = m.taille || 6
+              const symb = m.symbole === 'cercle' ? <circle cx={m.x} cy={cy} r={tS} fill={m.coul} stroke="rgba(0,0,0,.35)" />
+                : m.symbole === 'carre' ? <rect x={m.x - tS} y={cy - tS} width={2 * tS} height={2 * tS} fill={m.coul} stroke="rgba(0,0,0,.35)" />
+                : m.symbole === 'triangle' ? <path d={`M${m.x},${cy - tS} L${m.x + tS},${cy + tS} L${m.x - tS},${cy + tS} Z`} fill={m.coul} stroke="rgba(0,0,0,.35)" />
+                : m.symbole === 'etoile' ? <polygon points={Array.from({ length: 10 }, (_, k) => {
+                    const r = k % 2 ? tS / 2.2 : tS, a = -Math.PI / 2 + k * Math.PI / 5
+                    return `${m.x + r * Math.cos(a)},${cy + r * Math.sin(a)}`
+                  }).join(' ')} fill={m.coul} stroke="rgba(0,0,0,.35)" />
+                : <path d={`M${m.x},${cy - tS} L${m.x + tS},${cy} L${m.x},${cy + tS} L${m.x - tS},${cy} Z`} fill={m.coul} stroke="rgba(0,0,0,.35)" />
+              const nbCar = Math.floor((m.larg - tS - 8) / 5.2)
+              const txt = m.titre.length > nbCar ? (nbCar > 2 ? m.titre.slice(0, nbCar - 1) + '…' : '') : m.titre
+              return <g key={i} {...props}>{symb}
+                {txt && <text x={m.x + tS + 4} y={cy + 3.5}
+                  style={{ font: '9.5px "Palatino Linotype", serif', fill: 'var(--svg-texte-fort)', pointerEvents: 'none' }}>{txt}</text>}
+              </g>
+            }
             const nbCar = Math.floor((m.larg - 10) / 5.2)
             const txt = m.titre.length > nbCar ? (nbCar > 2 ? m.titre.slice(0, nbCar - 1) + '…' : '') : m.titre
-            return <g key={i} style={{ cursor: 'pointer' }}
-              onMouseMove={(ev) => setSurvol({ x: ev.clientX, y: ev.clientY, obj: m.obj })}
-              onMouseLeave={() => setSurvol(null)}>
+            return <g key={i} {...props}>
               <rect x={m.x} y={y} width={m.larg} height={H_PASTILLE} rx="7"
                 fill={m.creux ? 'var(--parch)' : m.coul} stroke={m.creux ? m.coul : 'rgba(0,0,0,.35)'}
                 strokeWidth={m.creux ? 1.6 : 1} />
               {txt && <text x={m.x + 6} y={y + 11}
-                style={{ font: '9.5px "Palatino Linotype", serif', fill: m.creux ? '#3d3319' : (clair ? '#f2ead6' : '#26221a'), pointerEvents: 'none' }}>{txt}</text>}
+                style={{ font: '9.5px "Palatino Linotype", serif', fill: m.creux ? 'var(--svg-texte-fort)' : (clair ? '#f2ead6' : '#26221a'), pointerEvents: 'none' }}>{txt}</text>}
             </g>
           })}
         </svg>

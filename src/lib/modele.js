@@ -5,8 +5,13 @@ export const uid = (p = 'x') => p + '_' + Math.random().toString(36).slice(2, 9)
 // ── Gabarits d'entités ──────────────────────────────────────
 export const nouveauPnj = () => ({
   id: uid('pnj'), nom: 'Nouveau PNJ', role: '', faction: null,
+  poste: '', superieurId: null, compteurs: [],
   description: '', secrets: '', repliques: [],
   arbre: null, // rempli par nouvelArbre() à la demande
+})
+
+export const nouveauCompteur = () => ({
+  id: uid('cpt'), nom: 'Compteur', min: 0, max: 8, valeur: 0, description: '',
 })
 
 export const nouvelArbre = () => ({
@@ -19,14 +24,27 @@ export const nouvelArbre = () => ({
 
 export const nouveauJoueur = () => ({
   id: uid('pj'), joueur: '', personnage: 'Nouveau personnage', classe: '', niveau: 1,
-  faction: null, notes: '',
+  faction: null, notes: '', citations: [],
   reputations: {},      // factionId -> -4..+4
-  interactions: [],     // { id, date (jour sidérien|null), pnjId, resume, effet }
+  historique: [],       // { id, type, date, pnjId, lieuId, resume, effet }
 })
+
+export const TYPES_HISTORIQUE = ['interaction', 'combat', 'lieu', 'révélation', 'autre']
+
+export const nouvelleEntreeHistorique = () => ({
+  id: uid('his'), type: 'interaction', date: null, pnjId: null, lieuId: null, resume: '', effet: '',
+})
+
+export const nouveauLieu = () => ({
+  id: uid('lieu'), nom: 'Nouveau lieu', type: 'quartier', factionId: null,
+  parentId: null, description: '', secrets: '',
+})
+
+export const TYPES_LIEU = ['région', 'ville', 'quartier', 'bâtiment', 'site']
 
 export const nouvelleFaction = () => ({
   id: uid('fac'), nom: 'Nouvelle faction', couleur: '#a3512e', devise: '',
-  description: '', objectifs: '', ressources: '', chefIds: [],
+  description: '', objectifs: '', ressources: '', chefId: null,
 })
 
 export const nouvelEvenement = () => ({
@@ -45,14 +63,35 @@ export const SYMBOLES = ['losange', 'cercle', 'carre', 'etoile', 'triangle']
 // Migration douce : garantit les champs ajoutés au fil des versions.
 export const normaliser = (u) => {
   u.arcs ||= []
-  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.couleur ??= null; e.sessionId ??= null })
-  u.campagnes.forEach(c => { c.sessions ||= [] })
+  u.lieux ||= []
+  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; delete e.couleur })
+  u.campagnes.forEach(c => {
+    c.sessions ||= []
+    c.arcId ??= null
+    delete c.depart
+    c.sessions.forEach(s => { s.sections ||= [] })
+  })
+  u.factions.forEach(f => {
+    if (f.chefId === undefined) f.chefId = (f.chefIds && f.chefIds[0]) || null
+    delete f.chefIds
+  })
+  u.pnjs.forEach(p => { p.poste ??= ''; p.superieurId ??= null; p.compteurs ||= [] })
+  u.joueurs.forEach(j => {
+    j.citations ||= []
+    if (!j.historique) {
+      j.historique = (j.interactions || []).map(i => ({
+        id: i.id || uid('his'), type: 'interaction', date: i.date ?? null,
+        pnjId: i.pnjId || null, lieuId: null, resume: i.resume || '', effet: i.effet || '',
+      }))
+    }
+    delete j.interactions
+  })
   return u
 }
 
 export const nouvelleCampagne = () => ({
   id: uid('cmp'), code: '', titre: 'Nouvelle campagne', factionId: null, saison: 1,
-  pitch: '', ton: '', depart: 'M0', duree: '', niveaux: '',
+  arcId: null, pitch: '', ton: '', duree: '', niveaux: '',
   actes: [],            // { id, titre, resume, pivot }
   sessions: [],         // { id, code, titre, date, resume }
   pnjIds: [], issues: '',
@@ -60,6 +99,7 @@ export const nouvelleCampagne = () => ({
 
 export const nouvelleSession = () => ({
   id: uid('ses'), code: '', titre: 'Nouvelle session', date: null, resume: '',
+  sections: [],   // { id, titre, contenu } : la préparation à lire en session
 })
 
 // ── Univers de départ (seed minimal, tout est éditable) ─────

@@ -27,7 +27,7 @@ function mdPnj(p, factions) {
 }
 
 function mdFaction(f, pnjs) {
-  const chefs = f.chefIds.map(id => pnjs.find(p => p.id === id)).filter(Boolean)
+  const chefs = [pnjs.find(p => p.id === f.chefId)].filter(Boolean)
   let md = `#Faction\n\n# ${f.nom}\n\n`
   if (f.devise) md += `*« ${f.devise} »*\n\n`
   md += `${f.description}\n`
@@ -47,11 +47,14 @@ function mdJoueur(j, factions, pnjs) {
     md += `\n## Réputations\n\n| Faction | Score |\n|---|---|\n`
     md += reps.map(([fid, v]) => `| ${factions.find(x => x.id === fid)?.nom || fid} | ${v > 0 ? '+' : ''}${v} |`).join('\n') + '\n'
   }
-  if (j.interactions?.length) {
-    md += `\n## Interactions\n\n`
-    md += j.interactions.map(i => {
+  if (j.citations?.filter(Boolean).length) {
+    md += `\n## Citations\n\n${j.citations.filter(Boolean).map(c => `> ${c}`).join('\n\n')}\n`
+  }
+  if (j.historique?.length) {
+    md += `\n## Historique\n\n`
+    md += j.historique.map(i => {
       const p = pnjs.find(x => x.id === i.pnjId)
-      return `- **${i.date != null ? fmtDate(i.date) : 'sans date'}** · ${p ? lien(p.nom) : '?'} : ${i.resume}${i.effet ? ` *(${i.effet})*` : ''}`
+      return `- **${i.date != null ? fmtDate(i.date) : 'sans date'}** · *${i.type}*${p ? ` · ${lien(p.nom)}` : ''} : ${i.resume}${i.effet ? ` *(${i.effet})*` : ''}`
     }).join('\n') + '\n'
   }
   return md

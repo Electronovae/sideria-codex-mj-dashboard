@@ -10,6 +10,7 @@ import Campagnes from './modules/Campagnes.jsx'
 import Frise from './modules/Frise.jsx'
 import Codex from './modules/Codex.jsx'
 import Graphe from './modules/Graphe.jsx'
+import Lieux from './modules/Lieux.jsx'
 
 export const Ctx = React.createContext(null)
 
@@ -19,6 +20,7 @@ const MODULES = [
   ['campagnes', 'Méta & Campagnes', Campagnes],
   ['evenements', 'Événements', Evenements],
   ['factions', 'Factions', Factions],
+  ['lieux', 'Lieux', Lieux],
   ['pnjs', 'PNJ & Arbres', Pnjs],
   ['joueurs', 'Joueurs', Joueurs],
   ['frise', 'Frise chronologique', Frise],
@@ -29,17 +31,37 @@ export default function App() {
   const [univers, setUnivers] = useState(chargerLocal)
   const [onglet, setOnglet] = useState('codex')
   const [codexCible, setCodexCible] = useState(null)
+  const [theme, setTheme] = useState(() => { try { return localStorage.getItem('sideria-theme') || 'clair' } catch { return 'clair' } })
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    try { localStorage.setItem('sideria-theme', theme) } catch {}
+  }, [theme])
   const [statut, setStatut] = useState('local')
   const [idSupabase, setIdSupabase] = useState(null)
   const fichierRef = useRef(null)
   const minuteur = useRef(null)
 
-  // Autosave local, 800 ms après la dernière modification.
+  // Autosave local (800 ms) puis Supabase (30 s) après la dernière modification.
+  const minuteurSb = useRef(null)
   useEffect(() => {
     clearTimeout(minuteur.current)
     minuteur.current = setTimeout(() => { sauverLocal(univers); setStatut(s => s.startsWith('supabase') ? s : 'local ✓') }, 800)
-    return () => clearTimeout(minuteur.current)
+    if (supabaseActif()) {
+      clearTimeout(minuteurSb.current)
+      minuteurSb.current = setTimeout(async () => {
+        try {
+          setStatut('supabase…')
+          const id = await pousserSupabase(univers, idSupabaseRef.current)
+          idSupabaseRef.current = id
+          setIdSupabase(id)
+          setStatut('supabase ✓ ' + new Date().toLocaleTimeString())
+        } catch (err) { setStatut('supabase : erreur (' + (err.message || '?') + ')') }
+      }, 30000)
+    }
+    return () => { clearTimeout(minuteur.current); clearTimeout(minuteurSb.current) }
   }, [univers])
+  const idSupabaseRef = useRef(null)
+  useEffect(() => { idSupabaseRef.current = idSupabase }, [idSupabase])
 
   // maj(fn) : toutes les mutations passent par là.
   const maj = (fn) => setUnivers(u => {
@@ -85,6 +107,8 @@ export default function App() {
         <h1>Sidéria Studio</h1>
         <span className="statut">sauvegarde : {statut}</span>
         <span className="sep" />
+        <button className="btn" onClick={() => setTheme(th => th === 'clair' ? 'sombre' : 'clair')}>
+          {theme === 'clair' ? 'Mode sombre' : 'Mode clair'}</button>
         <button className="btn" onClick={() => exporterJson(univers)}>Exporter JSON</button>
         <button className="btn" onClick={() => fichierRef.current.click()}>Importer JSON</button>
         <button className="btn" onClick={() => exporterObsidian(univers)}>Export Obsidian (.zip)</button>

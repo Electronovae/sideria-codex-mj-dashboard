@@ -79,7 +79,7 @@ export const DateSiderienne = ({ label, valeur, surChange, optionnel = false }) 
 
 // Cadre générique liste (gauche) + fiche (droite), avec tri optionnel.
 // tris : { libellé: (item) => valeur } ; le premier est le tri par défaut.
-export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, libelleAjout = '+ Ajouter', tris = null }) => {
+export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, libelleAjout = '+ Ajouter', tris = null, groupe = null }) => {
   const cles = tris ? Object.keys(tris) : []
   const [tri, setTri] = React.useState(cles[0] || null)
   const affiches = tri && tris
@@ -101,11 +101,20 @@ export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, lib
             </select>
           </div>
         )}
-        {affiches.map(it => (
-          <div key={it.id} className={'item' + (it.id === selId ? ' sel' : '')} onClick={() => surSel(it.id)}>
-            {rendu(it)}
-          </div>
-        ))}
+        {affiches.map((it, i) => {
+          const grpActif = groupe && tri === cles[0]
+          const entete = grpActif && (i === 0 || groupe(affiches[i - 1]) !== groupe(it))
+            ? <div className="sous-titre-liste" key={'g' + i}>{groupe(it)}</div> : null
+          return (
+            <React.Fragment key={it.id}>
+              {entete}
+              <div className={'item' + (it.id === selId ? ' sel' : '')} onClick={() => surSel(it.id)}
+                style={grpActif ? { paddingLeft: 22 } : undefined}>
+                {rendu(it)}
+              </div>
+            </React.Fragment>
+          )
+        })}
       </div>
       <div className="fiche">
         {enfants || <div className="vide">Sélectionne un élément à gauche, ou crées-en un.</div>}
