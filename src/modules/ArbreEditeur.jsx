@@ -125,14 +125,21 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
     const id = uid('n')
     const centre = { x: (taille.w / 2 - vue.x) / vue.z - NW / 2, y: (240 - vue.y) / vue.z }
     modifier(a => {
-      a.noeuds.push({ id, type: 'etat', phase: 0, titre: 'Nouveau nœud', description: '', replique: '', condition: '', x: centre.x, y: centre.y })
+      a.noeuds.push({ id, type: 'etat', phase: 0, titre: 'Nouveau nœud', description: '', x: centre.x, y: centre.y })
     })
     setSel({ type: 'noeud', id })
   }
   const recadrer = () => {
     if (!arbre.noeuds.length) return
     const xs = arbre.noeuds.map(n => n.x), ys = arbre.noeuds.map(n => n.y)
-    setVue({ x: 30 - Math.min(...xs), y: 30 - Math.min(...ys), z: 1 })
+    const x1 = Math.min(...xs), x2 = Math.max(...xs) + NW
+    const y1 = Math.min(...ys), y2 = Math.max(...ys) + NH
+    const z = Math.min(1.4, Math.max(0.3, Math.min((taille.w - 60) / (x2 - x1), (480 - 60) / (y2 - y1))))
+    setVue({
+      z,
+      x: (taille.w - (x2 - x1) * z) / 2 - x1 * z,
+      y: (480 - (y2 - y1) * z) / 2 - y1 * z,
+    })
   }
 
   const noeudSel = sel?.type === 'noeud' ? arbre.noeuds.find(n => n.id === sel.id) : null
@@ -141,37 +148,6 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
 
   return (
     <div>
-      {/* Compteur de l'arbre */}
-      <div className="carte">
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <Manometre compteur={c} surDelta={(d) => modifier(a => {
-            a.compteur.valeur = Math.min(a.compteur.max, Math.max(a.compteur.min, (a.compteur.valeur ?? a.compteur.initial ?? 0) + d))
-          })} />
-          <div style={{ flex: 1, minWidth: 260 }}>
-            <div className="rangee">
-              <span><label>Nom du compteur</label>
-                <input value={c.nom} onChange={e => modifier(a => { a.compteur.nom = e.target.value })} /></span>
-              <span className="etroit"><label>Min</label>
-                <input type="number" value={c.min} onChange={e => modifier(a => { a.compteur.min = +e.target.value })} /></span>
-              <span className="etroit"><label>Max</label>
-                <input type="number" value={c.max} onChange={e => modifier(a => { a.compteur.max = +e.target.value })} /></span>
-            </div>
-            <span><label>Ce qu'il mesure</label>
-              <input value={c.description} onChange={e => modifier(a => { a.compteur.description = e.target.value })} /></span>
-            <label>Événements du compteur (libellé + delta)</label>
-            {c.evenements.map((ev, i) => (
-              <div className="rangee" key={i}>
-                <input value={ev.label} onChange={e => modifier(a => { a.compteur.evenements[i].label = e.target.value })} />
-                <input className="etroit" type="number" value={ev.delta}
-                  onChange={e => modifier(a => { a.compteur.evenements[i].delta = +e.target.value })} />
-                <button className="btn clair etroit" onClick={() => modifier(a => { a.compteur.evenements.splice(i, 1) })}>×</button>
-              </div>
-            ))}
-            <button className="btn clair" onClick={() => modifier(a => { a.compteur.evenements.push({ label: '', delta: 1 }) })}>+ événement</button>
-          </div>
-        </div>
-      </div>
-
       {/* Canevas */}
       <div style={{ display: 'flex', gap: 6, margin: '10px 0 6px' }}>
         <button className="btn clair" onClick={ajouterNoeud}>+ nœud</button>
@@ -255,12 +231,6 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
             <span><label>Description (à lire ou jouer)</label>
               <textarea style={{ minHeight: 90 }} value={noeudSel.description}
                 onChange={e => modifier(a => { a.noeuds.find(n => n.id === sel.id).description = e.target.value })} /></span>
-            <span><label>Réplique type</label>
-              <textarea style={{ minHeight: 60 }} value={noeudSel.replique}
-                onChange={e => modifier(a => { a.noeuds.find(n => n.id === sel.id).replique = e.target.value })} /></span>
-            <span><label>Condition d'activation</label>
-              <input value={noeudSel.condition || ''} placeholder="Compteur ≥ 5"
-                onChange={e => modifier(a => { a.noeuds.find(n => n.id === sel.id).condition = e.target.value })} /></span>
             <button className="btn danger" style={{ marginTop: 10 }} onClick={() => {
               modifier(a => {
                 a.transitions = a.transitions.filter(t => t.from !== sel.id && t.to !== sel.id)

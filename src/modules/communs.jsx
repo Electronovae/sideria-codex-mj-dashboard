@@ -122,3 +122,36 @@ export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, lib
     </>
   )
 }
+
+
+// ── Wikilinks : résout [[Nom]] vers l'entité correspondante ──
+export function resoudreNom(univers, nom) {
+  const n = nom.trim().toLowerCase()
+  const chercher = (liste, type, cle) => {
+    const x = liste.find(e => (e[cle] || '').toLowerCase() === n)
+    return x ? { type, id: x.id } : null
+  }
+  return chercher(univers.pnjs, 'pnj', 'nom')
+    || chercher(univers.joueurs, 'pj', 'personnage')
+    || chercher(univers.factions, 'faction', 'nom')
+    || chercher(univers.lieux, 'lieu', 'nom')
+    || chercher(univers.campagnes, 'campagne', 'titre')
+    || chercher(univers.arcs, 'arc', 'nom')
+    || chercher(univers.evenements, 'evenement', 'titre')
+}
+
+// Rend un texte en transformant les [[Nom]] en liens cliquables vers le Codex.
+export function Texte({ children }) {
+  const { univers, setOnglet, setCodexCible } = useStudio()
+  if (!children) return null
+  const morceaux = String(children).split(/(\[\[[^\]]+\]\])/g)
+  return <>{morceaux.map((m, i) => {
+    const lien = m.match(/^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/)
+    if (!lien) return <React.Fragment key={i}>{m}</React.Fragment>
+    const cible = resoudreNom(univers, lien[1])
+    const libelle = lien[2] || lien[1]
+    if (!cible) return <span key={i} style={{ color: 'var(--gris)', borderBottom: '1px dashed var(--gris)' }} title="Aucune entité ne porte ce nom">{libelle}</span>
+    return <span key={i} onClick={() => { setCodexCible(cible); setOnglet('codex') }}
+      style={{ color: '#b8912a', cursor: 'pointer', borderBottom: '1px dashed var(--or)' }}>{libelle}</span>
+  })}</>
+}

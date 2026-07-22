@@ -10,8 +10,11 @@ function mdPnj(p, factions) {
   const f = factions.find(x => x.id === p.faction)
   let md = `#PNJ\n\n# ${p.nom}\n\n**Rôle :** ${p.role || '?'} · **Faction :** ${f ? lien(f.nom) : 'aucune'}\n\n${p.description}\n`
   if (p.repliques?.length) md += `\n## Répliques\n${p.repliques.map(r => `> ${r}`).join('\n\n')}\n`
+  if (p.compteurs?.length) {
+    md += `\n## Compteurs\n\n${p.compteurs.map(c => `- **${c.nom}** (${c.min} à ${c.max}, valeur ${c.valeur ?? c.min}) : ${c.description}`).join('\n')}\n`
+  }
   if (p.arbre) {
-    md += `\n## Arbre narratif\n\n**${p.arbre.compteur.nom}** (${p.arbre.compteur.min} à ${p.arbre.compteur.max}, départ ${p.arbre.compteur.initial}) : ${p.arbre.compteur.description}\n`
+    md += `\n## Arbre narratif\n`
     md += `\n| Nœud | Type | Description |\n|---|---|---|\n`
     md += p.arbre.noeuds.map(n => `| ${n.titre} | ${n.type} | ${n.description.replace(/\n/g, ' ')} |`).join('\n') + '\n'
     if (p.arbre.transitions.length) {

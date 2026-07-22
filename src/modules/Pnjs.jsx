@@ -77,11 +77,13 @@ export default function Pnjs() {
           <p className="aide">Les jauges propres à ce PNJ (confiance, patience, corruption...), manipulables en mode session, indépendantes de l'arbre.</p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             {pnj.compteurs.map((c, i) => (
-              <div className="carte" key={c.id} style={{ minWidth: 250 }}>
-                <Manometre compteur={c} surDelta={(d) => modifier(p => {
-                  const x = p.compteurs[i]
-                  x.valeur = Math.min(x.max, Math.max(x.min, (x.valeur ?? x.min) + d))
-                })} />
+              <div className="carte" key={c.id} style={{ minWidth: 290, maxWidth: 420 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <Manometre compteur={c} surDelta={(d) => modifier(p => {
+                    const x = p.compteurs[i]
+                    x.valeur = Math.min(x.max, Math.max(x.min, (x.valeur ?? x.min) + d))
+                  })} />
+                </div>
                 <div className="rangee">
                   <span><label>Nom</label>
                     <input value={c.nom} onChange={e => modifier(p => { p.compteurs[i].nom = e.target.value })} /></span>
@@ -92,12 +94,43 @@ export default function Pnjs() {
                 </div>
                 <span><label>Ce qu'il mesure</label>
                   <input value={c.description} onChange={e => modifier(p => { p.compteurs[i].description = e.target.value })} /></span>
-                <button className="btn clair" style={{ marginTop: 6 }}
-                  onClick={() => modifier(p => { p.compteurs.splice(i, 1) })}>retirer</button>
+                <label>Seuils (zones du manomètre)</label>
+                {c.seuils.map((s, k) => (
+                  <div className="rangee" key={k}>
+                    <input className="etroit" type="number" title="jusqu'à" value={s.jusqua}
+                      onChange={e => modifier(p => { p.compteurs[i].seuils[k].jusqua = +e.target.value })} />
+                    <input placeholder="libellé" value={s.libelle}
+                      onChange={e => modifier(p => { p.compteurs[i].seuils[k].libelle = e.target.value })} />
+                    <select className="etroit" value={s.couleur}
+                      onChange={e => modifier(p => { p.compteurs[i].seuils[k].couleur = e.target.value })}>
+                      <option value="vert">vert</option><option value="orange">orange</option><option value="rouge">rouge</option>
+                    </select>
+                    <button className="btn clair etroit" onClick={() => modifier(p => { p.compteurs[i].seuils.splice(k, 1) })}>×</button>
+                  </div>
+                ))}
+                <button className="btn clair" onClick={() => modifier(p => {
+                  p.compteurs[i].seuils.push({ jusqua: c.max, libelle: '', couleur: 'orange' })
+                })}>+ seuil</button>
+                <label>Événements du compteur (boutons du mode session)</label>
+                {c.evenements.map((ev, k) => (
+                  <div className="rangee" key={k}>
+                    <input placeholder="Rapport rendu à Sterling" value={ev.label}
+                      onChange={e => modifier(p => { p.compteurs[i].evenements[k].label = e.target.value })} />
+                    <input className="etroit" type="number" value={ev.delta}
+                      onChange={e => modifier(p => { p.compteurs[i].evenements[k].delta = +e.target.value })} />
+                    <button className="btn clair etroit" onClick={() => modifier(p => { p.compteurs[i].evenements.splice(k, 1) })}>×</button>
+                  </div>
+                ))}
+                <button className="btn clair" onClick={() => modifier(p => {
+                  p.compteurs[i].evenements.push({ label: '', delta: 1 })
+                })}>+ événement</button>
+                <div style={{ marginTop: 8 }}>
+                  <button className="btn clair" onClick={() => modifier(p => { p.compteurs.splice(i, 1) })}>retirer le compteur</button>
+                </div>
               </div>
             ))}
           </div>
-          <button className="btn clair" onClick={() => modifier(p => { p.compteurs.push(nouveauCompteur()) })}>+ compteur</button>
+                    <button className="btn clair" onClick={() => modifier(p => { p.compteurs.push(nouveauCompteur()) })}>+ compteur</button>
 
           <h3>Arbre de décision</h3>
           {!pnj.arbre

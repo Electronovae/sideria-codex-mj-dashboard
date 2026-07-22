@@ -11,6 +11,7 @@ import Frise from './modules/Frise.jsx'
 import Codex from './modules/Codex.jsx'
 import Graphe from './modules/Graphe.jsx'
 import Lieux from './modules/Lieux.jsx'
+import Recherche from './modules/Recherche.jsx'
 
 export const Ctx = React.createContext(null)
 
@@ -63,12 +64,34 @@ export default function App() {
   const idSupabaseRef = useRef(null)
   useEffect(() => { idSupabaseRef.current = idSupabase }, [idSupabase])
 
-  // maj(fn) : toutes les mutations passent par là.
+  // maj(fn) : toutes les mutations passent par là (avec historique pour Ctrl+Z).
+  const passe = useRef([]), futur = useRef([])
   const maj = (fn) => setUnivers(u => {
+    passe.current.push(u)
+    if (passe.current.length > 50) passe.current.shift()
+    futur.current = []
     const copie = structuredClone(u)
     fn(copie)
     return copie
   })
+  const [recherche, setRecherche] = useState(false)
+  useEffect(() => {
+    const clavier = (e) => {
+      const dansChamp = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); setRecherche(v => !v)
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) {
+        e.preventDefault()
+        if (e.shiftKey) {
+          if (futur.current.length) setUnivers(u => { passe.current.push(u); return futur.current.pop() })
+        } else if (passe.current.length) {
+          setUnivers(u => { futur.current.push(u); return passe.current.pop() })
+        }
+      }
+    }
+    window.addEventListener('keydown', clavier)
+    return () => window.removeEventListener('keydown', clavier)
+  }, [])
 
   const ctx = useMemo(() => ({ univers, maj, setOnglet, codexCible, setCodexCible }), [univers, codexCible])
 
@@ -125,6 +148,7 @@ export default function App() {
         ))}
       </nav>
       <main><Module /></main>
+      {recherche && <Recherche fermer={() => setRecherche(false)} />}
     </Ctx.Provider>
   )
 }

@@ -12,13 +12,12 @@ export const nouveauPnj = () => ({
 
 export const nouveauCompteur = () => ({
   id: uid('cpt'), nom: 'Compteur', min: 0, max: 8, valeur: 0, description: '',
+  seuils: [{ jusqua: 4, libelle: 'Calme', couleur: 'vert' }, { jusqua: 8, libelle: 'Rupture', couleur: 'rouge' }],
+  evenements: [],   // { label, delta }
 })
 
 export const nouvelArbre = () => ({
-  compteur: { nom: 'Compteur', min: 0, max: 8, initial: 0, description: '',
-    seuils: [{ jusqua: 4, libelle: 'Calme', couleur: 'vert' }, { jusqua: 8, libelle: 'Rupture', couleur: 'rouge' }],
-    evenements: [] },
-  noeuds: [{ id: 'n0', type: 'etat', phase: 0, titre: 'État initial', description: '', replique: '', condition: '' }],
+  noeuds: [{ id: 'n0', type: 'etat', phase: 0, titre: 'État initial', description: '', x: 60, y: 40 }],
   transitions: [],
 })
 
@@ -64,6 +63,8 @@ export const SYMBOLES = ['losange', 'cercle', 'carre', 'etoile', 'triangle']
 export const normaliser = (u) => {
   u.arcs ||= []
   u.lieux ||= []
+  u.meta.lignesForce ||= []      // { id, titre, description }
+  u.meta.arbitrages ||= []       // { id, date, titre, decision }
   u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; delete e.couleur })
   u.campagnes.forEach(c => {
     c.sessions ||= []
@@ -77,9 +78,18 @@ export const normaliser = (u) => {
   })
   u.pnjs.forEach(p => {
     p.poste ??= ''; p.superieurId ??= null; p.compteurs ||= []
-    p.compteurs.forEach(c => { c.valeur ??= c.min ?? 0 })
+    p.compteurs.forEach(c => { c.valeur ??= c.min ?? 0; c.seuils ||= []; c.evenements ||= [] })
     if (p.arbre) {
-      p.arbre.compteur.valeur ??= p.arbre.compteur.initial ?? 0
+      // migration : le compteur intégré à l'arbre devient un compteur personnalisé du PNJ
+      if (p.arbre.compteur) {
+        const c = p.arbre.compteur
+        p.compteurs.push({
+          id: uid('cpt'), nom: c.nom || 'Compteur', min: c.min ?? 0, max: c.max ?? 8,
+          valeur: c.valeur ?? c.initial ?? c.min ?? 0, description: c.description || '',
+          seuils: c.seuils || [], evenements: c.evenements || [],
+        })
+        delete p.arbre.compteur
+      }
       const parPhase = {}
       p.arbre.noeuds.forEach(n => {
         if (n.x == null || n.y == null) {

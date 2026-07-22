@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useStudio, Champ, SelecteurFaction, PucesPnjs } from './communs.jsx'
 import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid } from '../lib/modele.js'
+import { Texte } from './communs.jsx'
 import { DateSiderienne } from './communs.jsx'
 import { fmtDate } from '../lib/calendrier.js'
 import { Manometre } from './ArbreEditeur.jsx'
@@ -155,40 +156,87 @@ export default function Campagnes() {
 }
 
 function Meta({ meta, modifier }) {
+  const { univers, setOnglet, setCodexCible } = useStudio()
+  const campagnesDeSaison = (num) => univers.campagnes.filter(c => c.saison === num)
   return (
     <div>
       <h2>Méta-campagne</h2>
       <Champ label="Nom de l'univers" value={meta.nom} onChange={e => modifier(m => { m.nom = e.target.value })} />
       <Champ label="Thèse (ce que l'histoire globale raconte)" zone value={meta.these}
         onChange={e => modifier(m => { m.these = e.target.value })} />
+
       <h3>Saisons</h3>
-      {meta.saisons.map((s, i) => (
-        <div className="carte" key={s.num}>
-          <div className="rangee">
-            <Champ className="etroit" label="N°" type="number" value={s.num}
-              onChange={e => modifier(m => { m.saisons[i].num = +e.target.value })} />
-            <Champ label="Titre" value={s.titre} onChange={e => modifier(m => { m.saisons[i].titre = e.target.value })} />
-          </div>
-          <div className="rangee">
+      {meta.saisons.map((s, i) => {
+        const camps = campagnesDeSaison(s.num)
+        return (
+          <div className="carte" key={i} style={{ borderLeftColor: 'var(--or)' }}>
+            <div className="rangee">
+              <span className="etroit"><label>N°</label>
+                <input type="number" value={s.num} onChange={e => modifier(m => { m.saisons[i].num = +e.target.value })} /></span>
+              <Champ label="Titre" value={s.titre} onChange={e => modifier(m => { m.saisons[i].titre = e.target.value })} />
+              <Champ className="etroit" label="Horloge" value={s.horloge}
+                onChange={e => modifier(m => { m.saisons[i].horloge = e.target.value })} />
+              <Champ className="etroit" label="Niveaux" value={s.niveaux}
+                onChange={e => modifier(m => { m.saisons[i].niveaux = e.target.value })} />
+            </div>
             <Champ label="Question dramatique" value={s.question}
               onChange={e => modifier(m => { m.saisons[i].question = e.target.value })} />
-            <Champ className="etroit" label="Horloge" value={s.horloge}
-              onChange={e => modifier(m => { m.saisons[i].horloge = e.target.value })} />
-            <Champ className="etroit" label="Niveaux" value={s.niveaux}
-              onChange={e => modifier(m => { m.saisons[i].niveaux = e.target.value })} />
+            <div style={{ marginTop: 8 }}>
+              <label>Campagnes de cette saison ({camps.length})</label>
+              {camps.length
+                ? camps.map(c => {
+                  const f = univers.factions.find(x => x.id === c.factionId)
+                  return <span key={c.id} className="puce" style={{ borderColor: f?.couleur || 'var(--or)' }}
+                    onClick={() => { setCodexCible({ type: 'campagne', id: c.id }); setOnglet('codex') }}>
+                    <span className="rond" style={{ background: f?.couleur || '#888' }} />
+                    {c.code ? c.code + ' · ' : ''}{c.titre}</span>
+                })
+                : <p className="aide">Aucune : rattache des campagnes via leur champ Saison.</p>}
+            </div>
+            <button className="btn clair" style={{ marginTop: 6 }}
+              onClick={() => modifier(m => { m.saisons.splice(i, 1) })}>retirer la saison</button>
           </div>
-          <button className="btn clair" style={{ marginTop: 6 }}
-            onClick={() => modifier(m => { m.saisons.splice(i, 1) })}>retirer la saison</button>
-        </div>
-      ))}
+        )
+      })}
       <button className="btn clair" onClick={() => modifier(m => {
         m.saisons.push({ num: m.saisons.length + 1, titre: '', question: '', horloge: '', niveaux: '' })
       })}>+ saison</button>
-      <p className="aide">Les campagnes se rattachent aux saisons définies ici. La thèse est la boussole : tout arc qui la contredit mérite discussion.</p>
+
+      <h3>Lignes de force</h3>
+      <p className="aide">Les fils transversaux qui traversent toutes les saisons (le dossier, Silas, la mémoire velthari...). Utilise des [[wikilinks]] : ils deviennent cliquables ici et dans le Codex.</p>
+      {meta.lignesForce.map((l, i) => (
+        <div className="carte" key={l.id}>
+          <Champ label="Titre" value={l.titre} onChange={e => modifier(m => { m.lignesForce[i].titre = e.target.value })} />
+          <Champ label="Description" zone value={l.description}
+            onChange={e => modifier(m => { m.lignesForce[i].description = e.target.value })} />
+          {l.description && <p style={{ fontSize: '.86rem' }}><Texte>{l.description}</Texte></p>}
+          <button className="btn clair" onClick={() => modifier(m => { m.lignesForce.splice(i, 1) })}>retirer</button>
+        </div>
+      ))}
+      <button className="btn clair" onClick={() => modifier(m => {
+        m.lignesForce.push({ id: uid('lf'), titre: '', description: '' })
+      })}>+ ligne de force</button>
+
+      <h3>Journal des arbitrages</h3>
+      <p className="aide">Les décisions de design verrouillées, datées. La source de vérité du canon.</p>
+      {meta.arbitrages.map((a, i) => (
+        <div className="carte" key={a.id} style={{ borderLeftColor: 'var(--rouge)' }}>
+          <div className="rangee">
+            <Champ className="etroit" label="Date" placeholder="Juil. 2026" value={a.date}
+              onChange={e => modifier(m => { m.arbitrages[i].date = e.target.value })} />
+            <Champ label="Sujet" value={a.titre} onChange={e => modifier(m => { m.arbitrages[i].titre = e.target.value })} />
+          </div>
+          <Champ label="Décision" zone value={a.decision}
+            onChange={e => modifier(m => { m.arbitrages[i].decision = e.target.value })} />
+          <button className="btn clair" onClick={() => modifier(m => { m.arbitrages.splice(i, 1) })}>retirer</button>
+        </div>
+      ))}
+      <button className="btn clair" onClick={() => modifier(m => {
+        m.arbitrages.push({ id: uid('arb'), date: '', titre: '', decision: '' })
+      })}>+ arbitrage</button>
     </div>
   )
 }
-
 
 function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
   const [modeSession, setModeSession] = React.useState(false)
@@ -335,7 +383,7 @@ function ModeSession({ session, campagne, univers, maj, fermer }) {
           {session.sections.map(sec => (
             <div key={sec.id} style={{ marginBottom: 22 }}>
               <h2 style={{ fontVariant: 'small-caps', color: 'var(--or)', borderBottom: '1px solid var(--parch-mid)', paddingBottom: 4, fontSize: '1.25rem' }}>{sec.titre || 'Section'}</h2>
-              <div style={{ whiteSpace: 'pre-wrap', fontSize: '1.02rem', lineHeight: 1.65 }}>{sec.contenu}</div>
+              <div style={{ whiteSpace: 'pre-wrap', fontSize: '1.02rem', lineHeight: 1.65 }}><Texte>{sec.contenu}</Texte></div>
             </div>
           ))}
           {evtsSession.length > 0 && <>
@@ -361,30 +409,26 @@ function ModeSession({ session, campagne, univers, maj, fermer }) {
                 <strong>{p.nom}</strong>
                 <span className="aide"> · {p.poste || p.role}</span>
                 {ouvert && <div onClick={ev => ev.stopPropagation()} style={{ cursor: 'default', marginTop: 6 }}>
-                  {p.description && <p style={{ fontSize: '.86rem' }}>{p.description}</p>}
+                  {p.description && <p style={{ fontSize: '.86rem' }}><Texte>{p.description}</Texte></p>}
                   {p.repliques.filter(Boolean).map((r, i) =>
                     <p key={i} style={{ borderLeft: '3px solid var(--or)', paddingLeft: 8, fontStyle: 'italic', fontSize: '.86rem', margin: '4px 0' }}>{r}</p>)}
                   {p.secrets && <div style={{ border: '1px dashed var(--rouge)', padding: '5px 8px', fontSize: '.82rem', margin: '6px 0' }}>
                     <span style={{ color: 'var(--rouge)', font: '700 9px monospace', letterSpacing: '.1em' }}>SECRET · </span>{p.secrets}</div>}
-                  {p.arbre && <div style={{ textAlign: 'center', marginTop: 6 }}>
-                    <Manometre compteur={p.arbre.compteur} largeur={190} surDelta={(d) => majPnj(p.id, x => {
-                      const cc = x.arbre.compteur
-                      cc.valeur = borner((cc.valeur ?? cc.initial ?? 0) + d, cc.min, cc.max)
-                    })} />
-                    {p.arbre.compteur.evenements.filter(e => e.label).map((ev, i) => (
-                      <button key={i} className="btn clair" style={{ margin: 2, fontSize: '.72rem' }}
-                        onClick={() => majPnj(p.id, x => {
-                          const cc = x.arbre.compteur
-                          cc.valeur = borner((cc.valeur ?? cc.initial ?? 0) + ev.delta, cc.min, cc.max)
-                        })}>{ev.label} ({ev.delta > 0 ? '+' : ''}{ev.delta})</button>
-                    ))}
-                  </div>}
                   {p.compteurs.map((cpt, i) => (
                     <div key={cpt.id} style={{ textAlign: 'center', marginTop: 6 }}>
                       <Manometre compteur={cpt} largeur={190} surDelta={(d) => majPnj(p.id, x => {
                         const cc = x.compteurs[i]
                         cc.valeur = borner((cc.valeur ?? cc.min) + d, cc.min, cc.max)
                       })} />
+                      <div>
+                        {cpt.evenements.filter(e => e.label).map((ev, k) => (
+                          <button key={k} className="btn clair" style={{ margin: 2, fontSize: '.72rem' }}
+                            onClick={() => majPnj(p.id, x => {
+                              const cc = x.compteurs[i]
+                              cc.valeur = borner((cc.valeur ?? cc.min) + ev.delta, cc.min, cc.max)
+                            })}>{ev.label} ({ev.delta > 0 ? '+' : ''}{ev.delta})</button>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>}
