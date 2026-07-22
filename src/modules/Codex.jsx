@@ -42,6 +42,7 @@ export default function Codex() {
     ['PNJ', 'pnj', [...univers.pnjs].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), x => x.nom],
     ['PJ', 'pj', univers.joueurs, x => x.personnage],
     ['Lieux', 'lieu', univers.lieux, x => x.nom],
+    ['Rapports', 'rapport', univers.rapports, x => x.titre],
     ['Événements', 'evenement', [...univers.evenements].sort((a, b) => a.debut - b.debut), x => x.titre],
   ]
 
@@ -80,6 +81,7 @@ export default function Codex() {
       const camps = univers.campagnes.filter(c => c.pnjIds.includes(id))
       const dirs = univers.factions.filter(fa => fa.chefId === id)
       const inters = univers.joueurs.flatMap(j => (j.historique || []).filter(i => i.pnjId === id).map(i => ({ ...i, j })))
+      const rapportsAuteur = univers.rapports.filter(rr => rr.auteurId === id)
       return <>
         <h2>{x.nom}</h2>
         <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.role}
@@ -94,6 +96,8 @@ export default function Codex() {
         {x.arbre && <Bloc titre="Arbre narratif"><p>{x.arbre.noeuds.length} nœuds, {x.arbre.transitions.length} transitions. Édition dans l'onglet PNJ.</p></Bloc>}
         {x.secrets && <div className="carte" style={{ borderLeftColor: 'var(--rouge)' }}>
           <label>Secrets Maître</label><p>{x.secrets}</p></div>}
+        {rapportsAuteur.length > 0 && <Bloc titre="Rapports rédigés">{rapportsAuteur.map(rr =>
+          <div key={rr.id}><L type="rapport" id={rr.id}>{rr.titre}</L> ({rr.type})</div>)}</Bloc>}
         {(evts.length + camps.length + inters.length) > 0 && <Bloc titre="Apparaît dans">
           {camps.map(c => <div key={c.id}>Campagne · <L type="campagne" id={c.id}>{c.titre}</L></div>)}
           {evts.map(e => <div key={e.id}>{fmtDate(e.debut)} · <L type="evenement" id={e.id}>{e.titre}</L></div>)}
@@ -190,6 +194,20 @@ export default function Codex() {
           <div key={e.id}><L type="lieu" id={e.id}>{e.nom}</L> ({e.type})</div>)}</Bloc>}
         {passages.length > 0 && <Bloc titre="Passages">{passages.map((p2, k) =>
           <div key={k}><L type="pj" id={p2.jj.id}>{p2.jj.personnage}</L>{p2.date != null && <> ({fmtDate(p2.date)})</>} : {p2.resume || p2.type}</div>)}</Bloc>}
+      </>
+    }
+    if (type === 'rapport') {
+      const x = univers.rapports.find(rr => rr.id === id); if (!x) return null
+      const auteur = pnj(x.auteurId)
+      return <>
+        <h2>{x.titre}</h2>
+        <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.type}
+          {auteur && <> · par <L type="pnj" id={auteur.id}>{auteur.nom}</L></>}
+          {x.factionId && <> · <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}
+          {x.date != null && <> · {fmtDate(x.date)}</>}
+          {x.visibleJoueurs && <> · visible joueurs</>}</p>
+        <ChampCodex valeur={x.contenu} vide="Contenu vide."
+          surChange={v => maj(u => { u.rapports.find(rr => rr.id === id).contenu = v })} />
       </>
     }
     if (type === 'evenement') {

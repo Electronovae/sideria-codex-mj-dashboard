@@ -187,15 +187,27 @@ export default function Frise() {
       <div ref={conteneur} style={{ flex: 1, position: 'relative', overflowY: 'auto', overflowX: 'hidden', cursor: 'grab', userSelect: 'none' }}
         onMouseDown={(ev) => { if (ev.button !== 0) return; ev.preventDefault(); drag.current = { x: ev.clientX, t0: vue.t0, actif: false } }} onMouseLeave={() => setSurvol(null)}>
         <svg width={largeur} height={hauteur} style={{ display: 'block' }}>
-          {univers.arcs.map(a => {
-            const x1 = Math.max(MARGE_G, xDe(a.debut)), x2 = Math.min(largeur, xDe(a.fin))
-            if (x2 <= x1) return null
-            return <g key={a.id}>
-              <rect x={x1} y={H_AXE} width={x2 - x1} height={hauteur - H_AXE} fill={a.couleur} opacity=".08" />
-              <rect x={x1} y={H_AXE} width={x2 - x1} height={16} fill={a.couleur} opacity=".55" />
-              <text x={x1 + 6} y={H_AXE + 12} style={{ font: '700 10px monospace', fill: '#fff' }}>{a.nom}</text>
-            </g>
-          })}
+          {(() => {
+            // Étiquettes d'arcs sur plusieurs rangées pour éviter les chevauchements.
+            const visibles = univers.arcs
+              .map(a => ({ a, x1: Math.max(MARGE_G, xDe(a.debut)), x2: Math.min(largeur, xDe(a.fin)) }))
+              .filter(v => v.x2 > v.x1)
+              .sort((u1, u2) => u1.x1 - u2.x1)
+            const finRangee = []
+            return visibles.map(({ a, x1, x2 }) => {
+              const lw = 14 + a.nom.length * 6.4
+              let r = finRangee.findIndex(fin => x1 >= fin + 10)
+              if (r === -1) { r = finRangee.length; finRangee.push(-Infinity) }
+              finRangee[r] = x1 + Math.max(lw, 30)
+              const y = H_AXE + r * 17
+              return <g key={a.id}>
+                <rect x={x1} y={H_AXE} width={x2 - x1} height={hauteur - H_AXE} fill={a.couleur} opacity=".08" />
+                <rect x={x1} y={y} width={Math.min(x2 - x1, Math.max(lw, 30))} height={16} rx="3" fill={a.couleur} opacity=".8" />
+                <text x={x1 + 6} y={y + 12} style={{ font: '700 10px monospace', fill: '#fff' }}>
+                  {a.nom.length * 6.4 > x2 - x1 - 10 ? a.nom.slice(0, Math.max(2, Math.floor((x2 - x1 - 14) / 6.4))) + '…' : a.nom}</text>
+              </g>
+            })
+          })()}
           {lignes.map((l, i) => (
             <line key={l.id} x1={MARGE_G} y1={geo[i].centre} x2={largeur} y2={geo[i].centre}
               stroke={faction(l.faction)?.couleur || '#8a8272'} strokeWidth="1" opacity=".15" />

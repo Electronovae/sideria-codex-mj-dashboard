@@ -12,6 +12,7 @@ import Codex from './modules/Codex.jsx'
 import Graphe from './modules/Graphe.jsx'
 import Lieux from './modules/Lieux.jsx'
 import Recherche from './modules/Recherche.jsx'
+import Rapports from './modules/Rapports.jsx'
 
 export const Ctx = React.createContext(null)
 
@@ -20,6 +21,7 @@ const MODULES = [
   ['tableau', 'Tableau de bord', Tableau],
   ['campagnes', 'Méta & Campagnes', Campagnes],
   ['evenements', 'Événements', Evenements],
+  ['rapports', 'Rapports', Rapports],
   ['factions', 'Factions', Factions],
   ['lieux', 'Lieux', Lieux],
   ['pnjs', 'PNJ & Arbres', Pnjs],

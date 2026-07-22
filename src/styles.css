@@ -2,12 +2,13 @@
   --bleu:#1c2b45; --bleu-nuit:#131e31; --or:#c9a227; --or-clair:#e6c96a;
   --parch:#f2ead6; --parch-mid:#e4d8bd; --encre:#26221a; --gris:#8a8272;
   --vert:#3f7d5c; --rouge:#9c3a2e;
-  --texte-clair:#f2ead6;
+  --texte-clair:#f2ead6; --titre:#1c2b45;
   --carte:#fbf6e9; --fond2:#efe6cf; --champ:#fbf6e9; --champ-bord:#c9bc99;
   --svg-texte:#5c5232; --svg-texte-fort:#3d3319; --axe:#7a6a3f;
   --mono:"Consolas","Menlo",monospace;
 }
 [data-theme="sombre"]{
+  --titre:#e6c96a;
   --parch:#171d2b; --parch-mid:#2a3347; --encre:#e4dcc8; --gris:#9a927e;
   --bleu:#1a2540; --bleu-nuit:#0e1425;
   --carte:#1f2740; --fond2:#1c2438; --champ:#141b2c; --champ-bord:#3a4560;
@@ -45,8 +46,8 @@ main{flex:1;display:flex;min-height:0}
 .liste .item .sous{font-size:.72rem;color:var(--gris)}
 .liste .ajout{margin:10px 14px}
 .fiche{flex:1;overflow-y:auto;padding:20px 26px;max-width:1000px}
-.fiche h2{font-variant:small-caps;color:var(--bleu);margin-bottom:12px;font-size:1.4rem}
-.fiche h3{font-variant:small-caps;color:var(--bleu);margin:20px 0 8px;font-size:1.05rem;
+.fiche h2{font-variant:small-caps;color:var(--titre);margin-bottom:12px;font-size:1.4rem}
+.fiche h3{font-variant:small-caps;color:var(--titre);margin:20px 0 8px;font-size:1.05rem;
   border-bottom:1px solid var(--parch-mid);padding-bottom:3px}
 label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;
   color:var(--gris);margin:10px 0 3px}

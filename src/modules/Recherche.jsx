@@ -27,6 +27,7 @@ export default function Recherche({ fermer }) {
   })
   univers.arcs.forEach(a => pousser('arc', a.id, a.nom, 'Arc', a.description))
   univers.evenements.forEach(e => pousser('evenement', e.id, e.titre, 'Événement', e.desc))
+  univers.rapports.forEach(r => pousser('rapport', r.id, r.titre, 'Rapport · ' + r.type, r.contenu))
   const resultats = candidats.sort((a, b) => a.score - b.score).slice(0, 12)
 
   const ouvrir = (r) => {

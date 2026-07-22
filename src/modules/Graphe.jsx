@@ -6,14 +6,14 @@ import { useStudio } from './communs.jsx'
 // clic sur un nœud : ouvre sa page dans le Codex.
 const TYPES = [
   ['faction', 'Factions'], ['pnj', 'PNJ'], ['pj', 'PJ'],
-  ['campagne', 'Campagnes'], ['session', 'Sessions'], ['evenement', 'Événements'], ['arc', 'Arcs'],
+  ['lieu', 'Lieux'], ['campagne', 'Campagnes'], ['session', 'Sessions'], ['evenement', 'Événements'], ['arc', 'Arcs'],
 ]
 
 export default function Graphe() {
   const { univers, setOnglet, setCodexCible } = useStudio()
   const conteneur = useRef(null)
   const [taille, setTaille] = useState({ w: 900, h: 600 })
-  const [types, setTypes] = useState(() => new Set(['faction', 'pnj', 'pj', 'campagne']))
+  const [types, setTypes] = useState(() => new Set(['faction', 'pnj', 'pj', 'lieu', 'campagne']))
   const [tick, setTick] = useState(0)
   const [survol, setSurvol] = useState(null)
   const sim = useRef({ noeuds: [], liens: [], vue: { x: 0, y: 0, z: 1 }, chaud: 0, dragNoeud: null, dragFond: null })
@@ -60,6 +60,14 @@ export default function Graphe() {
         ajouter('session', se.id, (se.code ? se.code + ' ' : '') + se.titre, '#8d6e63')
         lier('session:' + se.id, 'campagne:' + c.id)
       })
+    })
+    if (actif('lieu')) univers.lieux.forEach(l => {
+      ajouter('lieu', l.id, l.nom, faction(l.factionId)?.couleur || '#8d6e63')
+      if (l.parentId) lier('lieu:' + l.id, 'lieu:' + l.parentId)
+      if (actif('faction') && l.factionId) lier('lieu:' + l.id, 'faction:' + l.factionId)
+    })
+    if (actif('lieu') && actif('pj')) univers.joueurs.forEach(j => {
+      ;(j.historique || []).forEach(h => { if (h.lieuId) lier('pj:' + j.id, 'lieu:' + h.lieuId) })
     })
     if (actif('arc')) univers.arcs.forEach(a => ajouter('arc', a.id, a.nom, a.couleur))
     if (actif('evenement')) univers.evenements.forEach(e => {
@@ -214,8 +222,11 @@ export default function Graphe() {
               onMouseMove={() => { if (sim.current.dragNoeud === n.cle) sim.current.aBouge = true; setSurvol(n.cle) }}
               onMouseLeave={() => setSurvol(v => v === n.cle ? null : v)}
               onClick={() => { if (!sim.current.aBouge) ouvrirCodex(n) }}>
-              <circle cx={p.x} cy={p.y} r={r} fill={n.coul}
-                stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />
+              {n.type === 'lieu'
+                ? <rect x={p.x - r} y={p.y - r} width={2 * r} height={2 * r} rx={r / 3} fill={n.coul}
+                    stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />
+                : <circle cx={p.x} cy={p.y} r={r} fill={n.coul}
+                    stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />}
               {n.type === 'faction' && <circle cx={p.x} cy={p.y} r={r + 3} fill="none" stroke={n.coul} strokeWidth="1" opacity=".5" />}
               {(s.vue.z > 0.55 || enSurvol || n.type === 'faction') &&
                 <text x={p.x} y={p.y + r + 11} textAnchor="middle"

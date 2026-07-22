@@ -97,6 +97,14 @@ export async function exporterObsidian(u) {
   u.factions.forEach(f => fac.file(`${ascii(f.nom) || f.id}.md`, mdFaction(f, u.pnjs)))
   u.joueurs.forEach(j => pj.file(`${ascii(j.personnage) || j.id}.md`, mdJoueur(j, u.factions, u.pnjs)))
   u.campagnes.forEach(c => cmp.file(`${ascii(c.titre) || c.id}.md`, mdCampagne(c, u.factions, u.pnjs)))
+  if (u.rapports?.length) {
+    const rap = rac.folder('Rapports')
+    u.rapports.forEach(r => {
+      const auteur = u.pnjs.find(p => p.id === r.auteurId)
+      let md = `#Rapport\n\n# ${r.titre}\n\n*${r.type}*${auteur ? ` · par ${lien(auteur.nom)}` : ''}${r.date != null ? ` · ${fmtDate(r.date)}` : ''}${r.visibleJoueurs ? ' · visible joueurs' : ''}\n\n${r.contenu}\n`
+      rap.file(`${ascii(r.titre) || r.id}.md`, md)
+    })
+  }
   rac.file('Chronologie des evenements.md', mdEvenements(u.evenements, u.pnjs, u.factions))
   rac.file('Meta-campagne.md', `#Meta\n\n# ${u.meta.nom}\n\n## Thèse\n\n${u.meta.these}\n\n## Saisons\n\n${u.meta.saisons.map(s => `### Saison ${s.num} : ${s.titre}\n\n*« ${s.question} »* · Horloge ${s.horloge} · Niveaux ${s.niveaux}\n`).join('\n')}`)
   const blob = await zip.generateAsync({ type: 'blob' })

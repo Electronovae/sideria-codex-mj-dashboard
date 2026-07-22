@@ -41,6 +41,13 @@ export const nouveauLieu = () => ({
 
 export const TYPES_LIEU = ['région', 'ville', 'quartier', 'bâtiment', 'site']
 
+export const nouveauRapport = () => ({
+  id: uid('rap'), titre: 'Nouveau rapport', type: 'rapport', date: null,
+  auteurId: null, factionId: null, visibleJoueurs: false, contenu: '',
+})
+
+export const TYPES_RAPPORT = ['rapport', 'une de journal', 'lettre', 'note', 'décret', 'témoignage']
+
 export const nouvelleFaction = () => ({
   id: uid('fac'), nom: 'Nouvelle faction', couleur: '#a3512e', devise: '',
   description: '', objectifs: '', ressources: '', chefId: null,
@@ -63,6 +70,7 @@ export const SYMBOLES = ['losange', 'cercle', 'carre', 'etoile', 'triangle']
 export const normaliser = (u) => {
   u.arcs ||= []
   u.lieux ||= []
+  u.rapports ||= []
   u.meta.lignesForce ||= []      // { id, titre, description }
   u.meta.arbitrages ||= []       // { id, date, titre, decision }
   u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; delete e.couleur })
