@@ -75,7 +75,22 @@ export const normaliser = (u) => {
     if (f.chefId === undefined) f.chefId = (f.chefIds && f.chefIds[0]) || null
     delete f.chefIds
   })
-  u.pnjs.forEach(p => { p.poste ??= ''; p.superieurId ??= null; p.compteurs ||= [] })
+  u.pnjs.forEach(p => {
+    p.poste ??= ''; p.superieurId ??= null; p.compteurs ||= []
+    p.compteurs.forEach(c => { c.valeur ??= c.min ?? 0 })
+    if (p.arbre) {
+      p.arbre.compteur.valeur ??= p.arbre.compteur.initial ?? 0
+      const parPhase = {}
+      p.arbre.noeuds.forEach(n => {
+        if (n.x == null || n.y == null) {
+          const ph = n.phase || 0
+          parPhase[ph] = (parPhase[ph] || 0) + 1
+          n.x = 60 + ph * 240
+          n.y = 40 + (parPhase[ph] - 1) * 100
+        }
+      })
+    }
+  })
   u.joueurs.forEach(j => {
     j.citations ||= []
     if (!j.historique) {

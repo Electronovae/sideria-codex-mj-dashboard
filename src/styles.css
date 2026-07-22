@@ -2,13 +2,14 @@
   --bleu:#1c2b45; --bleu-nuit:#131e31; --or:#c9a227; --or-clair:#e6c96a;
   --parch:#f2ead6; --parch-mid:#e4d8bd; --encre:#26221a; --gris:#8a8272;
   --vert:#3f7d5c; --rouge:#9c3a2e;
+  --texte-clair:#f2ead6;
   --carte:#fbf6e9; --fond2:#efe6cf; --champ:#fbf6e9; --champ-bord:#c9bc99;
   --svg-texte:#5c5232; --svg-texte-fort:#3d3319; --axe:#7a6a3f;
   --mono:"Consolas","Menlo",monospace;
 }
 [data-theme="sombre"]{
   --parch:#171d2b; --parch-mid:#2a3347; --encre:#e4dcc8; --gris:#9a927e;
-  --bleu:#0f1522; --bleu-nuit:#0a0f1a;
+  --bleu:#1a2540; --bleu-nuit:#0e1425;
   --carte:#1f2740; --fond2:#1c2438; --champ:#141b2c; --champ-bord:#3a4560;
   --svg-texte:#b0a88f; --svg-texte-fort:#e4dcc8; --axe:#8a7a4a;
 }
@@ -17,20 +18,20 @@ html,body,#racine{height:100%}
 body{background:var(--parch);color:var(--encre);
   font:14px/1.5 "Palatino Linotype",Palatino,"Book Antiqua",serif}
 #racine{display:flex;flex-direction:column}
-header{background:var(--bleu);color:var(--parch);padding:10px 18px;display:flex;
+header{background:var(--bleu);color:var(--texte-clair);padding:10px 18px;display:flex;
   align-items:center;gap:14px;flex-wrap:wrap;border-bottom:3px solid var(--or)}
 header h1{font-size:1.05rem;font-variant:small-caps;letter-spacing:.08em}
 header .statut{font:11px var(--mono);color:var(--or-clair)}
 .sep{flex:1}
 button{font:inherit;cursor:pointer;border-radius:2px}
-.btn{background:transparent;color:var(--parch);border:1px solid var(--or);padding:4px 12px;font-size:.8rem}
+.btn{background:transparent;color:var(--texte-clair);border:1px solid var(--or);padding:4px 12px;font-size:.8rem}
 .btn:hover{background:rgba(201,162,39,.18)}
 .btn.plein{background:var(--or);color:var(--bleu-nuit);font-weight:700}
 .btn.clair{color:var(--encre);border-color:var(--gris)}
 .btn.clair:hover{background:rgba(0,0,0,.06)}
 .btn.danger{border-color:var(--rouge);color:#c9695c}
 nav{background:var(--bleu-nuit);display:flex;gap:2px;padding:0 12px;flex-wrap:wrap}
-nav button{background:none;border:none;color:var(--parch);padding:9px 16px;font-size:.85rem;
+nav button{background:none;border:none;color:var(--texte-clair);padding:9px 16px;font-size:.85rem;
   font-variant:small-caps;letter-spacing:.05em;border-bottom:3px solid transparent}
 nav button.actif{color:var(--or-clair);border-bottom-color:var(--or)}
 main{flex:1;display:flex;min-height:0}
@@ -72,7 +73,7 @@ table.grille input,table.grille select{padding:3px 5px;font-size:.82rem}
 .carte{background:var(--carte);border:1px solid var(--parch-mid);border-left:4px solid var(--or);
   padding:12px 14px;margin:8px 0;border-radius:2px}
 .tableau-bord{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:4px}
-.tuile{background:var(--bleu);color:var(--parch);padding:16px;border-radius:4px;
+.tuile{background:var(--bleu);color:var(--texte-clair);padding:16px;border-radius:4px;
   border-bottom:3px solid var(--or);cursor:pointer}
 .tuile:hover{background:#22345a}
 .tuile .chiffre{font-size:2rem;font-weight:700;color:var(--or-clair)}
