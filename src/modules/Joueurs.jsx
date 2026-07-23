@@ -104,6 +104,21 @@ export default function Joueurs() {
                       {univers.lieux.map(ll => <option key={ll.id} value={ll.id}>{ll.nom}</option>)}
                     </select></span>
                 </div>
+                <div className="rangee">
+                  <span><label>Campagne</label>
+                    <select value={it.campagneId || ''} onChange={e => modifier(x => {
+                      x.historique[i].campagneId = e.target.value || null; x.historique[i].sessionId = null
+                    })}>
+                      <option value="">—</option>
+                      {univers.campagnes.map(c => <option key={c.id} value={c.id}>{c.titre}</option>)}
+                    </select></span>
+                  {it.campagneId && <span><label>Session</label>
+                    <select value={it.sessionId || ''} onChange={e => modifier(x => { x.historique[i].sessionId = e.target.value || null })}>
+                      <option value="">—</option>
+                      {univers.campagnes.find(c => c.id === it.campagneId)?.sessions.map(s =>
+                        <option key={s.id} value={s.id}>{(s.code ? s.code + ' ' : '') + s.titre}</option>)}
+                    </select></span>}
+                </div>
                 <Champ label="Ce qui s'est passé" zone value={it.resume}
                   onChange={e => modifier(x => { x.historique[i].resume = e.target.value })} />
                 <Champ label="Effet (compteur, réputation, promesse...)" value={it.effet}

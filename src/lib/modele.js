@@ -31,7 +31,7 @@ export const nouveauJoueur = () => ({
 export const TYPES_HISTORIQUE = ['interaction', 'combat', 'lieu', 'révélation', 'autre']
 
 export const nouvelleEntreeHistorique = () => ({
-  id: uid('his'), type: 'interaction', date: null, pnjId: null, lieuId: null, resume: '', effet: '',
+  id: uid('his'), type: 'interaction', date: null, pnjId: null, lieuId: null, campagneId: null, sessionId: null, resume: '', effet: '',
 })
 
 export const nouveauLieu = () => ({
@@ -55,7 +55,7 @@ export const nouvelleFaction = () => ({
 
 export const nouvelEvenement = () => ({
   id: uid('evt'), titre: 'Nouvel événement', desc: '', debut: versJour(312), fin: null,
-  participants: [], factionId: null, importance: 2, campagneId: null,
+  participants: [], joueurIds: [], factionId: null, importance: 2, campagneId: null,
   arcId: null, symbole: 'losange', couleur: null, sessionId: null,
 })
 
@@ -73,7 +73,7 @@ export const normaliser = (u) => {
   u.rapports ||= []
   u.meta.lignesForce ||= []      // { id, titre, description }
   u.meta.arbitrages ||= []       // { id, date, titre, decision }
-  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; delete e.couleur })
+  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; e.joueurIds ||= []; delete e.couleur })
   u.campagnes.forEach(c => {
     c.sessions ||= []
     c.arcId ??= null
@@ -114,9 +114,10 @@ export const normaliser = (u) => {
     if (!j.historique) {
       j.historique = (j.interactions || []).map(i => ({
         id: i.id || uid('his'), type: 'interaction', date: i.date ?? null,
-        pnjId: i.pnjId || null, lieuId: null, resume: i.resume || '', effet: i.effet || '',
+        pnjId: i.pnjId || null, lieuId: null, campagneId: null, sessionId: null, resume: i.resume || '', effet: i.effet || '',
       }))
     }
+    j.historique.forEach(it => { it.campagneId ??= null; it.sessionId ??= null })
     delete j.interactions
   })
   return u

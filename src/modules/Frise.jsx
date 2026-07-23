@@ -66,6 +66,7 @@ export default function Frise() {
   const faction = (id) => univers.factions.find(f => f.id === id)
   const arc = (id) => univers.arcs.find(a => a.id === id)
   const lignes = [
+    { id: '__general__', nom: 'Général (sans PNJ/PJ)', type: 'GEN', faction: null },
     ...(filtreTypes.has('PJ') ? univers.joueurs.map(j => ({ id: j.id, nom: j.personnage, type: 'PJ', faction: j.faction })) : []),
     ...(filtreTypes.has('PNJ') ? univers.pnjs.map(p => ({ id: p.id, nom: p.nom, type: 'PNJ', faction: p.faction })) : []),
   ].filter(l => l.faction == null || filtreFac.has(l.faction))
@@ -92,15 +93,16 @@ export default function Frise() {
   const parLigne = {}
   const poser = (it) => { (parLigne[it.ligne] ||= []).push(it) }
   univers.evenements.forEach(e => {
-    e.participants.filter(id => id in indexLigne).forEach(id => {
-      const x = xDe(e.debut)
-      const ponctuel = !(e.fin != null && xDe(e.fin) > x)
-      const larg = ponctuel
-        ? Math.min(180, 16 + Math.max(20, e.titre.length * 5.2))
-        : Math.max(24, xDe(e.fin) - x)
-      poser({ obj: e, ligne: indexLigne[id], x, larg, coul: couleurEvt(e), creux: false, titre: e.titre,
-        ponctuel, symbole: e.symbole || 'losange', taille: 4 + (e.importance || 1) * 1.6 })
-    })
+    const idsValides = [...e.participants, ...(e.joueurIds || [])].filter(id => id in indexLigne)
+    const x = xDe(e.debut)
+    const ponctuel = !(e.fin != null && xDe(e.fin) > x)
+    const larg = ponctuel
+      ? Math.min(180, 16 + Math.max(20, e.titre.length * 5.2))
+      : Math.max(24, xDe(e.fin) - x)
+    const base = { obj: e, x, larg, coul: couleurEvt(e), creux: false, titre: e.titre,
+      ponctuel, symbole: e.symbole || 'losange', taille: 4 + (e.importance || 1) * 1.6 }
+    if (idsValides.length) idsValides.forEach(id => poser({ ...base, ligne: indexLigne[id] }))
+    else poser({ ...base, ligne: indexLigne['__general__'] })
   })
   univers.joueurs.forEach(j => {
     if (!(j.id in indexLigne)) return
@@ -142,7 +144,7 @@ export default function Frise() {
 
   const liens = []
   univers.evenements.forEach(e => {
-    const ys = e.participants.filter(id => id in indexLigne).map(id => geo[indexLigne[id]].centre)
+    const ys = [...e.participants, ...(e.joueurIds || [])].filter(id => id in indexLigne).map(id => geo[indexLigne[id]].centre)
     if (ys.length > 1) liens.push({ x: xDe(e.debut), y1: Math.min(...ys), y2: Math.max(...ys) })
   })
 

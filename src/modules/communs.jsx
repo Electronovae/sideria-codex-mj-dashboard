@@ -54,6 +54,28 @@ export const PucesPnjs = ({ ids, surChange }) => {
   )
 }
 
+// Sélecteur multiple de PJ sous forme de puces cliquables.
+export const PucesJoueurs = ({ ids, surChange }) => {
+  const { univers } = useStudio()
+  const ens = new Set(ids)
+  const basculer = (id) => {
+    ens.has(id) ? ens.delete(id) : ens.add(id)
+    surChange([...ens])
+  }
+  return (
+    <div>
+      {univers.joueurs.map(j => {
+        const f = univers.factions.find(x => x.id === j.faction)
+        return (
+          <span key={j.id} className={'puce' + (ens.has(j.id) ? '' : ' off')}
+            style={{ borderColor: f?.couleur || 'var(--gris)' }}
+            onClick={() => basculer(j.id)}>{j.personnage}</span>
+        )
+      })}
+    </div>
+  )
+}
+
 // Saisie d'une date sidérienne (an / saison / jour) -> index de jour ou null.
 export const DateSiderienne = ({ label, valeur, surChange, optionnel = false }) => {
   const d = valeur != null ? depuisJour(valeur) : { an: '', sais: 0, jour: 1 }

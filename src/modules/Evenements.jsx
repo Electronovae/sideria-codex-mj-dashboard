@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, ListeFiche, PucesPnjs, DateSiderienne } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, ListeFiche, PucesPnjs, PucesJoueurs, DateSiderienne } from './communs.jsx'
 import { nouvelEvenement, SYMBOLES } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
 
@@ -53,10 +53,18 @@ export default function Evenements() {
                 <option value="1">★</option><option value="2">★★</option><option value="3">★★★</option>
               </select></span>
             <span><label>Campagne liée</label>
-              <select value={e.campagneId || ''} onChange={ev => modifier(x => { x.campagneId = ev.target.value || null })}>
+              <select value={e.campagneId || ''} onChange={ev => modifier(x => {
+                x.campagneId = ev.target.value || null; x.sessionId = null
+              })}>
                 <option value="">—</option>
                 {univers.campagnes.map(c => <option key={c.id} value={c.id}>{c.titre}</option>)}
               </select></span>
+            {e.campagneId && <span><label>Session liée</label>
+              <select value={e.sessionId || ''} onChange={ev => modifier(x => { x.sessionId = ev.target.value || null })}>
+                <option value="">—</option>
+                {univers.campagnes.find(c => c.id === e.campagneId)?.sessions.map(s =>
+                  <option key={s.id} value={s.id}>{(s.code ? s.code + ' ' : '') + s.titre}</option>)}
+              </select></span>}
           </div>
           <div className="rangee">
             <span><label>Arc</label>
@@ -73,6 +81,8 @@ export default function Evenements() {
           </div>
           <h3>Participants (PNJ)</h3>
           <PucesPnjs ids={e.participants} surChange={v => modifier(x => { x.participants = v })} />
+          <h3>Participants (PJ)</h3>
+          <PucesJoueurs ids={e.joueurIds} surChange={v => modifier(x => { x.joueurIds = v })} />
           <p className="aide">Ce fichier JSON est directement importable dans l'outil de frises (chroniques_sideria.html) : même schéma de dates.</p>
           <div style={{ marginTop: 24 }}>
             <button className="btn danger" onClick={supprimer}>Supprimer cet événement</button>

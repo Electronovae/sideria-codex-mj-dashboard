@@ -9,6 +9,33 @@ const TYPES = [
   ['lieu', 'Lieux'], ['campagne', 'Campagnes'], ['session', 'Sessions'], ['evenement', 'Événements'], ['arc', 'Arcs'],
 ]
 
+const FORMES = ['cercle', 'carre', 'triangle', 'losange', 'etoile']
+const FORMES_DEFAUT = { faction: 'cercle', pnj: 'cercle', pj: 'cercle', lieu: 'carre', campagne: 'losange', session: 'losange', evenement: 'etoile', arc: 'triangle' }
+const CLE_FORMES = 'sideria_graphe_formes'
+const chargerFormes = () => {
+  try { return { ...FORMES_DEFAUT, ...JSON.parse(localStorage.getItem(CLE_FORMES) || '{}') } }
+  catch { return { ...FORMES_DEFAUT } }
+}
+
+// Chemin SVG d'une forme, centré sur (0,0), de "rayon" r.
+const cheminForme = (forme, r) => {
+  if (forme === 'carre') return `M${-r},${-r} h${2 * r} v${2 * r} h${-2 * r} Z`
+  if (forme === 'triangle') {
+    const h = r * 1.3
+    return `M0,${-h} L${r * 1.05},${h * 0.65} L${-r * 1.05},${h * 0.65} Z`
+  }
+  if (forme === 'losange') return `M0,${-r * 1.2} L${r * 1.2},0 L0,${r * 1.2} L${-r * 1.2},0 Z`
+  if (forme === 'etoile') {
+    const pts = []
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 === 0 ? r * 1.25 : r * 0.5
+      pts.push(`${rr * Math.cos(a)},${rr * Math.sin(a)}`)
+    }
+    return `M${pts[0]} L${pts.slice(1).join(' L')} Z`
+  }
+  return null // cercle : rendu séparément
+}
+
 export default function Graphe() {
   const { univers, setOnglet, setCodexCible } = useStudio()
   const conteneur = useRef(null)
@@ -16,7 +43,15 @@ export default function Graphe() {
   const [types, setTypes] = useState(() => new Set(['faction', 'pnj', 'pj', 'lieu', 'campagne']))
   const [tick, setTick] = useState(0)
   const [survol, setSurvol] = useState(null)
+  const [formes, setFormes] = useState(chargerFormes)
+  const [panneauFormes, setPanneauFormes] = useState(false)
   const sim = useRef({ noeuds: [], liens: [], vue: { x: 0, y: 0, z: 1 }, chaud: 0, dragNoeud: null, dragFond: null })
+
+  const majForme = (type, forme) => setFormes(f => {
+    const n = { ...f, [type]: forme }
+    try { localStorage.setItem(CLE_FORMES, JSON.stringify(n)) } catch {}
+    return n
+  })
 
   useEffect(() => {
     const majT = () => conteneur.current && setTaille({ w: conteneur.current.clientWidth, h: conteneur.current.clientHeight })
@@ -51,6 +86,8 @@ export default function Graphe() {
       ajouter('pj', j.id, j.personnage, faction(j.faction)?.couleur || '#c9a227')
       if (actif('faction') && j.faction) lier('pj:' + j.id, 'faction:' + j.faction)
       if (actif('pnj')) (j.historique || []).forEach(i => { if (i.pnjId) lier('pj:' + j.id, 'pnj:' + i.pnjId) })
+      if (actif('campagne')) (j.historique || []).forEach(i => { if (i.campagneId) lier('pj:' + j.id, 'campagne:' + i.campagneId) })
+      if (actif('session')) (j.historique || []).forEach(i => { if (i.sessionId) lier('pj:' + j.id, 'session:' + i.sessionId) })
     })
     if (actif('campagne')) univers.campagnes.forEach(c => {
       ajouter('campagne', c.id, (c.code ? c.code + ' ' : '') + c.titre, faction(c.factionId)?.couleur || '#6b5b95')
@@ -73,6 +110,7 @@ export default function Graphe() {
     if (actif('evenement')) univers.evenements.forEach(e => {
       ajouter('evenement', e.id, e.titre, e.couleur || faction(e.factionId)?.couleur || '#8a8272')
       if (actif('pnj')) e.participants.forEach(pid => lier('evenement:' + e.id, 'pnj:' + pid))
+      if (actif('pj')) (e.joueurIds || []).forEach(jid => lier('evenement:' + e.id, 'pj:' + jid))
       if (actif('arc') && e.arcId) lier('evenement:' + e.id, 'arc:' + e.arcId)
       if (actif('session') && e.sessionId && actif('campagne')) lier('evenement:' + e.id, 'session:' + e.sessionId)
       else if (actif('campagne') && e.campagneId) lier('evenement:' + e.id, 'campagne:' + e.campagneId)
@@ -190,8 +228,22 @@ export default function Graphe() {
             onClick={() => bascule(t)}>{libelle}</span>
         ))}
         <button className="btn clair" onClick={() => { sim.current.chaud = 300; sim.current.vue = { x: 0, y: 0, z: 1 } }}>Recentrer</button>
+        <button className="btn clair" onClick={() => setPanneauFormes(v => !v)}>Formes</button>
         <span className="aide" style={{ marginLeft: 'auto' }}>glisser un nœud : le déplacer · glisser le fond : naviguer · molette : zoom · clic : ouvrir dans le Codex</span>
       </div>
+      {panneauFormes && (
+        <div style={{ padding: '8px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '2px solid var(--parch-mid)', background: '#efe6cf' }}>
+          {TYPES.map(([t, libelle]) => (
+            <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <label style={{ margin: 0 }}>{libelle}</label>
+              <select value={formes[t] || 'cercle'} onChange={e => majForme(t, e.target.value)}>
+                {FORMES.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </span>
+          ))}
+          <span className="aide">Préférence gardée sur cet appareil (localStorage), pas dans le fichier univers.</span>
+        </div>
+      )}
       <div ref={conteneur} style={{ flex: 1, position: 'relative', overflow: 'hidden', userSelect: 'none', cursor: 'grab' }}
         onMouseDown={(ev) => {
           if (ev.button !== 0 || ev.target.closest('[data-noeud]')) return
@@ -222,11 +274,15 @@ export default function Graphe() {
               onMouseMove={() => { if (sim.current.dragNoeud === n.cle) sim.current.aBouge = true; setSurvol(n.cle) }}
               onMouseLeave={() => setSurvol(v => v === n.cle ? null : v)}
               onClick={() => { if (!sim.current.aBouge) ouvrirCodex(n) }}>
-              {n.type === 'lieu'
-                ? <rect x={p.x - r} y={p.y - r} width={2 * r} height={2 * r} rx={r / 3} fill={n.coul}
-                    stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />
-                : <circle cx={p.x} cy={p.y} r={r} fill={n.coul}
-                    stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />}
+              {(() => {
+                const forme = formes[n.type] || 'cercle'
+                const d = cheminForme(forme, r)
+                return d
+                  ? <path d={d} transform={`translate(${p.x},${p.y})`} fill={n.coul}
+                      stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />
+                  : <circle cx={p.x} cy={p.y} r={r} fill={n.coul}
+                      stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />
+              })()}
               {n.type === 'faction' && <circle cx={p.x} cy={p.y} r={r + 3} fill="none" stroke={n.coul} strokeWidth="1" opacity=".5" />}
               {(s.vue.z > 0.55 || enSurvol || n.type === 'faction') &&
                 <text x={p.x} y={p.y + r + 11} textAnchor="middle"

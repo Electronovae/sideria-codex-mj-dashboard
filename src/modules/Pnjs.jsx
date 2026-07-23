@@ -77,7 +77,7 @@ export default function Pnjs() {
           <p className="aide">Les jauges propres à ce PNJ (confiance, patience, corruption...), manipulables en mode session, indépendantes de l'arbre.</p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             {pnj.compteurs.map((c, i) => (
-              <div className="carte" key={c.id} style={{ minWidth: 290, maxWidth: 420 }}>
+              <div className="carte" key={c.id} style={{ minWidth: 340, flex: '1 1 480px' }}>
                 <div style={{ textAlign: 'center' }}>
                   <Manometre compteur={c} surDelta={(d) => modifier(p => {
                     const x = p.compteurs[i]
