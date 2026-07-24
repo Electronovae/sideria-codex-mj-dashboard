@@ -23,7 +23,7 @@ export const nouvelArbre = () => ({
 
 export const nouveauJoueur = () => ({
   id: uid('pj'), joueur: '', personnage: 'Nouveau personnage', classe: '', niveau: 1,
-  faction: null, notes: '', citations: [],
+  faction: null, notes: '', secrets: '', citations: [],
   reputations: {},      // factionId -> -4..+4
   historique: [],       // { id, type, date, pnjId, lieuId, resume, effet }
 })
@@ -111,6 +111,7 @@ export const normaliser = (u) => {
   })
   u.joueurs.forEach(j => {
     j.citations ||= []
+    j.secrets ??= ''
     if (!j.historique) {
       j.historique = (j.interactions || []).map(i => ({
         id: i.id || uid('his'), type: 'interaction', date: i.date ?? null,

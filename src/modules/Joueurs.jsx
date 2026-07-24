@@ -53,8 +53,10 @@ export default function Joueurs() {
             <span><label>Faction actuelle</label>
               <SelecteurFaction valeur={j.faction} surChange={v => modifier(x => { x.faction = v })} /></span>
           </div>
-          <Champ label="Notes MJ (fils personnels, secrets, dettes)" zone value={j.notes}
+          <Champ label="Notes MJ (fils personnels, dettes, promesses)" zone value={j.notes}
             onChange={e => modifier(x => { x.notes = e.target.value })} />
+          <Champ label="Secrets Maître (ce que le personnage ignore, réservé au MJ)" zone value={j.secrets}
+            onChange={e => modifier(x => { x.secrets = e.target.value })} />
 
           <h3>Citations</h3>
           <p className="aide">Les phrases mémorables prononcées à la table.</p>
