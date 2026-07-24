@@ -19,9 +19,10 @@ export default function Pnjs() {
     if (!confirm(`Supprimer ${pnj.nom} ?`)) return
     maj(u => {
       u.pnjs = u.pnjs.filter(p => p.id !== selId)
+      u.pnjs.forEach(p => { if (p.superieurId === selId) p.superieurId = null })
       u.evenements.forEach(e => { e.participants = e.participants.filter(x => x !== selId) })
       u.campagnes.forEach(c => { c.pnjIds = c.pnjIds.filter(x => x !== selId) })
-      u.factions.forEach(f => { f.chefIds = f.chefIds.filter(x => x !== selId) })
+      u.factions.forEach(f => { if (f.chefId === selId) f.chefId = null })
     })
     setSelId(null)
   }
