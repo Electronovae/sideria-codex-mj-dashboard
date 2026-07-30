@@ -14,11 +14,11 @@ function ChampCodex({ valeur, surChange, vide = 'Aucune description.' }) {
       <p className="aide">Les [[Nom]] deviennent des liens. Clic hors du champ pour terminer.</p>
     </div>
   ) : (
-    <p style={{ whiteSpace: 'pre-wrap' }} onDoubleClick={() => setEdition(true)}>
+    <div style={{ whiteSpace: 'pre-wrap' }} onDoubleClick={() => setEdition(true)}>
       {valeur ? <Texte>{valeur}</Texte> : <span className="aide">{vide}</span>}
       <span onClick={() => setEdition(true)} title="Éditer"
         style={{ cursor: 'pointer', marginLeft: 8, opacity: .5 }}>✎</span>
-    </p>
+    </div>
   )
 }
 
@@ -148,7 +148,7 @@ export default function Codex() {
           return <div className="carte" key={s.id}>
             <strong>{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
             {s.date != null && <span className="aide"> · {fmtDate(s.date)}</span>}
-            {s.resume && <p><Texte>{s.resume}</Texte></p>}
+            {s.resume && <div><Texte>{s.resume}</Texte></div>}
             {es.map(e => <div key={e.id} style={{ paddingLeft: 10 }}>· <L type="evenement" id={e.id}>{e.titre}</L></div>)}
           </div>
         })}</Bloc>}
@@ -230,10 +230,10 @@ export default function Codex() {
       const m = univers.meta
       return <>
         <h2>{m.nom}</h2>
-        <p style={{ fontStyle: 'italic' }}><Texte>{m.these}</Texte></p>
+        <div style={{ fontStyle: "italic" }}><Texte>{m.these}</Texte></div>
         {m.lignesForce.length > 0 && <Bloc titre="Lignes de force">{m.lignesForce.map(l =>
           <div className="carte" key={l.id}><strong>{l.titre}</strong>
-            <p style={{ fontSize: '.9rem' }}><Texte>{l.description}</Texte></p></div>)}</Bloc>}
+            <div style={{ fontSize: '.9rem' }}><Texte>{l.description}</Texte></div></div>)}</Bloc>}
         {m.arbitrages.length > 0 && <Bloc titre="Journal des arbitrages">{m.arbitrages.map(a =>
           <div key={a.id}><strong>{a.date}</strong>{a.titre && <> · {a.titre}</>} : {a.decision}</div>)}</Bloc>}
         <p className="aide" style={{ marginTop: 16 }}>Chaque entité a sa page (colonne de gauche, ou Ctrl+K pour chercher).

@@ -36,6 +36,41 @@ const cheminForme = (forme, r) => {
   return null // cercle : rendu séparément
 }
 
+// Mini-graphe façon Obsidian, centré sur une seule entité et ses voisins directs.
+// Statique (pas de simulation de forces complète) : disposition en cercle, suffisant
+// pour une vue "liens de ce lieu/PNJ/etc." embarquée dans une fiche.
+export function MiniGraphe({ centre, voisins }) {
+  const { setOnglet, setCodexCible } = useStudio()
+  const largeur = 420, hauteur = Math.max(220, 80 + voisins.length * 6), cx = largeur / 2, cy = hauteur / 2
+  const rayon = Math.min(cx, cy) - 50
+  const ouvrir = (n) => { setCodexCible({ type: n.type, id: n.id }); setOnglet('codex') }
+  if (voisins.length === 0) {
+    return <p className="aide">Aucun lien détecté (ni [[wikilink]], ni rattachement direct).</p>
+  }
+  return (
+    <svg width="100%" viewBox={`0 0 ${largeur} ${hauteur}`} style={{ background: 'radial-gradient(ellipse at center, #f6efdc, var(--parch))', border: '1px solid var(--parch-mid)' }}>
+      {voisins.map((n, i) => {
+        const a = -Math.PI / 2 + (i / voisins.length) * Math.PI * 2
+        const x = cx + Math.cos(a) * rayon, y = cy + Math.sin(a) * rayon
+        return <line key={'l' + i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(122,106,63,.35)" strokeWidth="1" />
+      })}
+      <circle cx={cx} cy={cy} r={11} fill="var(--or)" stroke="rgba(0,0,0,.35)" />
+      <text x={cx} y={cy - 16} textAnchor="middle" style={{ font: '700 11px "Palatino Linotype", serif', fill: '#3d3319' }}>{centre.nom}</text>
+      {voisins.map((n, i) => {
+        const a = -Math.PI / 2 + (i / voisins.length) * Math.PI * 2
+        const x = cx + Math.cos(a) * rayon, y = cy + Math.sin(a) * rayon
+        return (
+          <g key={n.type + n.id} style={{ cursor: 'pointer' }} onClick={() => ouvrir(n)}>
+            <circle cx={x} cy={y} r={8} fill={n.couleur || '#8a8272'} stroke="rgba(0,0,0,.35)" />
+            <text x={x} y={y + 20} textAnchor="middle" style={{ font: '10px "Palatino Linotype", serif', fill: '#3d3319' }}>
+              {n.nom.length > 20 ? n.nom.slice(0, 19) + '…' : n.nom}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
 export default function Graphe() {
   const { univers, setOnglet, setCodexCible } = useStudio()
   const conteneur = useRef(null)
@@ -96,6 +131,7 @@ export default function Graphe() {
       if (actif('session')) c.sessions.forEach(se => {
         ajouter('session', se.id, (se.code ? se.code + ' ' : '') + se.titre, '#8d6e63')
         lier('session:' + se.id, 'campagne:' + c.id)
+        if (actif('pj')) (se.joueurIds || []).forEach(jid => lier('session:' + se.id, 'pj:' + jid))
       })
     })
     if (actif('lieu')) univers.lieux.forEach(l => {

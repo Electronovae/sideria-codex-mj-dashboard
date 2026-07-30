@@ -42,7 +42,7 @@ function mdFaction(f, pnjs) {
   return md
 }
 
-function mdJoueur(j, factions, pnjs) {
+function mdJoueur(j, factions, pnjs, campagnes) {
   const f = factions.find(x => x.id === j.faction)
   let md = `#PJ\n\n# ${j.personnage}\n\n**Joueur :** ${j.joueur || '?'} · **Classe :** ${j.classe || '?'} niv. ${j.niveau} · **Faction :** ${f ? lien(f.nom) : 'libre'}\n\n${j.notes}\n`
   const reps = Object.entries(j.reputations || {}).filter(([, v]) => v !== 0)
@@ -52,6 +52,10 @@ function mdJoueur(j, factions, pnjs) {
   }
   if (j.citations?.filter(Boolean).length) {
     md += `\n## Citations\n\n${j.citations.filter(Boolean).map(c => `> ${c}`).join('\n\n')}\n`
+  }
+  const sessionsJouees = (campagnes || []).flatMap(c => c.sessions.filter(s => (s.joueurIds || []).includes(j.id)).map(s => ({ ...s, campagne: c })))
+  if (sessionsJouees.length) {
+    md += `\n## Sessions jouées\n\n${sessionsJouees.map(s => `- **${s.date != null ? fmtDate(s.date) : 'sans date'}** · ${s.code ? s.code + ' : ' : ''}${s.titre} (${lien(s.campagne.titre)})`).join('\n')}\n`
   }
   if (j.historique?.length) {
     md += `\n## Historique\n\n`
@@ -95,7 +99,7 @@ export async function exporterObsidian(u) {
   const pnj = rac.folder('PNJ'), fac = rac.folder('Factions'), pj = rac.folder('PJ'), cmp = rac.folder('Campagnes')
   u.pnjs.forEach(p => pnj.file(`${ascii(p.nom) || p.id}.md`, mdPnj(p, u.factions)))
   u.factions.forEach(f => fac.file(`${ascii(f.nom) || f.id}.md`, mdFaction(f, u.pnjs)))
-  u.joueurs.forEach(j => pj.file(`${ascii(j.personnage) || j.id}.md`, mdJoueur(j, u.factions, u.pnjs)))
+  u.joueurs.forEach(j => pj.file(`${ascii(j.personnage) || j.id}.md`, mdJoueur(j, u.factions, u.pnjs, u.campagnes)))
   u.campagnes.forEach(c => cmp.file(`${ascii(c.titre) || c.id}.md`, mdCampagne(c, u.factions, u.pnjs)))
   if (u.rapports?.length) {
     const rap = rac.folder('Rapports')
@@ -106,7 +110,7 @@ export async function exporterObsidian(u) {
     })
   }
   rac.file('Chronologie des evenements.md', mdEvenements(u.evenements, u.pnjs, u.factions))
-  rac.file('Meta-campagne.md', `#Meta\n\n# ${u.meta.nom}\n\n## Thèse\n\n${u.meta.these}\n\n## Saisons\n\n${u.meta.saisons.map(s => `### Saison ${s.num} : ${s.titre}\n\n*« ${s.question} »* · Horloge ${s.horloge} · Niveaux ${s.niveaux}\n`).join('\n')}`)
+  rac.file('Meta-campagne.md', `#Meta\n\n# ${u.meta.nom}\n\n## Thèse\n\n${u.meta.these}\n\n## Saisons\n\n${u.meta.saisons.map(s => `### Saison ${s.num} : ${s.titre}\n\nHorloge ${s.horloge} · Niveaux ${s.niveaux}\n\n**Enjeux :** ${s.enjeux || ''}\n\n${s.resume || ''}\n`).join('\n')}`)
   const blob = await zip.generateAsync({ type: 'blob' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)

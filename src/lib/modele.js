@@ -23,7 +23,7 @@ export const nouvelArbre = () => ({
 
 export const nouveauJoueur = () => ({
   id: uid('pj'), joueur: '', personnage: 'Nouveau personnage', classe: '', niveau: 1,
-  faction: null, notes: '', secrets: '', citations: [],
+  faction: null, superieurId: null, notes: '', secrets: '', citations: [],
   reputations: {},      // factionId -> -4..+4
   historique: [],       // { id, type, date, pnjId, lieuId, resume, effet }
 })
@@ -78,7 +78,12 @@ export const normaliser = (u) => {
     c.sessions ||= []
     c.arcId ??= null
     delete c.depart
-    c.sessions.forEach(s => { s.sections ||= [] })
+    c.sessions.forEach(s => { s.sections ||= []; s.joueurIds ||= [] })
+  })
+  u.meta.saisons.forEach(s => {
+    if (s.enjeux === undefined) s.enjeux = s.question || ''
+    s.resume ??= ''
+    delete s.question
   })
   u.factions.forEach(f => {
     if (f.chefId === undefined) f.chefId = (f.chefIds && f.chefIds[0]) || null
@@ -112,6 +117,7 @@ export const normaliser = (u) => {
   u.joueurs.forEach(j => {
     j.citations ||= []
     j.secrets ??= ''
+    j.superieurId ??= null
     if (!j.historique) {
       j.historique = (j.interactions || []).map(i => ({
         id: i.id || uid('his'), type: 'interaction', date: i.date ?? null,
@@ -134,6 +140,7 @@ export const nouvelleCampagne = () => ({
 
 export const nouvelleSession = () => ({
   id: uid('ses'), code: '', titre: 'Nouvelle session', date: null, resume: '',
+  joueurIds: [],  // présents à la table pour cette session
   sections: [],   // { id, titre, contenu } : la préparation à lire en session
 })
 
@@ -143,9 +150,9 @@ export const universInitial = () => ({
     nom: 'Sidéria : L\'Ère de l\'Éther', version: 1,
     these: 'Sidéria est la cause de sa propre fin. L\'histoire est de décider ce qui mérite d\'être sauvé, et à quel prix.',
     saisons: [
-      { num: 1, titre: 'La Ville qui Gronde', question: 'À qui appartient ta colère ?', horloge: 'M0-M8', niveaux: '8-18' },
-      { num: 2, titre: 'Les Fils Coupés', question: 'À qui appartient ta loyauté ?', horloge: 'M9-M15', niveaux: '16-28' },
-      { num: 3, titre: 'La Déchirure', question: 'Qu\'est-ce qui mérite de survivre ?', horloge: 'M16-M24', niveaux: '26-40' },
+      { num: 1, titre: 'La Ville qui Gronde', enjeux: 'À qui appartient ta colère ?', resume: '', horloge: 'M0-M8', niveaux: '8-18' },
+      { num: 2, titre: 'Les Fils Coupés', enjeux: 'À qui appartient ta loyauté ?', resume: '', horloge: 'M9-M15', niveaux: '16-28' },
+      { num: 3, titre: 'La Déchirure', enjeux: 'Qu\'est-ce qui mérite de survivre ?', resume: '', horloge: 'M16-M24', niveaux: '26-40' },
     ],
   },
   factions: [

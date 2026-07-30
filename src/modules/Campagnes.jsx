@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, PucesPnjs } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs } from './communs.jsx'
 import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid } from '../lib/modele.js'
 import { Texte } from './communs.jsx'
 import { DateSiderienne } from './communs.jsx'
@@ -134,7 +134,7 @@ export default function Campagnes() {
             {c.sessions.map(s => (
               <div className="carte" key={s.id} style={{ cursor: 'pointer' }} onClick={() => setSessionSel(s.id)}>
                 <strong>{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
-                <span className="aide"> · {s.date != null ? fmtDate(s.date) : 'sans date'} · {univers.evenements.filter(e => e.sessionId === s.id).length} événement(s) · cliquer pour éditer</span>
+                <span className="aide"> · {s.date != null ? fmtDate(s.date) : 'sans date'} · {univers.evenements.filter(e => e.sessionId === s.id).length} événement(s) · {(s.joueurIds || []).length}/{univers.joueurs.length} joueur(s) présent(s) · cliquer pour éditer</span>
               </div>
             ))}
             <button className="btn clair" onClick={() => modifier(x => { x.sessions.push(nouvelleSession()) })}>+ session</button>
@@ -179,8 +179,12 @@ function Meta({ meta, modifier }) {
               <Champ className="etroit" label="Niveaux" value={s.niveaux}
                 onChange={e => modifier(m => { m.saisons[i].niveaux = e.target.value })} />
             </div>
-            <Champ label="Question dramatique" value={s.question}
-              onChange={e => modifier(m => { m.saisons[i].question = e.target.value })} />
+            <Champ label="Enjeux" zone value={s.enjeux}
+              onChange={e => modifier(m => { m.saisons[i].enjeux = e.target.value })} />
+            {s.enjeux && <div style={{ fontSize: ".86rem" }}><Texte>{s.enjeux}</Texte></div>}
+            <Champ label="Résumé" zone value={s.resume}
+              onChange={e => modifier(m => { m.saisons[i].resume = e.target.value })} />
+            {s.resume && <div style={{ fontSize: ".86rem" }}><Texte>{s.resume}</Texte></div>}
             <div style={{ marginTop: 8 }}>
               <label>Campagnes de cette saison ({camps.length})</label>
               {camps.length
@@ -199,7 +203,7 @@ function Meta({ meta, modifier }) {
         )
       })}
       <button className="btn clair" onClick={() => modifier(m => {
-        m.saisons.push({ num: m.saisons.length + 1, titre: '', question: '', horloge: '', niveaux: '' })
+        m.saisons.push({ num: m.saisons.length + 1, titre: '', enjeux: '', resume: '', horloge: '', niveaux: '' })
       })}>+ saison</button>
 
       <h3>Lignes de force</h3>
@@ -209,7 +213,7 @@ function Meta({ meta, modifier }) {
           <Champ label="Titre" value={l.titre} onChange={e => modifier(m => { m.lignesForce[i].titre = e.target.value })} />
           <Champ label="Description" zone value={l.description}
             onChange={e => modifier(m => { m.lignesForce[i].description = e.target.value })} />
-          {l.description && <p style={{ fontSize: '.86rem' }}><Texte>{l.description}</Texte></p>}
+          {l.description && <div style={{ fontSize: ".86rem" }}><Texte>{l.description}</Texte></div>}
           <button className="btn clair" onClick={() => modifier(m => { m.lignesForce.splice(i, 1) })}>retirer</button>
         </div>
       ))}
@@ -285,6 +289,11 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
       </div>
       <span><label>Résumé</label>
         <textarea value={s.resume} onChange={e => modifier(x => { x.resume = e.target.value })} /></span>
+      {s.resume && <div style={{ fontSize: ".86rem" }}><Texte>{s.resume}</Texte></div>}
+
+      <h3>Joueurs présents</h3>
+      <p className="aide">Coche les joueurs qui étaient à la table pour cette session (utile quand tout le monde n'est pas présent). Apparaît sur la frise et sur la fiche de chacun.</p>
+      <PucesJoueurs ids={s.joueurIds} surChange={v => modifier(x => { x.joueurIds = v })} />
 
       <h3>Préparation (les sections à lire en session)</h3>
       {s.sections.map((sec, i) => (
@@ -371,7 +380,8 @@ function ModeSession({ session, campagne, univers, maj, fermer }) {
         <strong style={{ fontVariant: 'small-caps', fontSize: '1.05rem' }}>
           {session.code ? session.code + ' · ' : ''}{session.titre}</strong>
         <span style={{ color: 'var(--or-clair)', fontSize: '.85rem' }}>
-          {campagne.titre}{session.date != null ? ' · ' + fmtDate(session.date) : ''}</span>
+          {campagne.titre}{session.date != null ? ' · ' + fmtDate(session.date) : ''}
+          {session.joueurIds?.length > 0 && ' · ' + session.joueurIds.map(id => univers.joueurs.find(j => j.id === id)?.personnage).filter(Boolean).join(', ')}</span>
         <span style={{ flex: 1 }} />
         <button className="btn" onClick={fermer}>Quitter (Échap)</button>
       </div>
@@ -409,7 +419,7 @@ function ModeSession({ session, campagne, univers, maj, fermer }) {
                 <strong>{p.nom}</strong>
                 <span className="aide"> · {p.poste || p.role}</span>
                 {ouvert && <div onClick={ev => ev.stopPropagation()} style={{ cursor: 'default', marginTop: 6 }}>
-                  {p.description && <p style={{ fontSize: '.86rem' }}><Texte>{p.description}</Texte></p>}
+                  {p.description && <div style={{ fontSize: ".86rem" }}><Texte>{p.description}</Texte></div>}
                   {p.repliques.filter(Boolean).map((r, i) =>
                     <p key={i} style={{ borderLeft: '3px solid var(--or)', paddingLeft: 8, fontStyle: 'italic', fontSize: '.86rem', margin: '4px 0' }}>{r}</p>)}
                   {p.secrets && <div style={{ border: '1px dashed var(--rouge)', padding: '5px 8px', fontSize: '.82rem', margin: '6px 0' }}>

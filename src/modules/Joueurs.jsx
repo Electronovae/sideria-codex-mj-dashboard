@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, ListeFiche, DateSiderienne } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, ListeFiche, DateSiderienne, Texte } from './communs.jsx'
 import { nouveauJoueur, nouvelleEntreeHistorique, TYPES_HISTORIQUE } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
 
@@ -19,6 +19,9 @@ export default function Joueurs() {
     maj(u => { u.joueurs = u.joueurs.filter(x => x.id !== selId) })
     setSelId(null)
   }
+  const sessionsJouees = j ? univers.campagnes.flatMap(c =>
+    c.sessions.filter(s => (s.joueurIds || []).includes(j.id)).map(s => ({ ...s, campagne: c }))
+  ).sort((a, b) => (a.date ?? 0) - (b.date ?? 0)) : []
 
   return (
     <ListeFiche
@@ -53,6 +56,11 @@ export default function Joueurs() {
             <span><label>Faction actuelle</label>
               <SelecteurFaction valeur={j.faction} surChange={v => modifier(x => { x.faction = v })} /></span>
           </div>
+          <span><label>Contact / supérieur dans la faction (pour l'organigramme)</label>
+            <select value={j.superieurId || ''} onChange={e => modifier(x => { x.superieurId = e.target.value || null })}>
+              <option value="">— aucun, affiché à la racine —</option>
+              {univers.pnjs.filter(p => p.faction === j.faction).map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}
+            </select></span>
           <Champ label="Notes MJ (fils personnels, dettes, promesses)" zone value={j.notes}
             onChange={e => modifier(x => { x.notes = e.target.value })} />
           <Champ label="Secrets Maître (ce que le personnage ignore, réservé au MJ)" zone value={j.secrets}
@@ -78,6 +86,17 @@ export default function Joueurs() {
               <span className="val">{(j.reputations[f.id] ?? 0) > 0 ? '+' : ''}{j.reputations[f.id] ?? 0}</span>
             </div>
           ))}
+
+          <h3>Sessions jouées ({sessionsJouees.length})</h3>
+          <p className="aide">Coché depuis l'onglet Méta et Campagnes, fiche de la session. Utile pour retrouver qui était là quand.</p>
+          {sessionsJouees.length
+            ? <ul style={{ marginLeft: 18 }}>{sessionsJouees.map(s => (
+                <li key={s.id}>
+                  <strong>{s.date != null ? fmtDate(s.date) : 'sans date'}</strong> · {s.code ? s.code + ' · ' : ''}{s.titre}
+                  <span className="aide"> ({s.campagne.titre})</span>
+                </li>
+              ))}</ul>
+            : <p className="aide">Aucune session cochée pour ce personnage pour l'instant.</p>}
 
           <h3>Historique</h3>
           <p className="aide">Tout ce que le personnage a vécu : rencontres, combats, lieux traversés, révélations. Les entrées datées apparaissent sur sa ligne de la frise.</p>

@@ -66,13 +66,9 @@ export default function Factions() {
             : <p className="aide">Aucun PNJ. Le rattachement se fait depuis la fiche du PNJ.</p>}
 
           <h3>Organigramme</h3>
-          {membres.length
-            ? <Organigramme faction={f} membres={membres} />
-            : <p className="aide">L'organigramme se construit avec les champs "poste" et "supérieur" des fiches PNJ.</p>}
-          {pjs.length > 0 && <>
-            <h3>Personnages joueurs affiliés</h3>
-            <ul style={{ marginLeft: 18 }}>{pjs.map(p => <li key={p.id}>{p.personnage} ({p.joueur})</li>)}</ul>
-          </>}
+          {(membres.length || pjs.length)
+            ? <Organigramme faction={f} membres={membres} pjs={pjs} />
+            : <p className="aide">L'organigramme se construit avec les champs "poste" et "supérieur" des fiches PNJ, et affiche aussi les PJ affiliés.</p>}
 
           <h3>Événements liés</h3>
           {evts.length
@@ -90,15 +86,26 @@ export default function Factions() {
 }
 
 
-// Organigramme : arbre hiérarchique déduit des champs superieurId des PNJ.
-function Organigramme({ faction, membres }) {
+// Organigramme : arbre hiérarchique déduit des champs superieurId des PNJ,
+// avec les PJ affiliés en feuilles rattachées à leur PNJ de référence (superieurId),
+// ou regroupés à la racine s'ils n'en ont pas.
+function Organigramme({ faction, membres, pjs = [] }) {
   const enfants = (id) => membres.filter(m => (m.superieurId || null) === id && m.id !== id)
+  const pjsDe = (id) => pjs.filter(p => (p.superieurId || null) === id)
   // racines : le chef, puis les membres sans supérieur (ou dont le supérieur est hors faction)
   const idsMembres = new Set(membres.map(m => m.id))
   const racines = membres.filter(m =>
     m.id === faction.chefId || !m.superieurId || !idsMembres.has(m.superieurId))
     .filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i)
     .sort((a, b) => (a.id === faction.chefId ? -1 : b.id === faction.chefId ? 1 : 0))
+  const pjsRacine = pjs.filter(p => !p.superieurId || !idsMembres.has(p.superieurId))
+  const CartePj = ({ p }) => (
+    <div className="carte" style={{ padding: '6px 12px', margin: '4px 0',
+      borderLeftColor: faction.couleur, borderLeftStyle: 'dashed', display: 'inline-block', minWidth: 220 }}>
+      <strong>{p.personnage}</strong>
+      <div className="aide" style={{ marginTop: 0 }}>PJ · {p.joueur || 'joueur ?'}</div>
+    </div>
+  )
   const Noeud = ({ m, prof, vus }) => {
     if (vus.has(m.id)) return null
     const suiv = new Set(vus); suiv.add(m.id)
@@ -111,8 +118,19 @@ function Organigramme({ faction, membres }) {
           <div className="aide" style={{ marginTop: 0 }}>{m.poste || m.role || 'poste à définir'}</div>
         </div>
         {enfants(m.id).map(e => <Noeud key={e.id} m={e} prof={prof + 1} vus={suiv} />)}
+        {pjsDe(m.id).map(p => <div key={p.id} style={{ marginLeft: (prof + 1) * 22 }}><CartePj p={p} /></div>)}
       </div>
     )
   }
-  return <div>{racines.map(m => <Noeud key={m.id} m={m} prof={0} vus={new Set()} />)}</div>
+  return (
+    <div>
+      {racines.map(m => <Noeud key={m.id} m={m} prof={0} vus={new Set()} />)}
+      {pjsRacine.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          {racines.length > 0 && <p className="aide" style={{ marginBottom: 4 }}>PJ affiliés (sans supérieur PNJ précisé) :</p>}
+          {pjsRacine.map(p => <CartePj key={p.id} p={p} />)}
+        </div>
+      )}
+    </div>
+  )
 }

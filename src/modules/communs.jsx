@@ -162,18 +162,105 @@ export function resoudreNom(univers, nom) {
     || chercher(univers.evenements, 'evenement', 'titre')
 }
 
-// Rend un texte en transformant les [[Nom]] en liens cliquables vers le Codex.
-export function Texte({ children }) {
+// Extrait tous les [[Nom]] présents dans un texte (utilisé pour l'interconnexion / les liens retour).
+export function extraireWikiliens(texte) {
+  if (!texte) return []
+  const noms = []
+  const re = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g
+  let m
+  while ((m = re.exec(String(texte)))) noms.push(m[1].trim())
+  return noms
+}
+
+// Rend un [[Nom]] en lien cliquable vers le Codex (utilisé par LigneRiche et Texte).
+function Wikilien({ nom, libelle }) {
   const { univers, setOnglet, setCodexCible } = useStudio()
-  if (!children) return null
-  const morceaux = String(children).split(/(\[\[[^\]]+\]\])/g)
+  const cible = resoudreNom(univers, nom)
+  if (!cible) return <span style={{ color: 'var(--gris)', borderBottom: '1px dashed var(--gris)' }} title="Aucune entité ne porte ce nom">{libelle}</span>
+  return <span onClick={() => { setCodexCible(cible); setOnglet('codex') }}
+    style={{ color: '#b8912a', cursor: 'pointer', borderBottom: '1px dashed var(--or)' }}>{libelle}</span>
+}
+
+// Découpe une ligne de texte en morceaux : wikilinks, gras, italique, texte brut.
+function LigneRiche({ texte }) {
+  const morceaux = String(texte).split(/(\[\[[^\]]+\]\]|\*\*[^*]+\*\*|\*[^*]+\*)/g).filter(m => m !== '')
   return <>{morceaux.map((m, i) => {
     const lien = m.match(/^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/)
-    if (!lien) return <React.Fragment key={i}>{m}</React.Fragment>
-    const cible = resoudreNom(univers, lien[1])
-    const libelle = lien[2] || lien[1]
-    if (!cible) return <span key={i} style={{ color: 'var(--gris)', borderBottom: '1px dashed var(--gris)' }} title="Aucune entité ne porte ce nom">{libelle}</span>
-    return <span key={i} onClick={() => { setCodexCible(cible); setOnglet('codex') }}
-      style={{ color: '#b8912a', cursor: 'pointer', borderBottom: '1px dashed var(--or)' }}>{libelle}</span>
+    if (lien) return <Wikilien key={i} nom={lien[1]} libelle={lien[2] || lien[1]} />
+    const gras = m.match(/^\*\*([^*]+)\*\*$/)
+    if (gras) return <strong key={i}>{gras[1]}</strong>
+    const ital = m.match(/^\*([^*]+)\*$/)
+    if (ital) return <em key={i}>{ital[1]}</em>
+    return <React.Fragment key={i}>{m}</React.Fragment>
   })}</>
+}
+
+// ── Interconnexion : liens sortants et liens retour (backlinks) ──
+// Décrit, pour chaque type d'entité, où chercher les [[wikilinks]] potentiels.
+const CHAMPS_TEXTE_PAR_TYPE = {
+  pnj: ['description', 'secrets'],
+  pj: ['notes', 'secrets'],
+  faction: ['description', 'objectifs', 'ressources'],
+  lieu: ['description', 'secrets'],
+  campagne: ['pitch', 'issues'],
+  evenement: ['desc'],
+  arc: ['description'],
+}
+
+const TOUTES_ENTITES = (univers) => ([
+  ...univers.pnjs.map(e => ({ type: 'pnj', id: e.id, nom: e.nom, obj: e })),
+  ...univers.joueurs.map(e => ({ type: 'pj', id: e.id, nom: e.personnage, obj: e })),
+  ...univers.factions.map(e => ({ type: 'faction', id: e.id, nom: e.nom, obj: e })),
+  ...univers.lieux.map(e => ({ type: 'lieu', id: e.id, nom: e.nom, obj: e })),
+  ...univers.campagnes.map(e => ({ type: 'campagne', id: e.id, nom: e.titre, obj: e })),
+  ...univers.evenements.map(e => ({ type: 'evenement', id: e.id, nom: e.titre, obj: e })),
+  ...univers.arcs.map(e => ({ type: 'arc', id: e.id, nom: e.nom, obj: e })),
+])
+
+// Liste les entités qui référencent `cible` (type, id) via un [[wikilink]] dans un de leurs champs texte.
+export function trouverBacklinks(univers, cible) {
+  const nomCible = TOUTES_ENTITES(univers).find(e => e.type === cible.type && e.id === cible.id)?.nom
+  if (!nomCible) return []
+  const nomCibleBas = nomCible.trim().toLowerCase()
+  const resultats = []
+  TOUTES_ENTITES(univers).forEach(e => {
+    if (e.type === cible.type && e.id === cible.id) return
+    const champs = CHAMPS_TEXTE_PAR_TYPE[e.type] || []
+    for (const champ of champs) {
+      const noms = extraireWikiliens(e.obj[champ])
+      if (noms.some(n => n.trim().toLowerCase() === nomCibleBas)) { resultats.push(e); break }
+    }
+  })
+  return resultats
+}
+
+// Rend un texte au format markdown fonctionnel léger :
+// # / ## / ### titres, **gras**, *italique*, listes "- item", [[wikilinks]] cliquables.
+// Pas de dépendance externe : suffisant pour les zones de texte du Studio.
+export function Texte({ children }) {
+  if (!children) return null
+  const lignes = String(children).split('\n')
+  const blocs = []
+  let listeCourante = null
+  const clorreListe = () => { if (listeCourante) { blocs.push(listeCourante); listeCourante = null } }
+  lignes.forEach((ligne, i) => {
+    const titre = ligne.match(/^(#{1,3})\s+(.*)$/)
+    const item = ligne.match(/^[-*]\s+(.*)$/)
+    if (titre) {
+      clorreListe()
+      const Tag = ['h4', 'h5', 'h6'][titre[1].length - 1]
+      blocs.push(<Tag key={i} style={{ margin: '.4em 0 .2em' }}><LigneRiche texte={titre[2]} /></Tag>)
+    } else if (item) {
+      if (!listeCourante) listeCourante = <ul key={'l' + i} style={{ margin: '.2em 0', paddingLeft: '1.3em' }} />
+      listeCourante = { ...listeCourante, props: { ...listeCourante.props, children: [...(listeCourante.props.children || []), <li key={i}><LigneRiche texte={item[1]} /></li>] } }
+    } else if (ligne.trim() === '') {
+      clorreListe()
+      blocs.push(<React.Fragment key={i} />)
+    } else {
+      clorreListe()
+      blocs.push(<p key={i} style={{ margin: '.2em 0' }}><LigneRiche texte={ligne} /></p>)
+    }
+  })
+  clorreListe()
+  return <>{blocs}</>
 }

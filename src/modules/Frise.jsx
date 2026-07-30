@@ -104,6 +104,18 @@ export default function Frise() {
     if (idsValides.length) idsValides.forEach(id => poser({ ...base, ligne: indexLigne[id] }))
     else poser({ ...base, ligne: indexLigne['__general__'] })
   })
+  univers.campagnes.forEach(c => {
+    ;(c.sessions || []).forEach(s => {
+      if (s.date == null) return
+      ;(s.joueurIds || []).forEach(jid => {
+        if (!(jid in indexLigne)) return
+        const titre = (s.code ? s.code + ' · ' : '') + s.titre
+        poser({ obj: { titre: `${univers.joueurs.find(j => j.id === jid)?.personnage} présent à ${titre}`, desc: s.resume, debut: s.date, fin: null },
+          ligne: indexLigne[jid], x: xDe(s.date), larg: Math.min(140, Math.max(24, 12 + titre.length * 5.2)),
+          coul: faction(c.factionId)?.couleur || '#8d6e63', creux: true, titre: '🎲 ' + titre, ponctuel: false })
+      })
+    })
+  })
   univers.joueurs.forEach(j => {
     if (!(j.id in indexLigne)) return
     ;(j.historique || []).forEach(it => {
