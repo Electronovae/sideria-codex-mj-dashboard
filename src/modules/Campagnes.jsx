@@ -1,6 +1,12 @@
 import React, { useState } from 'react'
 import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs } from './communs.jsx'
-import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid } from '../lib/modele.js'
+import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid, STATUTS_SESSION } from '../lib/modele.js'
+
+// Icône de statut d'écriture d'une session, réutilisée dans la liste, les cartes et l'éditeur.
+function IconeStatutSession({ statut }) {
+  const st = STATUTS_SESSION.find(x => x.val === statut) || STATUTS_SESSION[0]
+  return <span title={st.label} style={{ marginRight: 4 }}>{st.icone}</span>
+}
 import { Texte } from './communs.jsx'
 import { DateSiderienne } from './communs.jsx'
 import { fmtDate } from '../lib/calendrier.js'
@@ -77,7 +83,7 @@ export default function Campagnes() {
               style={{ paddingLeft: 34, fontSize: '.82rem' }}
               onClick={() => { setSelId(camp.id); setSessionSel(s.id) }}>
               <span style={{ color: 'var(--gris)' }}>└</span>
-              <span>{s.code ? s.code + ' · ' : ''}{s.titre}
+              <span><IconeStatutSession statut={s.statut} />{s.code ? s.code + ' · ' : ''}{s.titre}
                 <div className="sous">{s.date != null ? fmtDate(s.date) : 'sans date'}</div></span>
             </div>))
           return acc
@@ -133,7 +139,7 @@ export default function Campagnes() {
             <h3>Sessions</h3>
             {c.sessions.map(s => (
               <div className="carte" key={s.id} style={{ cursor: 'pointer' }} onClick={() => setSessionSel(s.id)}>
-                <strong>{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
+                <strong><IconeStatutSession statut={s.statut} />{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
                 <span className="aide"> · {s.date != null ? fmtDate(s.date) : 'sans date'} · {univers.evenements.filter(e => e.sessionId === s.id).length} événement(s) · {(s.joueurIds || []).length}/{univers.joueurs.length} joueur(s) présent(s) · cliquer pour éditer</span>
               </div>
             ))}
@@ -278,12 +284,16 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
       </div>
       {modeSession && <ModeSession session={s} campagne={campagne} univers={univers} maj={maj}
         fermer={() => setModeSession(false)} />}
-      <h2 style={{ marginTop: 10 }}>{s.code ? s.code + ' · ' : ''}{s.titre}</h2>
+      <h2 style={{ marginTop: 10 }}><IconeStatutSession statut={s.statut} />{s.code ? s.code + ' · ' : ''}{s.titre}</h2>
       <div className="rangee">
         <span className="etroit"><label>Code</label>
           <input placeholder="S01" value={s.code} onChange={e => modifier(x => { x.code = e.target.value })} /></span>
         <span><label>Titre</label>
           <input value={s.titre} onChange={e => modifier(x => { x.titre = e.target.value })} /></span>
+        <span className="etroit"><label>Statut</label>
+          <select value={s.statut} onChange={e => modifier(x => { x.statut = e.target.value })}>
+            {STATUTS_SESSION.map(st => <option key={st.val} value={st.val}>{st.icone} {st.label}</option>)}
+          </select></span>
         <DateSiderienne label="Date en jeu" optionnel valeur={s.date}
           surChange={v => modifier(x => { x.date = v })} />
       </div>

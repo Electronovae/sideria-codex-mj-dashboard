@@ -78,7 +78,12 @@ export const normaliser = (u) => {
     c.sessions ||= []
     c.arcId ??= null
     delete c.depart
-    c.sessions.forEach(s => { s.sections ||= []; s.joueurIds ||= [] })
+    c.sessions.forEach(s => {
+      s.sections ||= []
+      s.joueurIds ||= []
+      // Heuristique pour les sessions déjà créées : à ajuster manuellement au besoin.
+      s.statut ??= (s.joueurIds.length > 0 ? 'realisee' : (s.resume || s.sections.length ? 'ecrite' : 'ecriture'))
+    })
   })
   u.meta.saisons.forEach(s => {
     if (s.enjeux === undefined) s.enjeux = s.question || ''
@@ -138,8 +143,16 @@ export const nouvelleCampagne = () => ({
   pnjIds: [], issues: '',
 })
 
+// Statuts de session, utilisés partout où une session est affichée (liste, éditeur, frise).
+export const STATUTS_SESSION = [
+  { val: 'ecriture', label: "en cours d'écriture", icone: '✏️' },
+  { val: 'ecrite', label: 'écrite', icone: '📗' },
+  { val: 'realisee', label: 'réalisée', icone: '✅' },
+]
+
 export const nouvelleSession = () => ({
   id: uid('ses'), code: '', titre: 'Nouvelle session', date: null, resume: '',
+  statut: 'ecriture',  // voir STATUTS_SESSION : 'ecriture' | 'ecrite' | 'realisee'
   joueurIds: [],  // présents à la table pour cette session
   sections: [],   // { id, titre, contenu } : la préparation à lire en session
 })

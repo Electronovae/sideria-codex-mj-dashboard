@@ -58,6 +58,19 @@ puis `npm install` et `git diff` pour vérifier avant de commit.
   - liste des lieux groupée par type dans la colonne de gauche,
   - aperçu markdown de la description.
 
+## 6. Icônes de statut pour les sessions
+- `src/lib/modele.js` : nouveau champ `statut` sur la session (`'ecriture' | 'ecrite' |
+  'realisee'`), avec la constante exportée `STATUTS_SESSION` (valeur, libellé, icône).
+  Migration douce : les sessions déjà présentes reçoivent un statut déduit par
+  heuristique (jouée si des joueurs sont cochés présents, écrite si résumé/prépa déjà
+  remplis, sinon en cours d'écriture) — à corriger à la main si l'heuristique se trompe.
+  - ✏️ en cours d'écriture
+  - 📗 écrite
+  - ✅ réalisée
+- L'icône apparaît partout où une session est listée : sidebar, carte session dans la
+  fiche campagne, en-tête de l'éditeur de session, fiche Codex de la campagne.
+- Dans l'éditeur de session, un menu déroulant "Statut" permet de le changer.
+
 ## Points d'attention avant de merger
 - Le modèle `evenement` n'a pas de champ `lieuId` : je n'ai donc pas ajouté de section
   "Événements ici" dans la fiche Lieu pour ne pas afficher une fonctionnalité fantôme.

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useStudio, Texte } from './communs.jsx'
 import { fmtDate } from '../lib/calendrier.js'
+import { STATUTS_SESSION } from '../lib/modele.js'
 
 // Le Codex : l'Obsidian embarqué. Chaque entité saisie dans le Studio a sa page,
 // naviguable par liens, avec les vues agrégées par faction, arc, PNJ, PJ.
@@ -146,7 +147,7 @@ export default function Codex() {
         {(x.sessions || []).length > 0 && <Bloc titre="Sessions">{x.sessions.map(s => {
           const es = univers.evenements.filter(e => e.sessionId === s.id).sort((a, b) => a.debut - b.debut)
           return <div className="carte" key={s.id}>
-            <strong>{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
+            <strong>{(STATUTS_SESSION.find(st => st.val === s.statut) || STATUTS_SESSION[0]).icone} {s.code ? s.code + ' · ' : ''}{s.titre}</strong>
             {s.date != null && <span className="aide"> · {fmtDate(s.date)}</span>}
             {s.resume && <div><Texte>{s.resume}</Texte></div>}
             {es.map(e => <div key={e.id} style={{ paddingLeft: 10 }}>· <L type="evenement" id={e.id}>{e.titre}</L></div>)}
