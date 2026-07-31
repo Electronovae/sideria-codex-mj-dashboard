@@ -71,6 +71,21 @@ puis `npm install` et `git diff` pour vérifier avant de commit.
   fiche campagne, en-tête de l'éditeur de session, fiche Codex de la campagne.
 - Dans l'éditeur de session, un menu déroulant "Statut" permet de le changer.
 
+## 7. Plein écran pour les arbres narratifs
+- `src/modules/ArbreEditeur.jsx` : bouton "⛶ Plein écran" (et touche Échap pour sortir).
+  Le canevas passe en overlay occupant tout le viewport ; la hauteur, auparavant codée
+  en dur à 480px à plusieurs endroits, est désormais mesurée dynamiquement.
+
+## 8. Écran scindé (deux panneaux indépendants)
+- `src/App.jsx` : bouton "◨ Écran scindé" dans l'en-tête. Coupe la zone principale en
+  deux colonnes côte à côte (adapté aux écrans larges type 21:9), chacune avec son
+  propre sélecteur d'onglet. Les deux panneaux partagent les mêmes données (`univers`),
+  mais ont chacun leur propre navigation : cliquer un `[[wikilink]]` ou un lien du Codex
+  dans un panneau l'ouvre dans ce même panneau, jamais dans l'autre.
+- Pas de persistance du choix (ni l'activation, ni les deux onglets sélectionnés) :
+  chaque session repart sur l'affichage simple, un seul panneau, comme avant.
+- `src/styles.css` : styles `.scinde` / `.panneau` / `.barre-panneau` / `.contenu-panneau`.
+
 ## Points d'attention avant de merger
 - Le modèle `evenement` n'a pas de champ `lieuId` : je n'ai donc pas ajouté de section
   "Événements ici" dans la fiche Lieu pour ne pas afficher une fonctionnalité fantôme.

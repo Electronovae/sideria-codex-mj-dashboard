@@ -56,16 +56,29 @@ export function Manometre({ compteur, surDelta, largeur = 220 }) {
 export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
   const conteneur = useRef(null)
   const [taille, setTaille] = useState({ w: 800, h: 480 })
+  const [pleinEcran, setPleinEcran] = useState(false)
   const [vue, setVue] = useState({ x: 0, y: 0, z: 1 })
   const [sel, setSel] = useState(null)   // { type: 'noeud'|'transition', id|idx }
   const [lien, setLien] = useState(null) // { from, x, y } lien en cours de création
   const drag = useRef(null)
 
   useEffect(() => {
-    const majT = () => conteneur.current && setTaille(t => ({ ...t, w: conteneur.current.clientWidth }))
-    majT(); window.addEventListener('resize', majT)
-    return () => window.removeEventListener('resize', majT)
-  }, [])
+    const majT = () => conteneur.current && setTaille({
+      w: conteneur.current.clientWidth,
+      h: conteneur.current.clientHeight,
+    })
+    // rAF : laisse le layout (notamment le passage en plein écran) se poser avant de mesurer.
+    const id = requestAnimationFrame(majT)
+    window.addEventListener('resize', majT)
+    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', majT) }
+  }, [pleinEcran])
+
+  useEffect(() => {
+    if (!pleinEcran) return
+    const surTouche = (e) => { if (e.key === 'Escape') setPleinEcran(false) }
+    window.addEventListener('keydown', surTouche)
+    return () => window.removeEventListener('keydown', surTouche)
+  }, [pleinEcran])
 
   const versMonde = (ev) => {
     const r = conteneur.current.getBoundingClientRect()
@@ -123,7 +136,7 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
 
   const ajouterNoeud = () => {
     const id = uid('n')
-    const centre = { x: (taille.w / 2 - vue.x) / vue.z - NW / 2, y: (240 - vue.y) / vue.z }
+    const centre = { x: (taille.w / 2 - vue.x) / vue.z - NW / 2, y: (taille.h / 2 - vue.y) / vue.z }
     modifier(a => {
       a.noeuds.push({ id, type: 'etat', phase: 0, titre: 'Nouveau nœud', description: '', x: centre.x, y: centre.y })
     })
@@ -134,11 +147,11 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
     const xs = arbre.noeuds.map(n => n.x), ys = arbre.noeuds.map(n => n.y)
     const x1 = Math.min(...xs), x2 = Math.max(...xs) + NW
     const y1 = Math.min(...ys), y2 = Math.max(...ys) + NH
-    const z = Math.min(1.4, Math.max(0.3, Math.min((taille.w - 60) / (x2 - x1), (480 - 60) / (y2 - y1))))
+    const z = Math.min(1.4, Math.max(0.3, Math.min((taille.w - 60) / (x2 - x1), (taille.h - 60) / (y2 - y1))))
     setVue({
       z,
       x: (taille.w - (x2 - x1) * z) / 2 - x1 * z,
-      y: (480 - (y2 - y1) * z) / 2 - y1 * z,
+      y: (taille.h - (y2 - y1) * z) / 2 - y1 * z,
     })
   }
 
@@ -147,22 +160,28 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
   const c = arbre.compteur
 
   return (
-    <div>
+    <div style={pleinEcran ? {
+      position: 'fixed', inset: 0, zIndex: 200, background: 'var(--fond)',
+      padding: 12, display: 'flex', flexDirection: 'column',
+    } : undefined}>
       {/* Canevas */}
-      <div style={{ display: 'flex', gap: 6, margin: '10px 0 6px' }}>
+      <div style={{ display: 'flex', gap: 6, margin: '10px 0 6px', flex: 'none' }}>
         <button className="btn clair" onClick={ajouterNoeud}>+ nœud</button>
         <button className="btn clair" onClick={recadrer}>Recadrer</button>
         <span className="aide" style={{ alignSelf: 'center' }}>glisser un nœud : déplacer · tirer depuis le rond doré : créer un lien · clic : éditer à droite · molette : zoom</span>
+        <span style={{ flex: 1 }} />
+        <button className="btn clair" onClick={() => setPleinEcran(v => !v)}>
+          {pleinEcran ? '✕ Quitter le plein écran (Échap)' : '⛶ Plein écran'}</button>
       </div>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
-        <div ref={conteneur} style={{ flex: 1, height: 480, border: '1px solid var(--parch-mid)', background: 'var(--carte)', overflow: 'hidden', position: 'relative', userSelect: 'none', cursor: 'grab' }}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', flex: pleinEcran ? 1 : 'none', minHeight: 0 }}>
+        <div ref={conteneur} style={{ flex: 1, height: pleinEcran ? '100%' : 480, border: '1px solid var(--parch-mid)', background: 'var(--carte)', overflow: 'hidden', position: 'relative', userSelect: 'none', cursor: 'grab' }}
           onMouseDown={(ev) => {
             if (ev.button !== 0 || ev.target.closest('[data-el]')) return
             ev.preventDefault()
             drag.current = { type: 'fond', x: ev.clientX, y: ev.clientY, vx: vue.x, vy: vue.y }
             setSel(null)
           }}>
-          <svg width={taille.w} height={480} style={{ display: 'block' }}>
+          <svg width={taille.w} height={taille.h} style={{ display: 'block' }}>
             <g transform={`translate(${vue.x},${vue.y}) scale(${vue.z})`}>
               {arbre.transitions.map((t, i) => {
                 const a = arbre.noeuds.find(n => n.id === t.from)
@@ -219,7 +238,7 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
         </div>
 
         {/* Panneau latéral d'édition */}
-        <div style={{ width: 280, flex: 'none', border: '1px solid var(--parch-mid)', background: 'var(--fond2)', padding: 12, overflowY: 'auto', maxHeight: 480 }}>
+        <div style={{ width: 280, flex: 'none', border: '1px solid var(--parch-mid)', background: 'var(--fond2)', padding: 12, overflowY: 'auto', maxHeight: pleinEcran ? '100%' : 480 }}>
           {noeudSel ? <>
             <h3 style={{ marginTop: 0 }}>Nœud</h3>
             <span><label>Titre</label>
@@ -256,7 +275,7 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
           </> : <p className="aide">Clique sur un nœud ou une transition pour l'éditer. Tire depuis le rond doré d'un nœud vers un autre pour créer un lien.</p>}
         </div>
       </div>
-      <button className="btn danger" style={{ marginTop: 10 }} onClick={supprimerArbre}>Supprimer l'arbre</button>
+      {!pleinEcran && <button className="btn danger" style={{ marginTop: 10 }} onClick={supprimerArbre}>Supprimer l'arbre</button>}
     </div>
   )
 }

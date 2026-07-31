@@ -34,6 +34,9 @@ export default function App() {
   const [univers, setUnivers] = useState(chargerLocal)
   const [onglet, setOnglet] = useState('codex')
   const [codexCible, setCodexCible] = useState(null)
+  const [scinde, setScinde] = useState(false)
+  const [ongletB, setOngletB] = useState('graphe')
+  const [codexCibleB, setCodexCibleB] = useState(null)
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('sideria-theme') || 'clair' } catch { return 'clair' } })
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -96,6 +99,7 @@ export default function App() {
   }, [])
 
   const ctx = useMemo(() => ({ univers, maj, setOnglet, codexCible, setCodexCible }), [univers, codexCible])
+  const ctxB = useMemo(() => ({ univers, maj, setOnglet: setOngletB, codexCible: codexCibleB, setCodexCible: setCodexCibleB }), [univers, codexCibleB])
 
   const surImport = async (e) => {
     const f = e.target.files[0]
@@ -125,6 +129,7 @@ export default function App() {
   }
 
   const Module = MODULES.find(([id]) => id === onglet)[2]
+  const ModuleB = MODULES.find(([id]) => id === ongletB)?.[2] || Module
 
   return (
     <Ctx.Provider value={ctx}>
@@ -134,6 +139,8 @@ export default function App() {
         <span className="sep" />
         <button className="btn" onClick={() => setTheme(th => th === 'clair' ? 'sombre' : 'clair')}>
           {theme === 'clair' ? 'Mode sombre' : 'Mode clair'}</button>
+        <button className={'btn' + (scinde ? ' plein' : '')} onClick={() => setScinde(v => !v)}>
+          {scinde ? '◨ Quitter l\u2019écran scindé' : '◨ Écran scindé'}</button>
         <button className="btn" onClick={() => exporterJson(univers)}>Exporter JSON</button>
         <button className="btn" onClick={() => fichierRef.current.click()}>Importer JSON</button>
         <button className="btn" onClick={() => exporterObsidian(univers)}>Export Obsidian (.zip)</button>
@@ -144,12 +151,37 @@ export default function App() {
         {!supabaseActif() && <span className="statut" title="Renseigner .env pour activer">Supabase : non configuré</span>}
         <input ref={fichierRef} type="file" accept=".json" style={{ display: 'none' }} onChange={surImport} />
       </header>
-      <nav>
-        {MODULES.map(([id, titre]) => (
-          <button key={id} className={onglet === id ? 'actif' : ''} onClick={() => setOnglet(id)}>{titre}</button>
-        ))}
-      </nav>
-      <main><Module /></main>
+      {!scinde && (
+        <nav>
+          {MODULES.map(([id, titre]) => (
+            <button key={id} className={onglet === id ? 'actif' : ''} onClick={() => setOnglet(id)}>{titre}</button>
+          ))}
+        </nav>
+      )}
+      {!scinde ? (
+        <main><Module /></main>
+      ) : (
+        <main className="scinde">
+          <section className="panneau">
+            <div className="barre-panneau">
+              <select value={onglet} onChange={e => setOnglet(e.target.value)}>
+                {MODULES.map(([id, titre]) => <option key={id} value={id}>{titre}</option>)}
+              </select>
+            </div>
+            <div className="contenu-panneau"><Module /></div>
+          </section>
+          <section className="panneau">
+            <div className="barre-panneau">
+              <select value={ongletB} onChange={e => setOngletB(e.target.value)}>
+                {MODULES.map(([id, titre]) => <option key={id} value={id}>{titre}</option>)}
+              </select>
+            </div>
+            <div className="contenu-panneau">
+              <Ctx.Provider value={ctxB}><ModuleB /></Ctx.Provider>
+            </div>
+          </section>
+        </main>
+      )}
       {recherche && <Recherche fermer={() => setRecherche(false)} />}
     </Ctx.Provider>
   )

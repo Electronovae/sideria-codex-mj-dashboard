@@ -36,6 +36,13 @@ nav button{background:none;border:none;color:var(--texte-clair);padding:9px 16px
   font-variant:small-caps;letter-spacing:.05em;border-bottom:3px solid transparent}
 nav button.actif{color:var(--or-clair);border-bottom-color:var(--or)}
 main{flex:1;display:flex;min-height:0}
+main.scinde{gap:0}
+main.scinde .panneau{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+main.scinde .panneau:first-child{border-right:2px solid var(--parch-mid)}
+main.scinde .barre-panneau{flex:none;padding:6px 10px;border-bottom:1px solid var(--parch-mid);
+  background:linear-gradient(180deg,var(--fond2),var(--parch))}
+main.scinde .barre-panneau select{width:100%;font-size:.8rem}
+main.scinde .contenu-panneau{flex:1;display:flex;min-height:0}
 .liste{width:270px;flex:none;border-right:2px solid var(--parch-mid);overflow-y:auto;
   background:linear-gradient(180deg,var(--fond2),var(--parch))}
 .liste .item{padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;
