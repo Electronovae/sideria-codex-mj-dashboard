@@ -1,6 +1,13 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, ZoneDepotMd } from './communs.jsx'
 import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid, STATUTS_SESSION } from '../lib/modele.js'
+
+// Si le .md déposé commence par un titre "# ...", on le sépare du reste (utile pour pré-remplir le titre d'une section).
+function separerTitreMd(texte, nomFichier) {
+  const m = texte.match(/^#\s+(.+?)\s*\n?/)
+  if (m) return { titre: m[1].trim(), contenu: texte.slice(m[0].length).trim() }
+  return { titre: nomFichier, contenu: texte.trim() }
+}
 
 // Icône de statut d'écriture d'une session, réutilisée dans la liste, les cartes et l'éditeur.
 function IconeStatutSession({ statut }) {
@@ -297,8 +304,10 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
         <DateSiderienne label="Date en jeu" optionnel valeur={s.date}
           surChange={v => modifier(x => { x.date = v })} />
       </div>
-      <span><label>Résumé</label>
-        <textarea value={s.resume} onChange={e => modifier(x => { x.resume = e.target.value })} /></span>
+      <ZoneDepotMd libelle="Déposer un .md pour remplir le résumé" onTexte={texte => modifier(x => { x.resume = texte })}>
+        <span><label>Résumé</label>
+          <textarea value={s.resume} onChange={e => modifier(x => { x.resume = e.target.value })} /></span>
+      </ZoneDepotMd>
       {s.resume && <div style={{ fontSize: ".86rem" }}><Texte>{s.resume}</Texte></div>}
 
       <h3>Joueurs présents</h3>
@@ -306,26 +315,40 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
       <PucesJoueurs ids={s.joueurIds} surChange={v => modifier(x => { x.joueurIds = v })} />
 
       <h3>Préparation (les sections à lire en session)</h3>
+      <p className="aide">Glisse un fichier .md sur une section pour remplir son contenu (et son titre s'il commence par "# Titre"), ou dépose-le sur la zone du bas pour créer une nouvelle section directement.</p>
       {s.sections.map((sec, i) => (
-        <div className="carte" key={sec.id}>
-          <span><label>Titre de la section</label>
-            <input value={sec.titre} placeholder="Scène 1 : la gargote"
-              onChange={e => modifier(x => { x.sections[i].titre = e.target.value })} /></span>
-          <span><label>Contenu</label>
-            <textarea style={{ minHeight: 110 }} value={sec.contenu}
-              onChange={e => modifier(x => { x.sections[i].contenu = e.target.value })} /></span>
-          <div className="rangee" style={{ marginTop: 6 }}>
-            <button className="btn clair" disabled={i === 0}
-              onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i - 1, 0, m) })}>↑</button>
-            <button className="btn clair" disabled={i === s.sections.length - 1}
-              onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i + 1, 0, m) })}>↓</button>
-            <button className="btn clair" onClick={() => modifier(x => { x.sections.splice(i, 1) })}>retirer</button>
+        <ZoneDepotMd key={sec.id} libelle="Déposer le .md pour cette section"
+          onTexte={(texte, nom) => modifier(x => {
+            const { titre, contenu } = separerTitreMd(texte, nom)
+            x.sections[i].contenu = contenu
+            if (!x.sections[i].titre) x.sections[i].titre = titre
+          })}>
+          <div className="carte">
+            <span><label>Titre de la section</label>
+              <input value={sec.titre} placeholder="Scène 1 : la gargote"
+                onChange={e => modifier(x => { x.sections[i].titre = e.target.value })} /></span>
+            <span><label>Contenu</label>
+              <textarea style={{ minHeight: 110 }} value={sec.contenu}
+                onChange={e => modifier(x => { x.sections[i].contenu = e.target.value })} /></span>
+            <div className="rangee" style={{ marginTop: 6 }}>
+              <button className="btn clair" disabled={i === 0}
+                onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i - 1, 0, m) })}>↑</button>
+              <button className="btn clair" disabled={i === s.sections.length - 1}
+                onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i + 1, 0, m) })}>↓</button>
+              <button className="btn clair" onClick={() => modifier(x => { x.sections.splice(i, 1) })}>retirer</button>
+            </div>
           </div>
-        </div>
+        </ZoneDepotMd>
       ))}
-      <button className="btn clair" onClick={() => modifier(x => {
-        x.sections.push({ id: uid('sec'), titre: '', contenu: '' })
-      })}>+ section</button>
+      <ZoneDepotMd libelle="Déposer un .md pour créer une nouvelle section"
+        onTexte={(texte, nom) => modifier(x => {
+          const { titre, contenu } = separerTitreMd(texte, nom)
+          x.sections.push({ id: uid('sec'), titre, contenu })
+        })}>
+        <button className="btn clair" onClick={() => modifier(x => {
+          x.sections.push({ id: uid('sec'), titre: '', contenu: '' })
+        })}>+ section</button>
+      </ZoneDepotMd>
 
       <h3>Événements de la session ({evtsSession.length})</h3>
       <p className="aide">Chaque nouvel événement se pré-remplit au jour suivant le précédent (à partir de la date de session). Faction et campagne sont héritées, tout reste modifiable ici ou dans l'onglet Événements.</p>

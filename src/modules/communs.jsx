@@ -76,6 +76,52 @@ export const PucesJoueurs = ({ ids, surChange }) => {
   )
 }
 
+// Zone de dépôt d'un fichier .md/.txt : glisser un fichier dessus déclenche onTexte(contenu, nomSansExtension).
+// Enveloppe n'importe quel bloc (un champ, une liste de sections...) sans changer sa mise en page.
+export const ZoneDepotMd = ({ onTexte, children, style, className = '', libelle = 'Déposer le fichier .md ici' }) => {
+  const [survole, setSurvole] = React.useState(false)
+
+  const lireFichier = (fichier) => {
+    if (!fichier) return
+    const nom = fichier.name.replace(/\.(md|markdown|txt)$/i, '')
+    const lecteur = new FileReader()
+    lecteur.onload = () => onTexte(String(lecteur.result || ''), nom)
+    lecteur.readAsText(fichier, 'utf-8')
+  }
+
+  return (
+    <div
+      className={className}
+      style={{
+        ...style,
+        position: 'relative',
+        outline: survole ? '2px dashed var(--or)' : '2px dashed transparent',
+        outlineOffset: 3,
+        borderRadius: 6,
+        transition: 'outline-color .12s',
+      }}
+      onDragOver={e => { e.preventDefault(); if (!survole) setSurvole(true) }}
+      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setSurvole(false) }}
+      onDrop={e => {
+        e.preventDefault()
+        setSurvole(false)
+        const fichier = [...(e.dataTransfer.files || [])].find(f => /\.(md|markdown|txt)$/i.test(f.name))
+        if (!fichier) return
+        lireFichier(fichier)
+      }}
+    >
+      {children}
+      {survole && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'color-mix(in srgb, var(--or) 12%, transparent)', color: 'var(--or)',
+          fontSize: '.82rem', fontWeight: 600, pointerEvents: 'none', borderRadius: 6,
+        }}>{libelle}</div>
+      )}
+    </div>
+  )
+}
+
 // Saisie d'une date sidérienne (an / saison / jour) -> index de jour ou null.
 export const DateSiderienne = ({ label, valeur, surChange, optionnel = false }) => {
   const d = valeur != null ? depuisJour(valeur) : { an: '', sais: 0, jour: 1 }
