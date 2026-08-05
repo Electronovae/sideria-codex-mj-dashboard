@@ -78,6 +78,10 @@ export const PucesJoueurs = ({ ids, surChange }) => {
 
 // Zone de dépôt d'un fichier .md/.txt : glisser un fichier dessus déclenche onTexte(contenu, nomSansExtension).
 // Enveloppe n'importe quel bloc (un champ, une liste de sections...) sans changer sa mise en page.
+// Le cadre reste visible en permanence (pas seulement au survol) : sur des zones voisines de petite taille
+// (résumé, chaque section...), un cadre invisible tant qu'on ne survole pas est trop dur à viser précisément,
+// et le dépôt finit systématiquement sur la zone la plus grande/visible plutôt que celle visée. D'où le repère
+// permanent + le libellé toujours affiché sous chaque zone.
 export const ZoneDepotMd = ({ onTexte, children, style, className = '', libelle = 'Déposer le fichier .md ici' }) => {
   const [survole, setSurvole] = React.useState(false)
 
@@ -95,15 +99,17 @@ export const ZoneDepotMd = ({ onTexte, children, style, className = '', libelle 
       style={{
         ...style,
         position: 'relative',
-        outline: survole ? '2px dashed var(--or)' : '2px dashed transparent',
-        outlineOffset: 3,
+        border: survole ? '2px dashed var(--or)' : '1px dashed var(--parch-mid)',
         borderRadius: 6,
-        transition: 'outline-color .12s',
+        padding: 8,
+        background: survole ? 'color-mix(in srgb, var(--or) 10%, transparent)' : 'transparent',
+        transition: 'border-color .12s, background-color .12s',
       }}
-      onDragOver={e => { e.preventDefault(); if (!survole) setSurvole(true) }}
-      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setSurvole(false) }}
+      onDragOver={e => { e.preventDefault(); e.stopPropagation(); if (!survole) setSurvole(true) }}
+      onDragLeave={e => { e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget)) setSurvole(false) }}
       onDrop={e => {
         e.preventDefault()
+        e.stopPropagation()
         setSurvole(false)
         const fichier = [...(e.dataTransfer.files || [])].find(f => /\.(md|markdown|txt)$/i.test(f.name))
         if (!fichier) return
@@ -111,13 +117,10 @@ export const ZoneDepotMd = ({ onTexte, children, style, className = '', libelle 
       }}
     >
       {children}
-      {survole && (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'color-mix(in srgb, var(--or) 12%, transparent)', color: 'var(--or)',
-          fontSize: '.82rem', fontWeight: 600, pointerEvents: 'none', borderRadius: 6,
-        }}>{libelle}</div>
-      )}
+      <div style={{
+        fontSize: '.72rem', color: survole ? 'var(--or)' : 'var(--gris)',
+        marginTop: 4, fontWeight: survole ? 600 : 400,
+      }}>📄 {survole ? 'Lâcher ici' : libelle}</div>
     </div>
   )
 }
@@ -138,10 +141,11 @@ export const BoutonDepotMd = ({ onTexte, libelle = 'Glisser .md ici', style }) =
   return (
     <>
       <button type="button" className="btn clair" onClick={() => inputRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); if (!survole) setSurvole(true) }}
-        onDragLeave={() => setSurvole(false)}
+        onDragOver={e => { e.preventDefault(); e.stopPropagation(); if (!survole) setSurvole(true) }}
+        onDragLeave={e => { e.stopPropagation(); setSurvole(false) }}
         onDrop={e => {
           e.preventDefault()
+          e.stopPropagation()
           setSurvole(false)
           const fichier = [...(e.dataTransfer.files || [])].find(f => /\.(md|markdown|txt)$/i.test(f.name))
           lireFichier(fichier)
