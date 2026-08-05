@@ -122,6 +122,44 @@ export const ZoneDepotMd = ({ onTexte, children, style, className = '', libelle 
   )
 }
 
+// Bouton compact de dépôt .md : glisser un fichier dessus OU cliquer pour parcourir. À placer dans une barre d'actions.
+export const BoutonDepotMd = ({ onTexte, libelle = 'Glisser .md ici', style }) => {
+  const [survole, setSurvole] = React.useState(false)
+  const inputRef = React.useRef(null)
+
+  const lireFichier = (fichier) => {
+    if (!fichier) return
+    const nom = fichier.name.replace(/\.(md|markdown|txt)$/i, '')
+    const lecteur = new FileReader()
+    lecteur.onload = () => onTexte(String(lecteur.result || ''), nom)
+    lecteur.readAsText(fichier, 'utf-8')
+  }
+
+  return (
+    <>
+      <button type="button" className="btn clair" onClick={() => inputRef.current?.click()}
+        onDragOver={e => { e.preventDefault(); if (!survole) setSurvole(true) }}
+        onDragLeave={() => setSurvole(false)}
+        onDrop={e => {
+          e.preventDefault()
+          setSurvole(false)
+          const fichier = [...(e.dataTransfer.files || [])].find(f => /\.(md|markdown|txt)$/i.test(f.name))
+          lireFichier(fichier)
+        }}
+        style={{
+          ...style,
+          borderStyle: 'dashed',
+          borderColor: survole ? 'var(--or)' : undefined,
+          color: survole ? 'var(--or)' : undefined,
+        }}>
+        📄 {survole ? 'Lâcher ici' : libelle}
+      </button>
+      <input ref={inputRef} type="file" accept=".md,.markdown,.txt" style={{ display: 'none' }}
+        onChange={e => { lireFichier(e.target.files?.[0]); e.target.value = '' }} />
+    </>
+  )
+}
+
 // Saisie d'une date sidérienne (an / saison / jour) -> index de jour ou null.
 export const DateSiderienne = ({ label, valeur, surChange, optionnel = false }) => {
   const d = valeur != null ? depuisJour(valeur) : { an: '', sais: 0, jour: 1 }

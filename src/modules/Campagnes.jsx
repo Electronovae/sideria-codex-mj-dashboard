@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, ZoneDepotMd } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, ZoneDepotMd, BoutonDepotMd } from './communs.jsx'
 import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid, STATUTS_SESSION } from '../lib/modele.js'
 
 // Si le .md déposé commence par un titre "# ...", on le sépare du reste (utile pour pré-remplir le titre d'une section).
@@ -287,6 +287,7 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
       <div style={{ display: 'flex', gap: 10 }}>
         <button className="btn clair" onClick={retour}>← retour à {campagne.titre}</button>
         <span style={{ flex: 1 }} />
+        <BoutonDepotMd libelle="Glisser .md ici (résumé)" onTexte={texte => modifier(x => { x.resume = texte })} />
         <button className="btn plein" style={{ color: 'var(--bleu-nuit)' }} onClick={() => setModeSession(true)}>▶ Mode session</button>
       </div>
       {modeSession && <ModeSession session={s} campagne={campagne} univers={univers} maj={maj}
