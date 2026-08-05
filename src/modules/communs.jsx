@@ -126,8 +126,13 @@ export const ZoneDepotMd = ({ onTexte, children, style, className = '', libelle 
 }
 
 // Parse un .md de session complet (structure # Titre / bloc d'intro / ## Scène 1 / ## Scène 2 / ...)
-// en {titre, resume, sections: [{titre, contenu}]}. Fonctionne tant que le fichier suit cette convention
-// (celle utilisée dans tous les documents de préparation de session).
+// en {titre, resume, sections: [{titre, contenu}], evenements: [{titre, desc}]}.
+// Convention pour les événements : une section "## Événements" (accents/casse libres) en fin de fichier,
+// avec un "### Titre" par événement suivi de sa description. Cette section est retirée des sections normales.
+function normaliser(txt) {
+  return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
 export function parserSessionMd(texte) {
   const lignes = String(texte || '').replace(/\r\n/g, '\n').split('\n')
   let i = 0
@@ -141,6 +146,7 @@ export function parserSessionMd(texte) {
   const resume = introLignes.join('\n').replace(/^-{3,}\s*$/gm, '').trim()
 
   const sections = []
+  const blocsEvenements = []
   while (i < lignes.length) {
     const m = lignes[i].match(/^##\s+(.+)$/)
     const secTitre = m ? m[1].replace(/^\d+(bis)?\.\s*/i, '').trim() : lignes[i].trim()
@@ -148,12 +154,34 @@ export function parserSessionMd(texte) {
     const corps = []
     while (i < lignes.length && !/^##\s+/.test(lignes[i])) { corps.push(lignes[i]); i++ }
     const contenu = corps.join('\n').replace(/^-{3,}\s*$/gm, '').trim()
-    if (secTitre || contenu) sections.push({ titre: secTitre, contenu })
+    if (normaliser(secTitre).match(/^evenements?$/)) {
+      blocsEvenements.push(contenu)
+    } else if (secTitre || contenu) {
+      sections.push({ titre: secTitre, contenu })
+    }
   }
-  return { titre, resume, sections }
+
+  const evenements = []
+  for (const bloc of blocsEvenements) {
+    const lignesEvt = bloc.split('\n')
+    let j = 0
+    while (j < lignesEvt.length) {
+      const m = lignesEvt[j].match(/^###\s+(.+)$/)
+      if (!m) { j++; continue }
+      const evtTitre = m[1].trim()
+      j++
+      const corps = []
+      while (j < lignesEvt.length && !/^###\s+/.test(lignesEvt[j])) { corps.push(lignesEvt[j]); j++ }
+      const desc = corps.join('\n').replace(/^-{3,}\s*$/gm, '').trim()
+      if (evtTitre) evenements.push({ titre: evtTitre, desc })
+    }
+  }
+
+  return { titre, resume, sections, evenements }
 }
 
 // Bouton d'import d'un .md de session ENTIER : parse la structure (# titre, intro, ## scènes)
+
 // et restitue {titre, resume, sections}. À la différence de BoutonDepotMd/ZoneDepotMd, qui ne font
 // que déverser du texte brut dans un seul champ, celui-ci découpe réellement le fichier.
 export const BoutonImportSessionMd = ({ onSession, libelle = 'Importer un .md de session complète', style }) => {

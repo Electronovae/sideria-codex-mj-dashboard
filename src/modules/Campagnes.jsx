@@ -287,13 +287,29 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
       <div style={{ display: 'flex', gap: 10 }}>
         <button className="btn clair" onClick={retour}>← retour à {campagne.titre}</button>
         <span style={{ flex: 1 }} />
-        <BoutonImportSessionMd onSession={({ resume, sections }) => {
+        <BoutonImportSessionMd onSession={({ resume, sections, evenements }) => {
           if (s.sections.length && !window.confirm(
-            `Le fichier contient ${sections.length} section(s). Remplacer les ${s.sections.length} section(s) actuelle(s) de la session ?`
+            `Le fichier contient ${sections.length} section(s)`
+            + (evenements.length ? ` et ${evenements.length} événement(s)` : '')
+            + `. Remplacer les ${s.sections.length} section(s) actuelle(s) de la session ?`
           )) return
-          modifier(x => {
-            if (resume) x.resume = resume
-            x.sections = sections.map(sec => ({ id: uid('sec'), titre: sec.titre, contenu: sec.contenu }))
+          maj(u => {
+            const c = u.campagnes.find(x => x.id === campagne.id)
+            const sess = c.sessions.find(x => x.id === sessionId)
+            if (resume) sess.resume = resume
+            sess.sections = sections.map(sec => ({ id: uid('sec'), titre: sec.titre, contenu: sec.contenu }))
+            const base = sess.date != null ? sess.date : nouvelEvenement().debut
+            const dejaLa = u.evenements.filter(e => e.sessionId === sessionId).length
+            evenements.forEach((evt, idx) => {
+              const e = nouvelEvenement()
+              e.debut = base + dejaLa + idx
+              e.sessionId = sessionId
+              e.campagneId = campagne.id
+              e.factionId = campagne.factionId
+              e.titre = evt.titre
+              e.desc = evt.desc
+              u.evenements.push(e)
+            })
           })
         }} />
         <BoutonDepotMd libelle="Glisser .md ici (résumé)" onTexte={texte => modifier(x => { x.resume = texte })} />
