@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, ZoneDepotMd, BoutonDepotMd } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, ZoneDepotMd, BoutonDepotMd, BoutonImportSessionMd } from './communs.jsx'
 import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid, STATUTS_SESSION } from '../lib/modele.js'
 
 // Si le .md déposé commence par un titre "# ...", on le sépare du reste (utile pour pré-remplir le titre d'une section).
@@ -287,6 +287,15 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
       <div style={{ display: 'flex', gap: 10 }}>
         <button className="btn clair" onClick={retour}>← retour à {campagne.titre}</button>
         <span style={{ flex: 1 }} />
+        <BoutonImportSessionMd onSession={({ resume, sections }) => {
+          if (s.sections.length && !window.confirm(
+            `Le fichier contient ${sections.length} section(s). Remplacer les ${s.sections.length} section(s) actuelle(s) de la session ?`
+          )) return
+          modifier(x => {
+            if (resume) x.resume = resume
+            x.sections = sections.map(sec => ({ id: uid('sec'), titre: sec.titre, contenu: sec.contenu }))
+          })
+        }} />
         <BoutonDepotMd libelle="Glisser .md ici (résumé)" onTexte={texte => modifier(x => { x.resume = texte })} />
         <button className="btn plein" style={{ color: 'var(--bleu-nuit)' }} onClick={() => setModeSession(true)}>▶ Mode session</button>
       </div>

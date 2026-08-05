@@ -125,6 +125,74 @@ export const ZoneDepotMd = ({ onTexte, children, style, className = '', libelle 
   )
 }
 
+// Parse un .md de session complet (structure # Titre / bloc d'intro / ## Scène 1 / ## Scène 2 / ...)
+// en {titre, resume, sections: [{titre, contenu}]}. Fonctionne tant que le fichier suit cette convention
+// (celle utilisée dans tous les documents de préparation de session).
+export function parserSessionMd(texte) {
+  const lignes = String(texte || '').replace(/\r\n/g, '\n').split('\n')
+  let i = 0
+  while (i < lignes.length && !lignes[i].trim()) i++
+
+  let titre = ''
+  if (lignes[i] && /^#\s+/.test(lignes[i])) { titre = lignes[i].replace(/^#\s+/, '').trim(); i++ }
+
+  const introLignes = []
+  while (i < lignes.length && !/^##\s+/.test(lignes[i])) { introLignes.push(lignes[i]); i++ }
+  const resume = introLignes.join('\n').replace(/^-{3,}\s*$/gm, '').trim()
+
+  const sections = []
+  while (i < lignes.length) {
+    const m = lignes[i].match(/^##\s+(.+)$/)
+    const secTitre = m ? m[1].replace(/^\d+(bis)?\.\s*/i, '').trim() : lignes[i].trim()
+    i++
+    const corps = []
+    while (i < lignes.length && !/^##\s+/.test(lignes[i])) { corps.push(lignes[i]); i++ }
+    const contenu = corps.join('\n').replace(/^-{3,}\s*$/gm, '').trim()
+    if (secTitre || contenu) sections.push({ titre: secTitre, contenu })
+  }
+  return { titre, resume, sections }
+}
+
+// Bouton d'import d'un .md de session ENTIER : parse la structure (# titre, intro, ## scènes)
+// et restitue {titre, resume, sections}. À la différence de BoutonDepotMd/ZoneDepotMd, qui ne font
+// que déverser du texte brut dans un seul champ, celui-ci découpe réellement le fichier.
+export const BoutonImportSessionMd = ({ onSession, libelle = 'Importer un .md de session complète', style }) => {
+  const [survole, setSurvole] = React.useState(false)
+  const inputRef = React.useRef(null)
+
+  const traiter = (fichier) => {
+    if (!fichier) return
+    const lecteur = new FileReader()
+    lecteur.onload = () => onSession(parserSessionMd(String(lecteur.result || '')))
+    lecteur.readAsText(fichier, 'utf-8')
+  }
+
+  return (
+    <>
+      <button type="button" className="btn clair" onClick={() => inputRef.current?.click()}
+        onDragOver={e => { e.preventDefault(); e.stopPropagation(); if (!survole) setSurvole(true) }}
+        onDragLeave={e => { e.stopPropagation(); setSurvole(false) }}
+        onDrop={e => {
+          e.preventDefault()
+          e.stopPropagation()
+          setSurvole(false)
+          const fichier = [...(e.dataTransfer.files || [])].find(f => /\.(md|markdown|txt)$/i.test(f.name))
+          traiter(fichier)
+        }}
+        style={{
+          ...style,
+          borderStyle: 'dashed',
+          borderColor: survole ? 'var(--or)' : undefined,
+          color: survole ? 'var(--or)' : undefined,
+        }}>
+        🗂️ {survole ? 'Lâcher ici' : libelle}
+      </button>
+      <input ref={inputRef} type="file" accept=".md,.markdown,.txt" style={{ display: 'none' }}
+        onChange={e => { traiter(e.target.files?.[0]); e.target.value = '' }} />
+    </>
+  )
+}
+
 // Bouton compact de dépôt .md : glisser un fichier dessus OU cliquer pour parcourir. À placer dans une barre d'actions.
 export const BoutonDepotMd = ({ onTexte, libelle = 'Glisser .md ici', style }) => {
   const [survole, setSurvole] = React.useState(false)
