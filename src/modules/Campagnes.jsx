@@ -1,13 +1,6 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, ZoneDepotMd, BoutonDepotMd, BoutonImportSessionMd } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, BoutonImportSessionMd, ChampEditable } from './communs.jsx'
 import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid, STATUTS_SESSION } from '../lib/modele.js'
-
-// Si le .md déposé commence par un titre "# ...", on le sépare du reste (utile pour pré-remplir le titre d'une section).
-function separerTitreMd(texte, nomFichier) {
-  const m = texte.match(/^#\s+(.+?)\s*\n?/)
-  if (m) return { titre: m[1].trim(), contenu: texte.slice(m[0].length).trim() }
-  return { titre: nomFichier, contenu: texte.trim() }
-}
 
 // Icône de statut d'écriture d'une session, réutilisée dans la liste, les cartes et l'éditeur.
 function IconeStatutSession({ statut }) {
@@ -123,8 +116,9 @@ export default function Campagnes() {
               <Champ label="Durée (sessions)" placeholder="10-12" value={c.duree} onChange={e => modifier(x => { x.duree = e.target.value })} />
               <Champ label="Niveaux" placeholder="8-22" value={c.niveaux} onChange={e => modifier(x => { x.niveaux = e.target.value })} />
             </div>
-            <Champ label="Ton" value={c.ton} onChange={e => modifier(x => { x.ton = e.target.value })} />
-            <Champ label="Pitch" zone value={c.pitch} onChange={e => modifier(x => { x.pitch = e.target.value })} />
+            <label className="aide">Présentation (ce qu'on raconte de cette campagne)</label>
+            <ChampEditable valeur={c.pitch} vide="Aucune présentation." minHeight={140}
+              surChange={v => modifier(x => { x.pitch = v })} />
 
             <h3>Actes et points pivots</h3>
             {c.actes.map((a, i) => (
@@ -192,12 +186,12 @@ function Meta({ meta, modifier }) {
               <Champ className="etroit" label="Niveaux" value={s.niveaux}
                 onChange={e => modifier(m => { m.saisons[i].niveaux = e.target.value })} />
             </div>
-            <Champ label="Enjeux" zone value={s.enjeux}
-              onChange={e => modifier(m => { m.saisons[i].enjeux = e.target.value })} />
-            {s.enjeux && <div style={{ fontSize: ".86rem" }}><Texte>{s.enjeux}</Texte></div>}
-            <Champ label="Résumé" zone value={s.resume}
-              onChange={e => modifier(m => { m.saisons[i].resume = e.target.value })} />
-            {s.resume && <div style={{ fontSize: ".86rem" }}><Texte>{s.resume}</Texte></div>}
+            <label className="aide">Enjeux</label>
+            <ChampEditable valeur={s.enjeux} vide="Aucun enjeu défini."
+              surChange={v => modifier(m => { m.saisons[i].enjeux = v })} />
+            <label className="aide">Résumé</label>
+            <ChampEditable valeur={s.resume} vide="Aucun résumé."
+              surChange={v => modifier(m => { m.saisons[i].resume = v })} />
             <div style={{ marginTop: 8 }}>
               <label>Campagnes de cette saison ({camps.length})</label>
               {camps.length
@@ -224,9 +218,9 @@ function Meta({ meta, modifier }) {
       {meta.lignesForce.map((l, i) => (
         <div className="carte" key={l.id}>
           <Champ label="Titre" value={l.titre} onChange={e => modifier(m => { m.lignesForce[i].titre = e.target.value })} />
-          <Champ label="Description" zone value={l.description}
-            onChange={e => modifier(m => { m.lignesForce[i].description = e.target.value })} />
-          {l.description && <div style={{ fontSize: ".86rem" }}><Texte>{l.description}</Texte></div>}
+          <label className="aide">Description</label>
+          <ChampEditable valeur={l.description} vide="Aucune description."
+            surChange={v => modifier(m => { m.lignesForce[i].description = v })} />
           <button className="btn clair" onClick={() => modifier(m => { m.lignesForce.splice(i, 1) })}>retirer</button>
         </div>
       ))}
@@ -287,17 +281,17 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
       <div style={{ display: 'flex', gap: 10 }}>
         <button className="btn clair" onClick={retour}>← retour à {campagne.titre}</button>
         <span style={{ flex: 1 }} />
-        <BoutonImportSessionMd onSession={({ resume, sections, evenements }) => {
+        <BoutonImportSessionMd libelle="Importer un .md (session complète)" onSession={({ resume, sections, evenements }) => {
           if (s.sections.length && !window.confirm(
-            `Le fichier contient ${sections.length} section(s)`
+            `Le fichier contient ${sections.length} scène(s)`
             + (evenements.length ? ` et ${evenements.length} événement(s)` : '')
-            + `. Remplacer les ${s.sections.length} section(s) actuelle(s) de la session ?`
+            + `. Remplacer les ${s.sections.length} scène(s) actuelle(s) de la session ?`
           )) return
           maj(u => {
             const c = u.campagnes.find(x => x.id === campagne.id)
             const sess = c.sessions.find(x => x.id === sessionId)
             if (resume) sess.resume = resume
-            sess.sections = sections.map(sec => ({ id: uid('sec'), titre: sec.titre, contenu: sec.contenu }))
+            sess.sections = sections.map(sec => ({ id: uid('sec'), titre: sec.titre, description: sec.contenu, notesMJ: '' }))
             const base = sess.date != null ? sess.date : nouvelEvenement().debut
             const dejaLa = u.evenements.filter(e => e.sessionId === sessionId).length
             evenements.forEach((evt, idx) => {
@@ -312,7 +306,6 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
             })
           })
         }} />
-        <BoutonDepotMd libelle="Glisser .md ici (résumé)" onTexte={texte => modifier(x => { x.resume = texte })} />
         <button className="btn plein" style={{ color: 'var(--bleu-nuit)' }} onClick={() => setModeSession(true)}>▶ Mode session</button>
       </div>
       {modeSession && <ModeSession session={s} campagne={campagne} univers={univers} maj={maj}
@@ -330,51 +323,41 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
         <DateSiderienne label="Date en jeu" optionnel valeur={s.date}
           surChange={v => modifier(x => { x.date = v })} />
       </div>
-      <ZoneDepotMd libelle="Déposer un .md pour remplir le résumé" onTexte={texte => modifier(x => { x.resume = texte })}>
-        <span><label>Résumé</label>
-          <textarea value={s.resume} onChange={e => modifier(x => { x.resume = e.target.value })} /></span>
-      </ZoneDepotMd>
-      {s.resume && <div style={{ fontSize: ".86rem" }}><Texte>{s.resume}</Texte></div>}
+      <label className="aide">Résumé</label>
+      <ChampEditable valeur={s.resume} vide="Aucun résumé."
+        surChange={v => modifier(x => { x.resume = v })} />
 
       <h3>Joueurs présents</h3>
       <p className="aide">Coche les joueurs qui étaient à la table pour cette session (utile quand tout le monde n'est pas présent). Apparaît sur la frise et sur la fiche de chacun.</p>
       <PucesJoueurs ids={s.joueurIds} surChange={v => modifier(x => { x.joueurIds = v })} />
 
-      <h3>Préparation (les sections à lire en session)</h3>
-      <p className="aide">Glisse un fichier .md sur une section pour remplir son contenu (et son titre s'il commence par "# Titre"), ou dépose-le sur la zone du bas pour créer une nouvelle section directement.</p>
+      <h3>Scènes</h3>
+      <p className="aide">Pour chaque scène : une <strong>description</strong> à lire telle quelle aux joueurs, et des <strong>notes MJ</strong> à garder sous les yeux mais jamais dévoilées. Utilise le bouton d'import en haut pour remplir tout ça d'un coup depuis un .md.</p>
       {s.sections.map((sec, i) => (
-        <ZoneDepotMd key={sec.id} libelle="Déposer le .md pour cette section"
-          onTexte={(texte, nom) => modifier(x => {
-            const { titre, contenu } = separerTitreMd(texte, nom)
-            x.sections[i].contenu = contenu
-            if (!x.sections[i].titre) x.sections[i].titre = titre
-          })}>
-          <div className="carte">
-            <span><label>Titre de la section</label>
-              <input value={sec.titre} placeholder="Scène 1 : la gargote"
-                onChange={e => modifier(x => { x.sections[i].titre = e.target.value })} /></span>
-            <span><label>Contenu</label>
-              <textarea style={{ minHeight: 110 }} value={sec.contenu}
-                onChange={e => modifier(x => { x.sections[i].contenu = e.target.value })} /></span>
-            <div className="rangee" style={{ marginTop: 6 }}>
-              <button className="btn clair" disabled={i === 0}
-                onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i - 1, 0, m) })}>↑</button>
-              <button className="btn clair" disabled={i === s.sections.length - 1}
-                onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i + 1, 0, m) })}>↓</button>
-              <button className="btn clair" onClick={() => modifier(x => { x.sections.splice(i, 1) })}>retirer</button>
-            </div>
+        <div className="carte" key={sec.id}>
+          <span><label>Titre de la scène</label>
+            <input value={sec.titre} placeholder="Scène 1 : la gargote"
+              onChange={e => modifier(x => { x.sections[i].titre = e.target.value })} /></span>
+          <label className="aide">Description (lue aux joueurs)</label>
+          <ChampEditable valeur={sec.description} vide="Aucune description." minHeight={90}
+            surChange={v => modifier(x => { x.sections[i].description = v })} />
+          <label className="aide" style={{ color: 'var(--rouge)' }}>Notes MJ (jamais dévoilées)</label>
+          <div style={{ border: '1px dashed var(--rouge)', borderRadius: 6, padding: 6 }}>
+            <ChampEditable valeur={sec.notesMJ} vide="Aucune note." minHeight={70}
+              surChange={v => modifier(x => { x.sections[i].notesMJ = v })} />
           </div>
-        </ZoneDepotMd>
+          <div className="rangee" style={{ marginTop: 6 }}>
+            <button className="btn clair" disabled={i === 0}
+              onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i - 1, 0, m) })}>↑</button>
+            <button className="btn clair" disabled={i === s.sections.length - 1}
+              onClick={() => modifier(x => { const [m] = x.sections.splice(i, 1); x.sections.splice(i + 1, 0, m) })}>↓</button>
+            <button className="btn clair" onClick={() => modifier(x => { x.sections.splice(i, 1) })}>retirer</button>
+          </div>
+        </div>
       ))}
-      <ZoneDepotMd libelle="Déposer un .md pour créer une nouvelle section"
-        onTexte={(texte, nom) => modifier(x => {
-          const { titre, contenu } = separerTitreMd(texte, nom)
-          x.sections.push({ id: uid('sec'), titre, contenu })
-        })}>
-        <button className="btn clair" onClick={() => modifier(x => {
-          x.sections.push({ id: uid('sec'), titre: '', contenu: '' })
-        })}>+ section</button>
-      </ZoneDepotMd>
+      <button className="btn clair" onClick={() => modifier(x => {
+        x.sections.push({ id: uid('sec'), titre: '', description: '', notesMJ: '' })
+      })}>+ scène</button>
 
       <h3>Événements de la session ({evtsSession.length})</h3>
       <p className="aide">Chaque nouvel événement se pré-remplit au jour suivant le précédent (à partir de la date de session). Faction et campagne sont héritées, tout reste modifiable ici ou dans l'onglet Événements.</p>
@@ -448,11 +431,17 @@ function ModeSession({ session, campagne, univers, maj, fermer }) {
         {/* Préparation : les sections à lire */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '22px 30px', maxWidth: 780 }}>
           {session.resume && <p style={{ fontStyle: 'italic', color: 'var(--gris)', marginBottom: 16 }}>{session.resume}</p>}
-          {session.sections.length === 0 && <p className="aide">Aucune section de préparation. Reviens dans l'éditeur pour en écrire.</p>}
+          {session.sections.length === 0 && <p className="aide">Aucune scène préparée. Reviens dans l'éditeur pour en écrire.</p>}
           {session.sections.map(sec => (
             <div key={sec.id} style={{ marginBottom: 22 }}>
-              <h2 style={{ fontVariant: 'small-caps', color: 'var(--or)', borderBottom: '1px solid var(--parch-mid)', paddingBottom: 4, fontSize: '1.25rem' }}>{sec.titre || 'Section'}</h2>
-              <div style={{ whiteSpace: 'pre-wrap', fontSize: '1.02rem', lineHeight: 1.65 }}><Texte>{sec.contenu}</Texte></div>
+              <h2 style={{ fontVariant: 'small-caps', color: 'var(--or)', borderBottom: '1px solid var(--parch-mid)', paddingBottom: 4, fontSize: '1.25rem' }}>{sec.titre || 'Scène'}</h2>
+              {sec.notesMJ && (
+                <details style={{ margin: '4px 0 10px', border: '1px dashed var(--rouge)', borderRadius: 6, padding: '4px 8px' }}>
+                  <summary style={{ cursor: 'pointer', color: 'var(--rouge)', font: '700 9px monospace', letterSpacing: '.1em' }}>NOTES MJ</summary>
+                  <div style={{ fontSize: '.86rem', marginTop: 4 }}><Texte>{sec.notesMJ}</Texte></div>
+                </details>
+              )}
+              <div style={{ whiteSpace: 'pre-wrap', fontSize: '1.02rem', lineHeight: 1.65 }}><Texte>{sec.description}</Texte></div>
             </div>
           ))}
           {evtsSession.length > 0 && <>

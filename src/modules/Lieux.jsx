@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, ListeFiche, Texte, trouverBacklinks } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, ListeFiche, ChampEditable, trouverBacklinks } from './communs.jsx'
 import { MiniGraphe } from './Graphe.jsx'
 import { nouveauLieu, TYPES_LIEU } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
@@ -87,13 +87,14 @@ export default function Lieux() {
               <SelecteurFaction valeur={l.factionId} surChange={v => modifier(x => { x.factionId = v })} /></span>
           </div>
 
-          <Champ label="Description" zone value={l.description}
-            onChange={e => modifier(x => { x.description = e.target.value })} />
-          {l.description && <div style={{ fontSize: '.86rem' }}><Texte>{l.description}</Texte></div>}
+          <label className="aide">Description</label>
+          <ChampEditable valeur={l.description} vide="Aucune description."
+            surChange={v => modifier(x => { x.description = v })} />
           <p className="aide">Utilise des [[wikilinks]] vers d'autres PNJ, factions, lieux... : ils apparaissent ci-dessous dans "Liens" et dans le mini-graphe.</p>
 
-          <Champ label="Secrets Maître" zone value={l.secrets}
-            onChange={e => modifier(x => { x.secrets = e.target.value })} />
+          <label className="aide">Secrets Maître</label>
+          <ChampEditable valeur={l.secrets} vide="Aucun secret."
+            surChange={v => modifier(x => { x.secrets = v })} />
 
           <h3>Hiérarchie</h3>
           <div className="rangee" style={{ flexWrap: 'wrap' }}>

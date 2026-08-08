@@ -330,6 +330,45 @@ export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, lib
 }
 
 
+// Champ de texte éditable partagé : en lecture, affiche le rendu markdown léger (Texte) avec
+// une icône crayon ; un clic sur l'icône bascule en édition PURE (le texte rendu disparaît,
+// seule la zone de saisie reste visible) ; "Valider" (ou Échap) referme et republie le texte rendu.
+// À utiliser partout où un champ texte long doit s'afficher en lecture par défaut : Codex, Méta,
+// Campagnes, Sessions, Rapports, Lieux.
+export function ChampEditable({ valeur, surChange, vide = 'Aucun contenu.', placeholder, minHeight = 110, aide }) {
+  const [edition, setEdition] = React.useState(false)
+  const [brouillon, setBrouillon] = React.useState(valeur || '')
+
+  const ouvrir = () => { setBrouillon(valeur || ''); setEdition(true) }
+  const valider = () => { surChange(brouillon); setEdition(false) }
+  const annuler = () => setEdition(false)
+
+  if (edition) {
+    return (
+      <div>
+        <textarea autoFocus style={{ minHeight }} value={brouillon} placeholder={placeholder}
+          onChange={e => setBrouillon(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Escape') { e.preventDefault(); annuler() }
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); valider() }
+          }} />
+        <div className="rangee" style={{ marginTop: 4 }}>
+          <button className="btn clair" onClick={valider}>Valider</button>
+          <button className="btn" onClick={annuler}>Annuler</button>
+          {aide && <span className="aide" style={{ marginLeft: 8 }}>{aide}</span>}
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div style={{ whiteSpace: 'pre-wrap' }}>
+      {valeur ? <Texte>{valeur}</Texte> : <span className="aide">{vide}</span>}
+      <span onClick={ouvrir} title="Éditer"
+        style={{ cursor: 'pointer', marginLeft: 8, opacity: .5 }}>✎</span>
+    </div>
+  )
+}
+
 // ── Wikilinks : résout [[Nom]] vers l'entité correspondante ──
 export function resoudreNom(univers, nom) {
   const n = nom.trim().toLowerCase()

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, ListeFiche, DateSiderienne, Texte } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, ListeFiche, DateSiderienne, ChampEditable } from './communs.jsx'
 import { nouveauRapport, TYPES_RAPPORT } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
 
@@ -63,13 +63,9 @@ export default function Rapports() {
               onChange={e => modifier(x => { x.visibleJoueurs = e.target.checked })} />
             visible pour les joueurs (le distinguer à l'export ou dans la future vue joueurs)
           </label>
-          <Champ label="Contenu (les [[Nom]] deviennent des liens)" zone value={r.contenu}
-            style={{ minHeight: 220 }}
-            onChange={e => modifier(x => { x.contenu = e.target.value })} />
-          {r.contenu && <>
-            <h3>Aperçu</h3>
-            <div className="carte" style={{ whiteSpace: 'pre-wrap' }}><Texte>{r.contenu}</Texte></div>
-          </>}
+          <label className="aide">Contenu (les [[Nom]] deviennent des liens)</label>
+          <ChampEditable valeur={r.contenu} vide="Contenu vide." minHeight={220}
+            surChange={v => modifier(x => { x.contenu = v })} />
           <div style={{ marginTop: 24 }}>
             <button className="btn danger" onClick={supprimer}>Supprimer ce rapport</button>
           </div>

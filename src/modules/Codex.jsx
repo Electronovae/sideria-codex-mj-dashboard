@@ -1,27 +1,11 @@
 import React, { useState } from 'react'
-import { useStudio, Texte } from './communs.jsx'
+import { useStudio, Texte, ChampEditable } from './communs.jsx'
 import { fmtDate } from '../lib/calendrier.js'
 import { STATUTS_SESSION } from '../lib/modele.js'
 
 // Le Codex : l'Obsidian embarqué. Chaque entité saisie dans le Studio a sa page,
 // naviguable par liens, avec les vues agrégées par faction, arc, PNJ, PJ.
-// Champ éditable directement dans le Codex : affichage wikilinké, crayon pour éditer.
-function ChampCodex({ valeur, surChange, vide = 'Aucune description.' }) {
-  const [edition, setEdition] = React.useState(false)
-  return edition ? (
-    <div>
-      <textarea autoFocus style={{ minHeight: 110 }} value={valeur || ''}
-        onChange={e => surChange(e.target.value)} onBlur={() => setEdition(false)} />
-      <p className="aide">Les [[Nom]] deviennent des liens. Clic hors du champ pour terminer.</p>
-    </div>
-  ) : (
-    <div style={{ whiteSpace: 'pre-wrap' }} onDoubleClick={() => setEdition(true)}>
-      {valeur ? <Texte>{valeur}</Texte> : <span className="aide">{vide}</span>}
-      <span onClick={() => setEdition(true)} title="Éditer"
-        style={{ cursor: 'pointer', marginLeft: 8, opacity: .5 }}>✎</span>
-    </div>
-  )
-}
+// Les champs de texte utilisent le composant partagé ChampEditable (communs.jsx).
 
 export default function Codex() {
   const { univers, maj, codexCible, setCodexCible } = useStudio()
@@ -60,7 +44,7 @@ export default function Codex() {
       return <>
         <h2><span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', background: x.couleur, marginRight: 8 }} />{x.nom}</h2>
         {x.devise && <p style={{ fontStyle: 'italic' }}>« {x.devise} »</p>}
-        <ChampCodex valeur={x.description}
+        <ChampEditable valeur={x.description} vide="Aucune description."
           surChange={v => maj(u => { u.factions.find(ff => ff.id === id).description = v })} />
         {x.chefId && pnj(x.chefId) && <Bloc titre="Chef">
           <div><L type="pnj" id={x.chefId}>{pnj(x.chefId).nom}</L> : {pnj(x.chefId).poste || pnj(x.chefId).role}</div></Bloc>}
@@ -88,7 +72,7 @@ export default function Codex() {
         <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.role}
           {x.faction && <> · <L type="faction" id={x.faction}>{f(x.faction)?.nom}</L></>}
           {dirs.map(d => <span key={d.id}> · dirige <L type="faction" id={d.id}>{d.nom}</L></span>)}</p>
-        <ChampCodex valeur={x.description}
+        <ChampEditable valeur={x.description} vide="Aucune description."
           surChange={v => maj(u => { u.pnjs.find(pp => pp.id === id).description = v })} />
         {x.repliques.length > 0 && <Bloc titre="Répliques">{x.repliques.filter(Boolean).map((r, i) =>
           <p key={i} style={{ borderLeft: '3px solid var(--or)', paddingLeft: 8, fontStyle: 'italic' }}>{r}</p>)}</Bloc>}
@@ -114,7 +98,7 @@ export default function Codex() {
         <h2>{x.personnage}</h2>
         <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.joueur} · {x.classe || 'classe ?'} niv. {x.niveau}
           {x.faction && <> · <L type="faction" id={x.faction}>{f(x.faction)?.nom}</L></>}</p>
-        <ChampCodex valeur={x.notes} vide="Aucune note."
+        <ChampEditable valeur={x.notes} vide="Aucune note."
           surChange={v => maj(u => { u.joueurs.find(jj => jj.id === id).notes = v })} />
         {reps.length > 0 && <Bloc titre="Réputations">{reps.map(([fid, v]) =>
           <div key={fid}><L type="faction" id={fid}>{f(fid)?.nom || fid}</L> : {v > 0 ? '+' : ''}{v}</div>)}</Bloc>}
@@ -138,7 +122,7 @@ export default function Codex() {
           {x.factionId && <><L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L> · </>}
           Saison {x.saison} · départ {x.depart} · {x.duree || '?'} sessions · niveaux {x.niveaux || '?'}</p>
         {x.ton && <p style={{ fontStyle: 'italic' }}>{x.ton}</p>}
-        <ChampCodex valeur={x.pitch} vide="Aucun pitch."
+        <ChampEditable valeur={x.pitch} vide="Aucun pitch."
           surChange={v => maj(u => { u.campagnes.find(cc => cc.id === id).pitch = v })} />
         {x.actes.map((a, i) => <div className="carte" key={a.id}>
           <strong>Acte {i + 1}{a.titre && ' : ' + a.titre}</strong>
@@ -167,7 +151,7 @@ export default function Codex() {
       return <>
         <h2><span style={{ display: 'inline-block', width: 14, height: 14, background: x.couleur, marginRight: 8 }} />{x.nom}</h2>
         <p style={{ color: 'var(--gris)' }}>{fmtDate(x.debut, 'an')} → {fmtDate(x.fin, 'an')}</p>
-        <ChampCodex valeur={x.description}
+        <ChampEditable valeur={x.description} vide="Aucune description."
           surChange={v => maj(u => { u.arcs.find(aa => aa.id === id).description = v })} />
         <Bloc titre="Événements de l'arc">{evts.length ? evts.map(e =>
           <div key={e.id}>{fmtDate(e.debut)} · <L type="evenement" id={e.id}>{e.titre}</L></div>)
@@ -187,7 +171,7 @@ export default function Codex() {
         <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.type}
           {parent && <> · dans <L type="lieu" id={parent.id}>{parent.nom}</L></>}
           {x.factionId && <> · contrôlé par <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}</p>
-        <ChampCodex valeur={x.description}
+        <ChampEditable valeur={x.description} vide="Aucune description."
           surChange={v => maj(u => { u.lieux.find(ll => ll.id === id).description = v })} />
         {x.secrets && <div className="carte" style={{ borderLeftColor: 'var(--rouge)' }}>
           <label>Secrets Maître</label><p>{x.secrets}</p></div>}
@@ -207,7 +191,7 @@ export default function Codex() {
           {x.factionId && <> · <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}
           {x.date != null && <> · {fmtDate(x.date)}</>}
           {x.visibleJoueurs && <> · visible joueurs</>}</p>
-        <ChampCodex valeur={x.contenu} vide="Contenu vide."
+        <ChampEditable valeur={x.contenu} vide="Contenu vide."
           surChange={v => maj(u => { u.rapports.find(rr => rr.id === id).contenu = v })} />
       </>
     }
@@ -221,7 +205,7 @@ export default function Codex() {
           {x.factionId && <> · <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}
           {x.campagneId && univers.campagnes.find(c => c.id === x.campagneId) &&
             <> · campagne <L type="campagne" id={x.campagneId}>{univers.campagnes.find(c => c.id === x.campagneId).titre}</L></>}</p>
-        <ChampCodex valeur={x.desc}
+        <ChampEditable valeur={x.desc} vide="Aucune description."
           surChange={v => maj(u => { u.evenements.find(ee => ee.id === id).desc = v })} />
         {x.participants.length > 0 && <Bloc titre="Participants">{x.participants.map(pid => pnj(pid)).filter(Boolean)
           .map(p => <span key={p.id} style={{ marginRight: 12 }}><L type="pnj" id={p.id}>{p.nom}</L></span>)}</Bloc>}
@@ -260,6 +244,6 @@ export default function Codex() {
           onClick={() => setPage({ type, id: it.id })} style={{ paddingLeft: 22 }}>{libelle(it)}</div>)}
       </div>)}
     </div>
-    <div className="fiche"><Page /></div>
+    <div className="fiche">{Page()}</div>
   </>
 }

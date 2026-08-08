@@ -81,6 +81,11 @@ export const normaliser = (u) => {
     c.sessions.forEach(s => {
       s.sections ||= []
       s.joueurIds ||= []
+      s.sections.forEach(sec => {
+        if (sec.description === undefined) sec.description = sec.contenu || ''
+        sec.notesMJ ??= ''
+        delete sec.contenu
+      })
       // Heuristique pour les sessions déjà créées : à ajuster manuellement au besoin.
       s.statut ??= (s.joueurIds.length > 0 ? 'realisee' : (s.resume || s.sections.length ? 'ecrite' : 'ecriture'))
     })
@@ -154,7 +159,7 @@ export const nouvelleSession = () => ({
   id: uid('ses'), code: '', titre: 'Nouvelle session', date: null, resume: '',
   statut: 'ecriture',  // voir STATUTS_SESSION : 'ecriture' | 'ecrite' | 'realisee'
   joueurIds: [],  // présents à la table pour cette session
-  sections: [],   // { id, titre, contenu } : la préparation à lire en session
+  sections: [],   // { id, titre, description, notesMJ } : une "scène" — description lue aux joueurs, notesMJ gardées pour soi
 })
 
 // ── Univers de départ (seed minimal, tout est éditable) ─────
