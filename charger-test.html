@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Chargement…</title></head>
+<body style="font-family: sans-serif; padding: 40px; text-align: center;">
+  <p>Chargement de l'univers de test…</p>
+  <script>
+    fetch('./univers-test.json')
+      .then(r => r.json())
+      .then(data => {
+        localStorage.setItem('sideria-studio-univers', JSON.stringify(data))
+        location.href = './index.html'
+      })
+      .catch(e => { document.body.innerHTML = '<p style="color:red">Erreur de chargement : ' + e + '</p>' })
+  </script>
+</body>
+</html>
