@@ -31,6 +31,9 @@ export default function Lieux() {
   const faction = l ? univers.factions.find(f => f.id === l.factionId) : null
   const passages = l ? univers.joueurs.flatMap(j =>
     j.historique.filter(h => h.lieuId === l.id).map(h => ({ ...h, j }))) : []
+  const evtsLieu = l ? univers.evenements.filter(e => e.lieuId === l.id).sort((a, b) => a.debut - b.debut) : []
+  const scenesLieu = l ? univers.campagnes.flatMap(c => c.sessions.flatMap(s =>
+    s.sections.filter(sec => sec.lieuId === l.id).map(sec => ({ sec, s, c })))) : []
   // Voisins directs pour le mini-graphe : hiérarchie de lieux, faction, liens retour (backlinks).
   const voisins = l ? (() => {
     const vus = new Set()
@@ -126,6 +129,18 @@ export default function Lieux() {
 
           <h3>Graphe local</h3>
           <MiniGraphe centre={{ nom: l.nom }} voisins={voisins} />
+
+          {evtsLieu.length > 0 && <>
+            <h3>Événements ici ({evtsLieu.length})</h3>
+            <ul style={{ marginLeft: 18 }}>{evtsLieu.map(e =>
+              <li key={e.id} style={{ cursor: 'pointer' }} onClick={() => { setOnglet('evenements') }}>{fmtDate(e.debut)} · {e.titre}</li>)}</ul>
+          </>}
+
+          {scenesLieu.length > 0 && <>
+            <h3>Scènes de session ici ({scenesLieu.length})</h3>
+            <ul style={{ marginLeft: 18 }}>{scenesLieu.map(({ sec, s, c }) =>
+              <li key={sec.id}>{c.titre} · {(s.code ? s.code + ' ' : '') + s.titre} : {sec.titre || 'Scène'}</li>)}</ul>
+          </>}
 
           {passages.length > 0 && <>
             <h3>Passages de personnages ({passages.length})</h3>

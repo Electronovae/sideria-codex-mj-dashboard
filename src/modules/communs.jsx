@@ -22,6 +22,21 @@ export const SelecteurFaction = ({ valeur, surChange, avecVide = true }) => {
 }
 
 // Sélection multiple de factions sous forme de puces cliquables (PNJ multi-faction).
+// Sélecteur de lieu, hiérarchie affichée par indentation (région > ville > quartier > bâtiment > site).
+export const SelecteurLieu = ({ valeur, surChange, avecVide = true }) => {
+  const { univers } = useStudio()
+  const profondeur = (l, n = 0) => l.parentId ? profondeur(univers.lieux.find(x => x.id === l.parentId) || {}, n + 1) : n
+  const ordonnes = [...univers.lieux].sort((a, b) => a.nom.localeCompare(b.nom))
+    .map(l => ({ l, p: profondeur(l) })).sort((a, b) => a.p - b.p)
+  return (
+    <select value={valeur ?? ''} onChange={e => surChange(e.target.value || null)}>
+      {avecVide && <option value="">— aucun —</option>}
+      {ordonnes.map(({ l, p }) => <option key={l.id} value={l.id}>{'　'.repeat(p)}{l.nom}</option>)}
+    </select>
+  )
+}
+
+// Sélection multiple de factions sous forme de puces cliquables (PNJ multi-faction).
 export const SelecteurFactions = ({ ids, surChange }) => {
   const { univers } = useStudio()
   const ens = new Set(ids || [])

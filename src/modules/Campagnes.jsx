@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, PucesPnjs, PucesJoueurs, BoutonImportSessionMd, ChampEditable } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, SelecteurLieu, PucesPnjs, PucesJoueurs, BoutonImportSessionMd, ChampEditable } from './communs.jsx'
 import { nouvelleCampagne, nouvelleSession, nouvelEvenement, uid, STATUTS_SESSION } from '../lib/modele.js'
 
 // Icône de statut d'écriture d'une session, réutilisée dans la liste, les cartes et l'éditeur.
@@ -338,6 +338,8 @@ function EditeurSession({ campagne, sessionId, maj, univers, retour }) {
           <span><label>Titre de la scène</label>
             <input value={sec.titre} placeholder="Scène 1 : la gargote"
               onChange={e => modifier(x => { x.sections[i].titre = e.target.value })} /></span>
+          <span><label>Lieu</label>
+            <SelecteurLieu valeur={sec.lieuId} surChange={v => modifier(x => { x.sections[i].lieuId = v })} /></span>
           <label className="aide">Description (lue aux joueurs)</label>
           <ChampEditable valeur={sec.description} vide="Aucune description." minHeight={90}
             surChange={v => modifier(x => { x.sections[i].description = v })} />
@@ -434,7 +436,11 @@ function ModeSession({ session, campagne, univers, maj, fermer }) {
           {session.sections.length === 0 && <p className="aide">Aucune scène préparée. Reviens dans l'éditeur pour en écrire.</p>}
           {session.sections.map(sec => (
             <div key={sec.id} style={{ marginBottom: 22 }}>
-              <h2 style={{ fontVariant: 'small-caps', color: 'var(--or)', borderBottom: '1px solid var(--parch-mid)', paddingBottom: 4, fontSize: '1.25rem' }}>{sec.titre || 'Scène'}</h2>
+              <h2 style={{ fontVariant: 'small-caps', color: 'var(--or)', borderBottom: '1px solid var(--parch-mid)', paddingBottom: 4, fontSize: '1.25rem' }}>
+                {sec.titre || 'Scène'}
+                {sec.lieuId && <span style={{ fontVariant: 'normal', fontSize: '.8rem', color: 'var(--gris)', marginLeft: 10 }}>
+                  📍 {univers.lieux.find(l => l.id === sec.lieuId)?.nom}</span>}
+              </h2>
               {sec.notesMJ && (
                 <details style={{ margin: '4px 0 10px', border: '1px dashed var(--rouge)', borderRadius: 6, padding: '4px 8px' }}>
                   <summary style={{ cursor: 'pointer', color: 'var(--rouge)', font: '700 9px monospace', letterSpacing: '.1em' }}>NOTES MJ</summary>

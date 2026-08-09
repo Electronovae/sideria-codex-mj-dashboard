@@ -55,7 +55,7 @@ export const nouvelleFaction = () => ({
 
 export const nouvelEvenement = () => ({
   id: uid('evt'), titre: 'Nouvel événement', desc: '', debut: versJour(312), fin: null,
-  participants: [], joueurIds: [], factionId: null, importance: 2, campagneId: null,
+  participants: [], joueurIds: [], factionId: null, lieuId: null, importance: 2, campagneId: null,
   arcId: null, symbole: 'losange', couleur: null, sessionId: null,
 })
 
@@ -73,7 +73,7 @@ export const normaliser = (u) => {
   u.rapports ||= []
   u.meta.lignesForce ||= []      // { id, titre, description }
   u.meta.arbitrages ||= []       // { id, date, titre, decision }
-  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; e.joueurIds ||= []; delete e.couleur })
+  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; e.joueurIds ||= []; e.lieuId ??= null; delete e.couleur })
   u.campagnes.forEach(c => {
     c.sessions ||= []
     c.arcId ??= null
@@ -84,6 +84,7 @@ export const normaliser = (u) => {
       s.sections.forEach(sec => {
         if (sec.description === undefined) sec.description = sec.contenu || ''
         sec.notesMJ ??= ''
+        sec.lieuId ??= null
         delete sec.contenu
       })
       // Heuristique pour les sessions déjà créées : à ajuster manuellement au besoin.
@@ -164,7 +165,7 @@ export const nouvelleSession = () => ({
   id: uid('ses'), code: '', titre: 'Nouvelle session', date: null, resume: '',
   statut: 'ecriture',  // voir STATUTS_SESSION : 'ecriture' | 'ecrite' | 'realisee'
   joueurIds: [],  // présents à la table pour cette session
-  sections: [],   // { id, titre, description, notesMJ } : une "scène" — description lue aux joueurs, notesMJ gardées pour soi
+  sections: [],   // { id, titre, description, notesMJ, lieuId } : une "scène" — description lue aux joueurs, notesMJ gardées pour soi
 })
 
 // ── Univers de départ (seed minimal, tout est éditable) ─────

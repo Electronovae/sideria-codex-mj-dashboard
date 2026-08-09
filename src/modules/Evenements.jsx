@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, ListeFiche, PucesPnjs, PucesJoueurs, DateSiderienne } from './communs.jsx'
+import { useStudio, Champ, SelecteurFaction, SelecteurLieu, ListeFiche, PucesPnjs, PucesJoueurs, DateSiderienne } from './communs.jsx'
 import { nouvelEvenement, SYMBOLES } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
 
@@ -30,11 +30,13 @@ export default function Evenements() {
         titre: x => x.titre,
         faction: x => univers.factions.find(f => f.id === x.factionId)?.nom || 'zzz',
         arc: x => univers.arcs.find(a => a.id === x.arcId)?.nom || 'zzz',
+        lieu: x => univers.lieux.find(l => l.id === x.lieuId)?.nom || 'zzz',
       }}
       rendu={x => {
         const f = univers.factions.find(ff => ff.id === x.factionId)
+        const lieuNom = univers.lieux.find(l => l.id === x.lieuId)?.nom
         return (<><span className="rond" style={{ background: f?.couleur || '#888' }} />
-          <span>{x.titre}<div className="sous">{fmtDate(x.debut)}</div></span></>)
+          <span>{x.titre}<div className="sous">{fmtDate(x.debut)}{lieuNom ? ' · ' + lieuNom : ''}</div></span></>)
       }}
       enfants={e && (
         <div key={e.id}>
@@ -72,6 +74,8 @@ export default function Evenements() {
                 <option value="">—</option>
                 {univers.arcs.map(a => <option key={a.id} value={a.id}>{a.nom}</option>)}
               </select></span>
+            <span><label>Lieu</label>
+              <SelecteurLieu valeur={e.lieuId} surChange={v => modifier(x => { x.lieuId = v })} /></span>
             {e.fin == null && <span><label>Symbole (événement ponctuel)</label>
               <select value={e.symbole} onChange={ev => modifier(x => { x.symbole = ev.target.value })}>
                 {SYMBOLES.map(s => <option key={s}>{s}</option>)}

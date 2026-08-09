@@ -171,6 +171,9 @@ export default function Codex() {
       const parent = univers.lieux.find(ll => ll.id === x.parentId)
       const passages = univers.joueurs.flatMap(jj =>
         (jj.historique || []).filter(h => h.lieuId === id).map(h => ({ ...h, jj })))
+      const evtsIci = univers.evenements.filter(e => e.lieuId === id).sort((a, b) => a.debut - b.debut)
+      const scenesIci = univers.campagnes.flatMap(c => c.sessions.flatMap(s =>
+        s.sections.filter(sec => sec.lieuId === id).map(sec => ({ sec, s, c }))))
       return <>
         <h2>{x.nom}</h2>
         <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.type}
@@ -182,6 +185,10 @@ export default function Codex() {
           <label>Secrets Maître</label><p>{x.secrets}</p></div>}
         {enfants.length > 0 && <Bloc titre="Contient">{enfants.map(e =>
           <div key={e.id}><L type="lieu" id={e.id}>{e.nom}</L> ({e.type})</div>)}</Bloc>}
+        {evtsIci.length > 0 && <Bloc titre="Événements ici">{evtsIci.map(e =>
+          <div key={e.id}><strong>{fmtDate(e.debut)}</strong> · <L type="evenement" id={e.id}>{e.titre}</L></div>)}</Bloc>}
+        {scenesIci.length > 0 && <Bloc titre="Scènes de session ici">{scenesIci.map(({ sec, s, c }) =>
+          <div key={sec.id}>{c.titre} · {(s.code ? s.code + ' ' : '') + s.titre} : {sec.titre || 'Scène'}</div>)}</Bloc>}
         {passages.length > 0 && <Bloc titre="Passages">{passages.map((p2, k) =>
           <div key={k}><L type="pj" id={p2.jj.id}>{p2.jj.personnage}</L>{p2.date != null && <> ({fmtDate(p2.date)})</>} : {p2.resume || p2.type}</div>)}</Bloc>}
       </>
