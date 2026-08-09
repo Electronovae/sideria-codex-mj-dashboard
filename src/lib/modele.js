@@ -56,28 +56,23 @@ export const nouvelleFaction = () => ({
 export const nouvelEvenement = () => ({
   id: uid('evt'), titre: 'Nouvel événement', desc: '', debut: versJour(312), fin: null,
   participants: [], joueurIds: [], factionId: null, lieuId: null, importance: 2, campagneId: null,
-  arcId: null, symbole: 'losange', couleur: null, sessionId: null,
-})
-
-export const nouvelArc = () => ({
-  id: uid('arc'), nom: 'Nouvel arc', couleur: '#6b5b95', description: '',
-  debut: versJour(312), fin: versJour(314),
+  symbole: 'losange', couleur: null, sessionId: null,
 })
 
 export const SYMBOLES = ['losange', 'cercle', 'carre', 'etoile', 'triangle']
 
 // Migration douce : garantit les champs ajoutés au fil des versions.
 export const normaliser = (u) => {
-  u.arcs ||= []
+  delete u.arcs
   u.lieux ||= []
   u.rapports ||= []
   u.meta.lignesForce ||= []      // { id, titre, description }
   u.meta.arbitrages ||= []       // { id, date, titre, decision }
   u.meta.dateCampagne ??= null
-  u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; e.joueurIds ||= []; e.lieuId ??= null; delete e.couleur })
+  u.evenements.forEach(e => { delete e.arcId; e.symbole ??= 'losange'; e.sessionId ??= null; e.joueurIds ||= []; e.lieuId ??= null; delete e.couleur })
   u.campagnes.forEach(c => {
     c.sessions ||= []
-    c.arcId ??= null
+    delete c.arcId
     delete c.depart
     c.sessions.forEach(s => {
       s.sections ||= []
@@ -149,7 +144,7 @@ export const normaliser = (u) => {
 
 export const nouvelleCampagne = () => ({
   id: uid('cmp'), code: '', titre: 'Nouvelle campagne', factionId: null, saison: 1,
-  arcId: null, pitch: '', ton: '', duree: '', niveaux: '',
+  pitch: '', ton: '', duree: '', niveaux: '',
   actes: [],            // { id, titre, resume, pivot }
   sessions: [],         // { id, code, titre, date, resume }
   pnjIds: [], issues: '',
@@ -198,7 +193,6 @@ export const universInitial = () => ({
     { id: 'maret', nom: 'Maret', role: 'Organisatrice, Aile du Piston', faction: 'mouvement', description: '', secrets: '', repliques: [], arbre: null },
   ],
   joueurs: [],
-  arcs: [],
   evenements: [
     { id: 'evt_s0', titre: 'Saison 0 : Convergence', desc: 'La table ouverte au Dragon Blanc.', debut: versJour(312, 0, 16), fin: null, participants: ['silas', 'ryn', 'maret'], factionId: 'dragon', importance: 3, campagneId: null },
   ],

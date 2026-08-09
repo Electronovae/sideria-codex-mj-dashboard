@@ -30,7 +30,6 @@ export default function Evenements() {
         date: x => x.debut,
         titre: x => x.titre,
         faction: x => univers.factions.find(f => f.id === x.factionId)?.nom || 'zzz',
-        arc: x => univers.arcs.find(a => a.id === x.arcId)?.nom || 'zzz',
         lieu: x => univers.lieux.find(l => l.id === x.lieuId)?.nom || 'zzz',
       }}
       rendu={x => {
@@ -70,11 +69,6 @@ export default function Evenements() {
               </select></span>}
           </div>
           <div className="rangee">
-            <span><label>Arc</label>
-              <select value={e.arcId || ''} onChange={ev => modifier(x => { x.arcId = ev.target.value || null })}>
-                <option value="">—</option>
-                {univers.arcs.map(a => <option key={a.id} value={a.id}>{a.nom}</option>)}
-              </select></span>
             <span><label>Lieu</label>
               <SelecteurLieu valeur={e.lieuId} surChange={v => modifier(x => { x.lieuId = v })} /></span>
             {e.fin == null && <span><label>Symbole (événement ponctuel)</label>
@@ -82,7 +76,7 @@ export default function Evenements() {
                 {SYMBOLES.map(s => <option key={s}>{s}</option>)}
               </select></span>}
             <span><label>Couleur</label>
-              <p className="aide" style={{ marginTop: 8 }}>automatique : celle de la faction (sinon de l'arc)</p></span>
+              <p className="aide" style={{ marginTop: 8 }}>automatique : celle de la faction</p></span>
           </div>
           <h3>Participants (PNJ)</h3>
           <PucesPnjs ids={e.participants} surChange={v => modifier(x => { x.participants = v })} />

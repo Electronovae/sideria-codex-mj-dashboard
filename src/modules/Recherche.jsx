@@ -23,9 +23,8 @@ export default function Recherche({ fermer }) {
   univers.lieux.forEach(l => pousser('lieu', l.id, l.nom, 'Lieu · ' + l.type, l.description))
   univers.campagnes.forEach(c => {
     pousser('campagne', c.id, c.titre, 'Campagne · Saison ' + c.saison, c.pitch)
-    c.sessions.forEach(s => pousser('campagne', c.id, (s.code ? s.code + ' · ' : '') + s.titre, 'Session · ' + c.titre, s.resume + ' ' + s.sections.map(x => x.titre + ' ' + x.contenu).join(' ')))
+    c.sessions.forEach(s => pousser('campagne', c.id, (s.code ? s.code + ' · ' : '') + s.titre, 'Session · ' + c.titre, s.resume + ' ' + s.sections.map(x => x.titre + ' ' + x.description).join(' ')))
   })
-  univers.arcs.forEach(a => pousser('arc', a.id, a.nom, 'Arc', a.description))
   univers.evenements.forEach(e => pousser('evenement', e.id, e.titre, 'Événement', e.desc))
   univers.rapports.forEach(r => pousser('rapport', r.id, r.titre, 'Rapport · ' + r.type, r.contenu))
   const resultats = candidats.sort((a, b) => a.score - b.score).slice(0, 12)
@@ -59,7 +58,7 @@ export default function Recherche({ fermer }) {
             </div>
           ))}
           {q && !resultats.length && <div style={{ padding: 16, color: 'var(--gris)', fontStyle: 'italic' }}>Aucun résultat.</div>}
-          {!q && <div style={{ padding: 16, color: 'var(--gris)', fontSize: '.82rem' }}>Tape pour chercher parmi les PNJ, PJ, factions, lieux, campagnes, sessions, arcs et événements. ↑↓ pour naviguer, Entrée pour ouvrir.</div>}
+          {!q && <div style={{ padding: 16, color: 'var(--gris)', fontSize: '.82rem' }}>Tape pour chercher parmi les PNJ, PJ, factions, lieux, campagnes, sessions et événements. ↑↓ pour naviguer, Entrée pour ouvrir.</div>}
         </div>
       </div>
     </div>

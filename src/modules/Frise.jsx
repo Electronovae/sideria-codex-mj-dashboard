@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useStudio, DateSiderienne } from './communs.jsx'
-import { nouvelArc } from '../lib/modele.js'
 import { fmtDate, versJour, depuisJour, JPA, JPS, SAISONS } from '../lib/calendrier.js'
 
 const H_AXE = 46, MARGE_G = 185, H_PASTILLE = 15, ECART = 3, H_MIN = 32
@@ -13,7 +12,6 @@ export default function Frise() {
   const [filtreFac, setFiltreFac] = useState(() => new Set(univers.factions.map(f => f.id)))
   const [filtreTypes, setFiltreTypes] = useState(() => new Set(['PJ', 'PNJ']))
   const [survol, setSurvol] = useState(null)
-  const [panneauArcs, setPanneauArcs] = useState(false)
   const [poserDate, setPoserDate] = useState(false)
   const drag = useRef(null)
 
@@ -65,7 +63,6 @@ export default function Frise() {
   }, [])
 
   const faction = (id) => univers.factions.find(f => f.id === id)
-  const arc = (id) => univers.arcs.find(a => a.id === id)
   const lignes = [
     { id: '__general__', nom: 'Général (sans PNJ/PJ)', type: 'GEN', faction: null },
     ...(filtreTypes.has('PJ') ? univers.joueurs.map(j => ({ id: j.id, nom: j.personnage, type: 'PJ', faction: j.faction })) : []),
@@ -86,7 +83,7 @@ export default function Frise() {
   for (let j = Math.floor(jDe(MARGE_G) / pas) * pas; xDe(j) < largeur; j += pas) if (xDe(j) >= MARGE_G - 4) ticks.push(j)
 
   // ── Pastilles : collecte par ligne ──
-  const couleurEvt = (e) => faction(e.factionId)?.couleur || arc(e.arcId)?.couleur || '#8a8272'
+  const couleurEvt = (e) => faction(e.factionId)?.couleur || '#8a8272'
   const texteClair = (hex) => {
     const n = parseInt((hex || '#888888').slice(1), 16)
     return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) < 150
@@ -145,24 +142,9 @@ export default function Frise() {
     nbRangees[+lg] = Math.max(1, finRangee.length)
   })
 
-  // ── Rangées d'arcs (calculées avant la géométrie verticale, pour leur réserver la place) ──
-  const arcsVisibles = univers.arcs
-    .map(a => ({ a, x1: Math.max(MARGE_G, xDe(a.debut)), x2: Math.min(largeur, xDe(a.fin)) }))
-    .filter(v => v.x2 > v.x1)
-    .sort((u1, u2) => u1.x1 - u2.x1)
-  const finRangeeArcs = []
-  const arcsPositionnes = arcsVisibles.map(({ a, x1, x2 }) => {
-    const lw = 14 + a.nom.length * 6.4
-    let r = finRangeeArcs.findIndex(fin => x1 >= fin + 10)
-    if (r === -1) { r = finRangeeArcs.length; finRangeeArcs.push(-Infinity) }
-    finRangeeArcs[r] = x1 + Math.max(lw, 30)
-    return { a, x1, x2, lw, r }
-  })
-  const H_ARCS = finRangeeArcs.length ? finRangeeArcs.length * 17 + 6 : 0
-
-  // Géométrie verticale cumulative (les lignes commencent sous la bande d'arcs, s'il y en a).
+  // Géométrie verticale cumulative.
   const geo = []
-  let curseurY = H_AXE + H_ARCS + 8
+  let curseurY = H_AXE + 8
   lignes.forEach((l, i) => {
     const h = Math.max(H_MIN, 6 + nbRangees[i] * (H_PASTILLE + ECART))
     geo.push({ top: curseurY, h, centre: curseurY + h / 2 })
@@ -185,7 +167,6 @@ export default function Frise() {
         <button className="btn clair" onClick={() => centrer(312, 0.0025)}>Ères</button>
         <button className="btn clair" onClick={() => centrer(312, 0.06)}>Années</button>
         <button className="btn clair" onClick={() => centrer(312, 1)}>Saisons</button>
-        <button className="btn clair" onClick={() => setPanneauArcs(v => !v)}>Arcs ({univers.arcs.length})</button>
         <button className={'btn' + (poserDate ? ' plein' : ' clair')} style={poserDate ? { color: 'var(--bleu-nuit)' } : undefined}
           onClick={() => setPoserDate(v => !v)}>
           📍 {poserDate ? 'Clique sur la frise…' : 'Poser la date de campagne'}</button>
@@ -198,25 +179,6 @@ export default function Frise() {
           <span className="rond" style={{ background: f.couleur }} />{f.nom}</span>)}
         <span className="aide" style={{ marginLeft: 'auto' }}>molette : défiler · Ctrl+molette : zoom · Ctrl+Clic faction : isoler</span>
       </div>
-      {panneauArcs && (
-        <div style={{ padding: '8px 14px', borderBottom: '2px solid var(--parch-mid)', background: '#efe6cf' }}>
-          {univers.arcs.map((a, i) => (
-            <div key={a.id} className="rangee" style={{ marginBottom: 4, alignItems: 'end', flexWrap: 'wrap' }}>
-              <input value={a.nom} onChange={e => maj(u => { u.arcs[i].nom = e.target.value })} />
-              <input type="color" value={a.couleur} style={{ height: 32, flex: '0 0 60px' }}
-                onChange={e => maj(u => { u.arcs[i].couleur = e.target.value })} />
-              <DateSiderienne label="Début" valeur={a.debut}
-                surChange={v => maj(u => { u.arcs[i].debut = v ?? u.arcs[i].debut })} />
-              <DateSiderienne label="Fin" valeur={a.fin}
-                surChange={v => maj(u => { u.arcs[i].fin = v ?? u.arcs[i].fin })} />
-              <button className="btn clair" style={{ flex: '0 0 40px' }}
-                onClick={() => maj(u => { u.arcs.splice(i, 1); u.evenements.forEach(e => { if (e.arcId === a.id) e.arcId = null }) })}>×</button>
-            </div>
-          ))}
-          <button className="btn clair" onClick={() => maj(u => { u.arcs.push(nouvelArc()) })}>+ arc</button>
-          <span className="aide" style={{ marginLeft: 10 }}>Un arc = une bande de fond. Rattache les événements à un arc dans l'onglet Événements.</span>
-        </div>
-      )}
       <div ref={conteneur} style={{ flex: 1, position: 'relative', overflowY: 'auto', overflowX: 'hidden', cursor: poserDate ? 'crosshair' : 'grab', userSelect: 'none' }}
         onMouseDown={(ev) => { if (ev.button !== 0) return; ev.preventDefault(); drag.current = { x: ev.clientX, t0: vue.t0, actif: false } }} onMouseLeave={() => setSurvol(null)}
         onClick={(ev) => {
@@ -227,15 +189,6 @@ export default function Frise() {
           setPoserDate(false)
         }}>
         <svg width={largeur} height={hauteur} style={{ display: 'block' }}>
-          {arcsPositionnes.map(({ a, x1, x2, lw, r }) => {
-            const y = H_AXE + r * 17
-            return <g key={a.id}>
-              <rect x={x1} y={H_AXE + H_ARCS} width={x2 - x1} height={hauteur - H_AXE - H_ARCS} fill={a.couleur} opacity=".08" />
-              <rect x={x1} y={y} width={Math.min(x2 - x1, Math.max(lw, 30))} height={16} rx="3" fill={a.couleur} opacity=".8" />
-              <text x={x1 + 6} y={y + 12} style={{ font: '700 10px monospace', fill: '#fff' }}>
-                {a.nom.length * 6.4 > x2 - x1 - 10 ? a.nom.slice(0, Math.max(2, Math.floor((x2 - x1 - 14) / 6.4))) + '…' : a.nom}</text>
-            </g>
-          })}
           {lignes.map((l, i) => (
             <line key={l.id} x1={MARGE_G} y1={geo[i].centre} x2={largeur} y2={geo[i].centre}
               stroke={faction(l.faction)?.couleur || '#8a8272'} strokeWidth="1" opacity=".15" />

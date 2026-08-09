@@ -4,7 +4,7 @@ import { fmtDate } from '../lib/calendrier.js'
 import { STATUTS_SESSION } from '../lib/modele.js'
 
 // Le Codex : l'Obsidian embarqué. Chaque entité saisie dans le Studio a sa page,
-// naviguable par liens, avec les vues agrégées par faction, arc, PNJ, PJ.
+// naviguable par liens, avec les vues agrégées par faction, PNJ, PJ.
 // Les champs de texte utilisent le composant partagé ChampEditable (communs.jsx).
 
 export default function Codex() {
@@ -23,7 +23,6 @@ export default function Codex() {
   const sections = [
     ['Factions', 'faction', univers.factions, x => x.nom],
     ['Campagnes', 'campagne', univers.campagnes, x => (x.code ? x.code + ' · ' : '') + x.titre],
-    ['Arcs', 'arc', univers.arcs, x => x.nom],
     ['PNJ', 'pnj', [...univers.pnjs].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), x => x.nom],
     ['PJ', 'pj', univers.joueurs, x => x.personnage],
     ['Lieux', 'lieu', univers.lieux, x => x.nom],
@@ -149,22 +148,6 @@ export default function Codex() {
         {x.issues && <Bloc titre="Issues possibles"><p>{x.issues}</p></Bloc>}
       </>
     }
-    if (type === 'arc') {
-      const x = univers.arcs.find(a => a.id === id); if (!x) return null
-      const evts = univers.evenements.filter(e => e.arcId === id).sort((a, b) => a.debut - b.debut)
-      const persos = [...new Set(evts.flatMap(e => e.participants))].map(pid => pnj(pid)).filter(Boolean)
-      return <>
-        <h2><span style={{ display: 'inline-block', width: 14, height: 14, background: x.couleur, marginRight: 8 }} />{x.nom}</h2>
-        <p style={{ color: 'var(--gris)' }}>{fmtDate(x.debut, 'an')} → {fmtDate(x.fin, 'an')}</p>
-        <ChampEditable valeur={x.description} vide="Aucune description."
-          surChange={v => maj(u => { u.arcs.find(aa => aa.id === id).description = v })} />
-        <Bloc titre="Événements de l'arc">{evts.length ? evts.map(e =>
-          <div key={e.id}>{fmtDate(e.debut)} · <L type="evenement" id={e.id}>{e.titre}</L></div>)
-          : <p className="aide">Aucun. Rattache des événements à cet arc dans l'onglet Événements.</p>}</Bloc>
-        {persos.length > 0 && <Bloc titre="Personnages impliqués">{persos.map(p =>
-          <span key={p.id} style={{ marginRight: 12 }}><L type="pnj" id={p.id}>{p.nom}</L></span>)}</Bloc>}
-      </>
-    }
     if (type === 'lieu') {
       const x = univers.lieux.find(ll => ll.id === id); if (!x) return null
       const enfants = univers.lieux.filter(ll => ll.parentId === id)
@@ -212,8 +195,6 @@ export default function Codex() {
       return <>
         <h2>{x.titre}</h2>
         <p style={{ color: 'var(--gris)' }}>{fmtDate(x.debut)}{x.fin != null && <> → {fmtDate(x.fin)}</>}
-          {x.arcId && univers.arcs.find(a => a.id === x.arcId) &&
-            <> · arc <L type="arc" id={x.arcId}>{univers.arcs.find(a => a.id === x.arcId).nom}</L></>}
           {x.factionId && <> · <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}
           {x.campagneId && univers.campagnes.find(c => c.id === x.campagneId) &&
             <> · campagne <L type="campagne" id={x.campagneId}>{univers.campagnes.find(c => c.id === x.campagneId).titre}</L></>}</p>

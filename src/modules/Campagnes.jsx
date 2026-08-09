@@ -108,11 +108,6 @@ export default function Campagnes() {
                   onChange={e => modifier(x => { x.saison = +e.target.value || 0 })} /></span>
             </div>
             <div className="rangee">
-              <span><label>Arc narratif</label>
-                <select value={c.arcId || ''} onChange={e => modifier(x => { x.arcId = e.target.value || null })}>
-                  <option value="">—</option>
-                  {univers.arcs.map(a => <option key={a.id} value={a.id}>{a.nom}</option>)}
-                </select></span>
               <Champ label="Durée (sessions)" placeholder="10-12" value={c.duree} onChange={e => modifier(x => { x.duree = e.target.value })} />
               <Champ label="Niveaux" placeholder="8-22" value={c.niveaux} onChange={e => modifier(x => { x.niveaux = e.target.value })} />
             </div>

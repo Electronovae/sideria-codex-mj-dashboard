@@ -6,11 +6,11 @@ import { useStudio } from './communs.jsx'
 // clic sur un nœud : ouvre sa page dans le Codex.
 const TYPES = [
   ['faction', 'Factions'], ['pnj', 'PNJ'], ['pj', 'PJ'],
-  ['lieu', 'Lieux'], ['campagne', 'Campagnes'], ['session', 'Sessions'], ['evenement', 'Événements'], ['arc', 'Arcs'],
+  ['lieu', 'Lieux'], ['campagne', 'Campagnes'], ['session', 'Sessions'], ['evenement', 'Événements'],
 ]
 
 const FORMES = ['cercle', 'carre', 'triangle', 'losange', 'etoile']
-const FORMES_DEFAUT = { faction: 'cercle', pnj: 'cercle', pj: 'cercle', lieu: 'carre', campagne: 'losange', session: 'losange', evenement: 'etoile', arc: 'triangle' }
+const FORMES_DEFAUT = { faction: 'cercle', pnj: 'cercle', pj: 'cercle', lieu: 'carre', campagne: 'losange', session: 'losange', evenement: 'etoile' }
 const CLE_FORMES = 'sideria_graphe_formes'
 const chargerFormes = () => {
   try { return { ...FORMES_DEFAUT, ...JSON.parse(localStorage.getItem(CLE_FORMES) || '{}') } }
@@ -144,12 +144,10 @@ export default function Graphe() {
     if (actif('lieu') && actif('pj')) univers.joueurs.forEach(j => {
       ;(j.historique || []).forEach(h => { if (h.lieuId) lier('pj:' + j.id, 'lieu:' + h.lieuId) })
     })
-    if (actif('arc')) univers.arcs.forEach(a => ajouter('arc', a.id, a.nom, a.couleur))
     if (actif('evenement')) univers.evenements.forEach(e => {
       ajouter('evenement', e.id, e.titre, e.couleur || faction(e.factionId)?.couleur || '#8a8272')
       if (actif('pnj')) e.participants.forEach(pid => lier('evenement:' + e.id, 'pnj:' + pid))
       if (actif('pj')) (e.joueurIds || []).forEach(jid => lier('evenement:' + e.id, 'pj:' + jid))
-      if (actif('arc') && e.arcId) lier('evenement:' + e.id, 'arc:' + e.arcId)
       if (actif('session') && e.sessionId && actif('campagne')) lier('evenement:' + e.id, 'session:' + e.sessionId)
       else if (actif('campagne') && e.campagneId) lier('evenement:' + e.id, 'campagne:' + e.campagneId)
     })

@@ -417,7 +417,6 @@ export function resoudreNom(univers, nom) {
     || chercher(univers.factions, 'faction', 'nom')
     || chercher(univers.lieux, 'lieu', 'nom')
     || chercher(univers.campagnes, 'campagne', 'titre')
-    || chercher(univers.arcs, 'arc', 'nom')
     || chercher(univers.evenements, 'evenement', 'titre')
 }
 
@@ -463,7 +462,6 @@ const CHAMPS_TEXTE_PAR_TYPE = {
   lieu: ['description', 'secrets'],
   campagne: ['pitch', 'issues'],
   evenement: ['desc'],
-  arc: ['description'],
 }
 
 const TOUTES_ENTITES = (univers) => ([
@@ -473,7 +471,6 @@ const TOUTES_ENTITES = (univers) => ([
   ...univers.lieux.map(e => ({ type: 'lieu', id: e.id, nom: e.nom, obj: e })),
   ...univers.campagnes.map(e => ({ type: 'campagne', id: e.id, nom: e.titre, obj: e })),
   ...univers.evenements.map(e => ({ type: 'evenement', id: e.id, nom: e.titre, obj: e })),
-  ...univers.arcs.map(e => ({ type: 'arc', id: e.id, nom: e.nom, obj: e })),
 ])
 
 // Liste les entités qui référencent `cible` (type, id) via un [[wikilink]] dans un de leurs champs texte.
