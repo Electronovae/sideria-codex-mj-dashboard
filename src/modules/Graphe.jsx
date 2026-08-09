@@ -80,6 +80,8 @@ export default function Graphe() {
   const [survol, setSurvol] = useState(null)
   const [formes, setFormes] = useState(chargerFormes)
   const [panneauFormes, setPanneauFormes] = useState(false)
+  const [recherche, setRecherche] = useState('')
+  const [isole, setIsole] = useState(null) // clé du nœud isolé (recherche ou clic), ou null
   const sim = useRef({ noeuds: [], liens: [], vue: { x: 0, y: 0, z: 1 }, chaud: 0, dragNoeud: null, dragFond: null })
 
   const majForme = (type, forme) => setFormes(f => {
@@ -256,6 +258,27 @@ export default function Graphe() {
   const bascule = (t) => setTypes(prev => { const n = new Set(prev); n.has(t) ? n.delete(t) : n.add(t); return n })
   const ouvrirCodex = (n) => { setCodexCible({ type: n.type, id: n.id }); setOnglet('codex') }
 
+  // Voisins directs du nœud isolé (recherche ou clic), pour l'estompage du reste du graphe.
+  const voisinsIsole = React.useMemo(() => {
+    if (!isole) return null
+    const ens = new Set([isole])
+    s.liens.forEach(([a, b]) => { if (a === isole) ens.add(b); if (b === isole) ens.add(a) })
+    return ens
+  }, [isole, tick])
+
+  const centrerSur = (n) => {
+    s.vue.x = -n.x * s.vue.z
+    s.vue.y = -n.y * s.vue.z
+    setTick(t => t + 1)
+  }
+
+  const rechercher = (q) => {
+    setRecherche(q)
+    if (!q.trim()) { setIsole(null); return }
+    const n = s.noeuds.find(nn => nn.nom.toLowerCase().includes(q.trim().toLowerCase()))
+    if (n) { setIsole(n.cle); centrerSur(n) }
+  }
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <div style={{ padding: '6px 14px', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', borderBottom: '2px solid var(--parch-mid)' }}>
@@ -265,7 +288,17 @@ export default function Graphe() {
         ))}
         <button className="btn clair" onClick={() => { sim.current.chaud = 300; sim.current.vue = { x: 0, y: 0, z: 1 } }}>Recentrer</button>
         <button className="btn clair" onClick={() => setPanneauFormes(v => !v)}>Formes</button>
-        <span className="aide" style={{ marginLeft: 'auto' }}>glisser un nœud : le déplacer · glisser le fond : naviguer · molette : zoom · clic : ouvrir dans le Codex</span>
+        <span style={{ position: 'relative' }}>
+          <input list="graphe-noms" placeholder="🔍 chercher un nœud…" value={recherche}
+            style={{ width: 180 }}
+            onChange={e => rechercher(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') { setRecherche(''); setIsole(null) } }} />
+          <datalist id="graphe-noms">
+            {s.noeuds.map(n => <option key={n.cle} value={n.nom} />)}
+          </datalist>
+        </span>
+        {isole && <button className="btn clair" onClick={() => { setRecherche(''); setIsole(null) }}>✕ isolement</button>}
+        <span className="aide" style={{ marginLeft: 'auto' }}>glisser un nœud : le déplacer · glisser le fond : naviguer · molette : zoom · clic : ouvrir dans le Codex · recherche : isole le nœud et ses liens directs</span>
       </div>
       {panneauFormes && (
         <div style={{ padding: '8px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '2px solid var(--parch-mid)', background: '#efe6cf' }}>
@@ -292,15 +325,19 @@ export default function Graphe() {
             if (!a || !b) return null
             const pa = versEcran(a), pb = versEcran(b)
             const clair = survol && (survol === ca || survol === cb)
+            const dans = !isole || (voisinsIsole?.has(ca) && voisinsIsole?.has(cb))
             return <line key={i} x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y}
-              stroke={clair ? 'var(--or)' : 'rgba(122,106,63,.28)'} strokeWidth={clair ? 1.8 : 1} />
+              stroke={clair ? 'var(--or)' : 'rgba(122,106,63,.28)'} strokeWidth={clair ? 1.8 : 1}
+              opacity={dans ? 1 : .08} />
           })}
           {s.noeuds.map(n => {
             const p = versEcran(n)
             if (p.x < -60 || p.x > taille.w + 60 || p.y < -60 || p.y > taille.h + 60) return null
             const r = (5 + Math.min(9, n.deg * 1.1)) * Math.sqrt(s.vue.z)
             const enSurvol = survol === n.cle
-            return <g key={n.cle} data-noeud style={{ cursor: 'pointer' }}
+            const estIsole = isole === n.cle
+            const dans = !isole || voisinsIsole?.has(n.cle)
+            return <g key={n.cle} data-noeud style={{ cursor: 'pointer' }} opacity={dans ? 1 : .15}
               onMouseDown={(ev) => {
                 ev.preventDefault(); ev.stopPropagation()
                 sim.current.dragNoeud = n.cle
@@ -315,14 +352,14 @@ export default function Graphe() {
                 const d = cheminForme(forme, r)
                 return d
                   ? <path d={d} transform={`translate(${p.x},${p.y})`} fill={n.coul}
-                      stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />
+                      stroke={estIsole ? 'var(--rouge)' : enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={estIsole ? 3 : enSurvol ? 2.5 : 1} />
                   : <circle cx={p.x} cy={p.y} r={r} fill={n.coul}
-                      stroke={enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={enSurvol ? 2.5 : 1} />
+                      stroke={estIsole ? 'var(--rouge)' : enSurvol ? 'var(--or)' : 'rgba(0,0,0,.35)'} strokeWidth={estIsole ? 3 : enSurvol ? 2.5 : 1} />
               })()}
               {n.type === 'faction' && <circle cx={p.x} cy={p.y} r={r + 3} fill="none" stroke={n.coul} strokeWidth="1" opacity=".5" />}
-              {(s.vue.z > 0.55 || enSurvol || n.type === 'faction') &&
+              {(s.vue.z > 0.55 || enSurvol || n.type === 'faction' || dans) &&
                 <text x={p.x} y={p.y + r + 11} textAnchor="middle"
-                  style={{ font: (n.type === 'faction' ? '700 ' : '') + '10px "Palatino Linotype", serif', fill: '#3d3319', pointerEvents: 'none' }}>
+                  style={{ font: (n.type === 'faction' || estIsole ? '700 ' : '') + '10px "Palatino Linotype", serif', fill: '#3d3319', pointerEvents: 'none' }}>
                   {n.nom.length > 24 ? n.nom.slice(0, 23) + '…' : n.nom}</text>}
             </g>
           })}
