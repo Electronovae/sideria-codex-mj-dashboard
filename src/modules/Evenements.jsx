@@ -11,6 +11,7 @@ export default function Evenements() {
 
   const ajouter = () => {
     const n = nouvelEvenement()
+    if (univers.meta.dateCampagne != null) { n.debut = univers.meta.dateCampagne; n.fin = univers.meta.dateCampagne }
     maj(u => u.evenements.push(n))
     setSelId(n.id)
   }

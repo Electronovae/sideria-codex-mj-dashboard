@@ -73,6 +73,7 @@ export const normaliser = (u) => {
   u.rapports ||= []
   u.meta.lignesForce ||= []      // { id, titre, description }
   u.meta.arbitrages ||= []       // { id, date, titre, decision }
+  u.meta.dateCampagne ??= null
   u.evenements.forEach(e => { e.arcId ??= null; e.symbole ??= 'losange'; e.sessionId ??= null; e.joueurIds ||= []; e.lieuId ??= null; delete e.couleur })
   u.campagnes.forEach(c => {
     c.sessions ||= []
@@ -172,6 +173,7 @@ export const nouvelleSession = () => ({
 export const universInitial = () => ({
   meta: {
     nom: 'Sidéria : L\'Ère de l\'Éther', version: 1,
+    dateCampagne: null,  // jour sidérien "actuel" pour le MJ, sert de point de départ auto aux nouveaux événements
     these: 'Sidéria est la cause de sa propre fin. L\'histoire est de décider ce qui mérite d\'être sauvé, et à quel prix.',
     saisons: [
       { num: 1, titre: 'La Ville qui Gronde', enjeux: 'À qui appartient ta colère ?', resume: '', horloge: 'M0-M8', niveaux: '8-18' },

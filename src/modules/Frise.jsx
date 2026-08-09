@@ -14,6 +14,7 @@ export default function Frise() {
   const [filtreTypes, setFiltreTypes] = useState(() => new Set(['PJ', 'PNJ']))
   const [survol, setSurvol] = useState(null)
   const [panneauArcs, setPanneauArcs] = useState(false)
+  const [poserDate, setPoserDate] = useState(false)
   const drag = useRef(null)
 
   useEffect(() => {
@@ -170,6 +171,9 @@ export default function Frise() {
         <button className="btn clair" onClick={() => centrer(312, 0.06)}>Années</button>
         <button className="btn clair" onClick={() => centrer(312, 1)}>Saisons</button>
         <button className="btn clair" onClick={() => setPanneauArcs(v => !v)}>Arcs ({univers.arcs.length})</button>
+        <button className={'btn' + (poserDate ? ' plein' : ' clair')} style={poserDate ? { color: 'var(--bleu-nuit)' } : undefined}
+          onClick={() => setPoserDate(v => !v)}>
+          📍 {poserDate ? 'Clique sur la frise…' : 'Poser la date de campagne'}</button>
         {['PJ', 'PNJ'].map(t => <span key={t} className={'puce' + (filtreTypes.has(t) ? '' : ' off')}
           style={{ borderColor: 'var(--or)' }} onClick={() => bascule(filtreTypes, setFiltreTypes, t)}>{t}</span>)}
         <button className="btn clair" onClick={() => setFiltreFac(new Set(univers.factions.map(f => f.id)))}>toutes</button>
@@ -198,8 +202,15 @@ export default function Frise() {
           <span className="aide" style={{ marginLeft: 10 }}>Un arc = une bande de fond. Rattache les événements à un arc dans l'onglet Événements.</span>
         </div>
       )}
-      <div ref={conteneur} style={{ flex: 1, position: 'relative', overflowY: 'auto', overflowX: 'hidden', cursor: 'grab', userSelect: 'none' }}
-        onMouseDown={(ev) => { if (ev.button !== 0) return; ev.preventDefault(); drag.current = { x: ev.clientX, t0: vue.t0, actif: false } }} onMouseLeave={() => setSurvol(null)}>
+      <div ref={conteneur} style={{ flex: 1, position: 'relative', overflowY: 'auto', overflowX: 'hidden', cursor: poserDate ? 'crosshair' : 'grab', userSelect: 'none' }}
+        onMouseDown={(ev) => { if (ev.button !== 0) return; ev.preventDefault(); drag.current = { x: ev.clientX, t0: vue.t0, actif: false } }} onMouseLeave={() => setSurvol(null)}
+        onClick={(ev) => {
+          if (!poserDate) return
+          const rect = conteneur.current.getBoundingClientRect()
+          const jour = Math.round(jDe(ev.clientX - rect.left))
+          maj(u => { u.meta.dateCampagne = jour })
+          setPoserDate(false)
+        }}>
         <svg width={largeur} height={hauteur} style={{ display: 'block' }}>
           {(() => {
             // Étiquettes d'arcs sur plusieurs rangées pour éviter les chevauchements.
@@ -243,6 +254,15 @@ export default function Frise() {
             </g>
           })}
           <line x1="0" y1={H_AXE} x2={largeur} y2={H_AXE} stroke="var(--axe)" strokeWidth="2" />
+          {univers.meta.dateCampagne != null && (() => {
+            const x = xDe(univers.meta.dateCampagne)
+            if (x < MARGE_G - 20 || x > largeur + 20) return null
+            return <g>
+              <line x1={x} y1={H_AXE} x2={x} y2={hauteur} stroke="var(--or)" strokeWidth="2" strokeDasharray="5 3" />
+              <path d={`M${x},${H_AXE} l7,-10 h-14 Z`} fill="var(--or)" />
+              <text x={x + 4} y={H_AXE - 2} style={{ font: '700 10px monospace', fill: 'var(--or)' }}>date de campagne</text>
+            </g>
+          })()}
           {liens.map((l, i) => (l.x > MARGE_G - 10 && l.x < largeur + 10) &&
             <line key={i} x1={l.x} y1={l.y1} x2={l.x} y2={l.y2} stroke="rgba(38,34,26,.35)" strokeDasharray="2 3" />)}
           {marques.map((m, i) => {
