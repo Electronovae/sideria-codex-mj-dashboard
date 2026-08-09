@@ -4,8 +4,8 @@ export const uid = (p = 'x') => p + '_' + Math.random().toString(36).slice(2, 9)
 
 // ── Gabarits d'entités ──────────────────────────────────────
 export const nouveauPnj = () => ({
-  id: uid('pnj'), nom: 'Nouveau PNJ', role: '', faction: null,
-  poste: '', superieurId: null, compteurs: [],
+  id: uid('pnj'), nom: 'Nouveau PNJ', role: '', factionIds: [], rolesFactions: {},
+  poste: '', superieurId: null, compteurs: [], image: '',
   description: '', secrets: '', repliques: [],
   arbre: null, // rempli par nouvelArbre() à la demande
 })
@@ -50,7 +50,7 @@ export const TYPES_RAPPORT = ['rapport', 'une de journal', 'lettre', 'note', 'd�
 
 export const nouvelleFaction = () => ({
   id: uid('fac'), nom: 'Nouvelle faction', couleur: '#a3512e', devise: '',
-  description: '', objectifs: '', ressources: '', chefId: null,
+  histoire: '', description: '', objectifs: '', ressources: '', secrets: '', chefId: null,
 })
 
 export const nouvelEvenement = () => ({
@@ -98,9 +98,14 @@ export const normaliser = (u) => {
   u.factions.forEach(f => {
     if (f.chefId === undefined) f.chefId = (f.chefIds && f.chefIds[0]) || null
     delete f.chefIds
+    f.histoire ??= ''
+    f.secrets ??= ''
   })
   u.pnjs.forEach(p => {
-    p.poste ??= ''; p.superieurId ??= null; p.compteurs ||= []
+    p.poste ??= ''; p.superieurId ??= null; p.compteurs ||= []; p.image ??= ''
+    if (p.factionIds === undefined) p.factionIds = (p.faction != null ? [p.faction] : [])
+    delete p.faction
+    p.rolesFactions ??= {}
     p.compteurs.forEach(c => { c.valeur ??= c.min ?? 0; c.seuils ||= []; c.evenements ||= [] })
     if (p.arbre) {
       // migration : le compteur intégré à l'arbre devient un compteur personnalisé du PNJ

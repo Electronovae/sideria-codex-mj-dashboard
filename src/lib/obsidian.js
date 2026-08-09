@@ -7,8 +7,8 @@ const ascii = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(
 const lien = (nom) => `[[${nom}]]`
 
 function mdPnj(p, factions) {
-  const f = factions.find(x => x.id === p.faction)
-  let md = `#PNJ\n\n# ${p.nom}\n\n**Rôle :** ${p.role || '?'} · **Faction :** ${f ? lien(f.nom) : 'aucune'}\n\n${p.description}\n`
+  const fs = (p.factionIds || []).map(id => factions.find(x => x.id === id)).filter(Boolean)
+  let md = `#PNJ\n\n# ${p.nom}\n\n**Rôle :** ${p.role || '?'} · **Faction(s) :** ${fs.length ? fs.map(f => lien(f.nom)).join(', ') : 'aucune'}\n\n${p.description}\n`
   if (p.repliques?.length) md += `\n## Répliques\n${p.repliques.map(r => `> ${r}`).join('\n\n')}\n`
   if (p.compteurs?.length) {
     md += `\n## Compteurs\n\n${p.compteurs.map(c => `- **${c.nom}** (${c.min} à ${c.max}, valeur ${c.valeur ?? c.min}) : ${c.description}`).join('\n')}\n`
@@ -35,10 +35,12 @@ function mdFaction(f, pnjs) {
   if (f.devise) md += `*« ${f.devise} »*\n\n`
   md += `${f.description}\n`
   if (chefs.length) md += `\n**Direction :** ${chefs.map(c => lien(c.nom)).join(' · ')}\n`
+  if (f.histoire) md += `\n## Histoire\n\n${f.histoire}\n`
   if (f.objectifs) md += `\n## Objectifs\n\n${f.objectifs}\n`
   if (f.ressources) md += `\n## Ressources\n\n${f.ressources}\n`
-  const membres = pnjs.filter(p => p.faction === f.id)
-  if (membres.length) md += `\n## Membres notables\n\n${membres.map(m => `- ${lien(m.nom)} : ${m.role}`).join('\n')}\n`
+  const membres = pnjs.filter(p => p.factionIds?.includes(f.id))
+  if (membres.length) md += `\n## Membres notables\n\n${membres.map(m => `- ${lien(m.nom)} : ${m.rolesFactions?.[f.id] || m.role}`).join('\n')}\n`
+  if (f.secrets) md += `\n## Secrets Maître\n\n${f.secrets}\n`
   return md
 }
 

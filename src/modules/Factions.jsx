@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, ListeFiche } from './communs.jsx'
+import { useStudio, Champ, ListeFiche, ChampEditable } from './communs.jsx'
 import { nouvelleFaction } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
 
@@ -18,14 +18,14 @@ export default function Factions() {
     if (!confirm(`Supprimer ${f.nom} ? Les PNJ et PJ rattachés deviennent sans faction.`)) return
     maj(u => {
       u.factions = u.factions.filter(x => x.id !== selId)
-      u.pnjs.forEach(p => { if (p.faction === selId) p.faction = null })
+      u.pnjs.forEach(p => { p.factionIds = (p.factionIds || []).filter(id => id !== selId); delete p.rolesFactions[selId] })
       u.joueurs.forEach(j => { if (j.faction === selId) j.faction = null })
       u.evenements.forEach(e => { if (e.factionId === selId) e.factionId = null })
     })
     setSelId(null)
   }
 
-  const membres = f ? univers.pnjs.filter(p => p.faction === f.id) : []
+  const membres = f ? univers.pnjs.filter(p => p.factionIds?.includes(f.id)) : []
   const pjs = f ? univers.joueurs.filter(j => j.faction === f.id) : []
   const evts = f ? univers.evenements.filter(e => e.factionId === f.id).sort((a, b) => a.debut - b.debut) : []
 
@@ -35,10 +35,10 @@ export default function Factions() {
       libelleAjout="+ Nouvelle faction"
       tris={{
         nom: f => f.nom,
-        'nb PNJ': f => -univers.pnjs.filter(p => p.faction === f.id).length,
+        'nb PNJ': f => -univers.pnjs.filter(p => p.factionIds?.includes(f.id)).length,
       }}
       rendu={x => (<><span className="rond" style={{ background: x.couleur }} />
-        <span>{x.nom}<div className="sous">{univers.pnjs.filter(p => p.faction === x.id).length} PNJ</div></span></>)}
+        <span>{x.nom}<div className="sous">{univers.pnjs.filter(p => p.factionIds?.includes(x.id)).length} PNJ</div></span></>)}
       enfants={f && (
         <div key={f.id}>
           <h2>{f.nom}</h2>
@@ -49,9 +49,26 @@ export default function Factions() {
                 onChange={e => modifier(x => { x.couleur = e.target.value })} /></span>
           </div>
           <Champ label="Devise" value={f.devise} onChange={e => modifier(x => { x.devise = e.target.value })} />
-          <Champ label="Description" zone value={f.description} onChange={e => modifier(x => { x.description = e.target.value })} />
-          <Champ label="Objectifs" zone value={f.objectifs} onChange={e => modifier(x => { x.objectifs = e.target.value })} />
-          <Champ label="Ressources et moyens" zone value={f.ressources} onChange={e => modifier(x => { x.ressources = e.target.value })} />
+
+          <h3>Histoire</h3>
+          <ChampEditable valeur={f.histoire} vide="Aucune histoire écrite."
+            surChange={v => modifier(x => { x.histoire = v })} />
+
+          <h3>Idéologie</h3>
+          <ChampEditable valeur={f.description} vide="Aucune description."
+            surChange={v => modifier(x => { x.description = v })} />
+
+          <h3>Objectifs</h3>
+          <ChampEditable valeur={f.objectifs} vide="Aucun objectif défini."
+            surChange={v => modifier(x => { x.objectifs = v })} />
+
+          <h3>Ressources et moyens</h3>
+          <ChampEditable valeur={f.ressources} vide="Aucune ressource notée."
+            surChange={v => modifier(x => { x.ressources = v })} />
+
+          <h3>Secrets Maître</h3>
+          <ChampEditable valeur={f.secrets} vide="Aucun secret."
+            surChange={v => modifier(x => { x.secrets = v })} />
 
           <h3>Chef de la faction</h3>
           <select value={f.chefId || ''} onChange={e => modifier(x => { x.chefId = e.target.value || null })}>
@@ -62,7 +79,7 @@ export default function Factions() {
 
           <h3>Membres</h3>
           {membres.length
-            ? <ul style={{ marginLeft: 18 }}>{membres.map(m => <li key={m.id}>{m.nom}{m.poste ? ` : ${m.poste}` : m.role ? ` : ${m.role}` : ''}</li>)}</ul>
+            ? <ul style={{ marginLeft: 18 }}>{membres.map(m => <li key={m.id}>{m.nom}{(m.rolesFactions?.[f.id] || m.poste || m.role) ? ` : ${m.rolesFactions?.[f.id] || m.poste || m.role}` : ''}{m.factionIds?.length > 1 ? ' (multi-faction)' : ''}</li>)}</ul>
             : <p className="aide">Aucun PNJ. Le rattachement se fait depuis la fiche du PNJ.</p>}
 
           <h3>Organigramme</h3>
@@ -115,7 +132,7 @@ function Organigramme({ faction, membres, pjs = [] }) {
           borderLeftColor: m.id === faction.chefId ? 'var(--or)' : faction.couleur,
           display: 'inline-block', minWidth: 220 }}>
           <strong>{m.nom}</strong>{m.id === faction.chefId && ' ★'}
-          <div className="aide" style={{ marginTop: 0 }}>{m.poste || m.role || 'poste à définir'}</div>
+          <div className="aide" style={{ marginTop: 0 }}>{m.rolesFactions?.[faction.id] || m.poste || m.role || 'poste à définir'}</div>
         </div>
         {enfants(m.id).map(e => <Noeud key={e.id} m={e} prof={prof + 1} vus={suiv} />)}
         {pjsDe(m.id).map(p => <div key={p.id} style={{ marginLeft: (prof + 1) * 22 }}><CartePj p={p} /></div>)}

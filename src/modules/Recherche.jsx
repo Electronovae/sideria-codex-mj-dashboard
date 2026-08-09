@@ -17,7 +17,7 @@ export default function Recherche({ fermer }) {
     const score = norm(titre).startsWith(nq) ? 0 : norm(titre).includes(nq) ? 1 : norm(texte).includes(nq) ? 2 : -1
     if (score >= 0) candidats.push({ type, id, titre, sous, score })
   }
-  univers.pnjs.forEach(p => pousser('pnj', p.id, p.nom, 'PNJ · ' + (univers.factions.find(f => f.id === p.faction)?.nom || ''), p.description + ' ' + p.role + ' ' + p.secrets))
+  univers.pnjs.forEach(p => pousser('pnj', p.id, p.nom, 'PNJ · ' + (p.factionIds || []).map(id => univers.factions.find(f => f.id === id)?.nom).filter(Boolean).join(', '), p.description + ' ' + p.role + ' ' + p.secrets))
   univers.joueurs.forEach(j => pousser('pj', j.id, j.personnage, 'PJ · ' + j.joueur, j.notes))
   univers.factions.forEach(f => pousser('faction', f.id, f.nom, 'Faction', f.description))
   univers.lieux.forEach(l => pousser('lieu', l.id, l.nom, 'Lieu · ' + l.type, l.description))

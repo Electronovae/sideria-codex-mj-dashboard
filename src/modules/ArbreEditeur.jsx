@@ -161,9 +161,14 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
 
   return (
     <div style={pleinEcran ? {
-      position: 'fixed', inset: 0, zIndex: 200, background: 'var(--fond)',
-      padding: 12, display: 'flex', flexDirection: 'column',
+      position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.55)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12,
     } : undefined}>
+      <div style={pleinEcran ? {
+        width: '100%', height: '100%', maxWidth: 1600, maxHeight: 900,
+        background: 'var(--fond)', padding: 12, display: 'flex', flexDirection: 'column',
+        border: '1px solid var(--parch-mid)', borderRadius: 8,
+      } : undefined}>
       {/* Canevas */}
       <div style={{ display: 'flex', gap: 6, margin: '10px 0 6px', flex: 'none' }}>
         <button className="btn clair" onClick={ajouterNoeud}>+ nœud</button>
@@ -276,6 +281,7 @@ export default function ArbreEditeur({ arbre, modifier, supprimerArbre }) {
         </div>
       </div>
       {!pleinEcran && <button className="btn danger" style={{ marginTop: 10 }} onClick={supprimerArbre}>Supprimer l'arbre</button>}
+      </div>
     </div>
   )
 }

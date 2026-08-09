@@ -114,8 +114,8 @@ export default function Graphe() {
 
     if (actif('faction')) univers.factions.forEach(f => ajouter('faction', f.id, f.nom, f.couleur))
     if (actif('pnj')) univers.pnjs.forEach(p => {
-      ajouter('pnj', p.id, p.nom, faction(p.faction)?.couleur || '#8a8272')
-      if (actif('faction') && p.faction) lier('pnj:' + p.id, 'faction:' + p.faction)
+      ajouter('pnj', p.id, p.nom, faction(p.factionIds?.[0])?.couleur || '#8a8272')
+      if (actif('faction')) (p.factionIds || []).forEach(fid => lier('pnj:' + p.id, 'faction:' + fid))
     })
     if (actif('pj')) univers.joueurs.forEach(j => {
       ajouter('pj', j.id, j.personnage, faction(j.faction)?.couleur || '#c9a227')

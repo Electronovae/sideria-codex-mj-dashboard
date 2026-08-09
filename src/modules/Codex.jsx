@@ -37,7 +37,7 @@ export default function Codex() {
     const { type, id } = page
     if (type === 'faction') {
       const x = f(id); if (!x) return null
-      const membres = univers.pnjs.filter(p => p.faction === id)
+      const membres = univers.pnjs.filter(p => p.factionIds?.includes(id))
       const pjs = univers.joueurs.filter(j => j.faction === id)
       const evts = univers.evenements.filter(e => e.factionId === id).sort((a, b) => a.debut - b.debut)
       const camps = univers.campagnes.filter(c => c.factionId === id)
@@ -46,10 +46,11 @@ export default function Codex() {
         {x.devise && <p style={{ fontStyle: 'italic' }}>« {x.devise} »</p>}
         <ChampEditable valeur={x.description} vide="Aucune description."
           surChange={v => maj(u => { u.factions.find(ff => ff.id === id).description = v })} />
+        {x.histoire && <Bloc titre="Histoire"><p style={{ whiteSpace: 'pre-wrap' }}><Texte>{x.histoire}</Texte></p></Bloc>}
         {x.chefId && pnj(x.chefId) && <Bloc titre="Chef">
-          <div><L type="pnj" id={x.chefId}>{pnj(x.chefId).nom}</L> : {pnj(x.chefId).poste || pnj(x.chefId).role}</div></Bloc>}
+          <div><L type="pnj" id={x.chefId}>{pnj(x.chefId).nom}</L> : {pnj(x.chefId).rolesFactions?.[id] || pnj(x.chefId).poste || pnj(x.chefId).role}</div></Bloc>}
         {membres.length > 0 && <Bloc titre="Membres">{membres.map(m =>
-          <div key={m.id}><L type="pnj" id={m.id}>{m.nom}</L>{m.role && <> : {m.role}</>}</div>)}</Bloc>}
+          <div key={m.id}><L type="pnj" id={m.id}>{m.nom}</L>{(m.rolesFactions?.[id] || m.role) && <> : {m.rolesFactions?.[id] || m.role}</>}{m.factionIds?.length > 1 && <> (multi-faction)</>}</div>)}</Bloc>}
         {pjs.length > 0 && <Bloc titre="PJ affiliés">{pjs.map(j =>
           <div key={j.id}><L type="pj" id={j.id}>{j.personnage}</L> ({j.joueur})</div>)}</Bloc>}
         {camps.length > 0 && <Bloc titre="Campagnes">{camps.map(c =>
@@ -58,6 +59,8 @@ export default function Codex() {
           <div key={e.id}><strong>{fmtDate(e.debut)}</strong> · <L type="evenement" id={e.id}>{e.titre}</L></div>)}</Bloc>}
         {x.objectifs && <Bloc titre="Objectifs"><p>{x.objectifs}</p></Bloc>}
         {x.ressources && <Bloc titre="Ressources"><p>{x.ressources}</p></Bloc>}
+        {x.secrets && <div className="carte" style={{ borderLeftColor: 'var(--rouge)' }}>
+          <label>Secrets Maître</label><p style={{ whiteSpace: 'pre-wrap' }}>{x.secrets}</p></div>}
       </>
     }
     if (type === 'pnj') {
@@ -69,8 +72,10 @@ export default function Codex() {
       const rapportsAuteur = univers.rapports.filter(rr => rr.auteurId === id)
       return <>
         <h2>{x.nom}</h2>
+        {x.image && <img src={x.image} alt={x.nom} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, float: 'right' }} />}
         <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.role}
-          {x.faction && <> · <L type="faction" id={x.faction}>{f(x.faction)?.nom}</L></>}
+          {(x.factionIds || []).map(fid => f(fid)).filter(Boolean).map(ff =>
+            <span key={ff.id}> · <L type="faction" id={ff.id}>{ff.nom}</L>{x.rolesFactions?.[ff.id] && ` (${x.rolesFactions[ff.id]})`}</span>)}
           {dirs.map(d => <span key={d.id}> · dirige <L type="faction" id={d.id}>{d.nom}</L></span>)}</p>
         <ChampEditable valeur={x.description} vide="Aucune description."
           surChange={v => maj(u => { u.pnjs.find(pp => pp.id === id).description = v })} />

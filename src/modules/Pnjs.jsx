@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useStudio, Champ, SelecteurFaction, ListeFiche } from './communs.jsx'
+import { useStudio, Champ, SelecteurFactions, PuceFaction, ChampEditable, ListeFiche } from './communs.jsx'
 import { nouveauPnj, nouvelArbre, nouveauCompteur, uid } from '../lib/modele.js'
 import ArbreEditeur, { Manometre } from './ArbreEditeur.jsx'
 
@@ -32,14 +32,15 @@ export default function Pnjs() {
       items={univers.pnjs} selId={selId} surSel={setSelId} surAjout={ajouter}
       libelleAjout="+ Nouveau PNJ"
       tris={{
-        faction: p => (univers.factions.find(f => f.id === p.faction)?.nom || 'zzz') + '·' + p.nom,
+        faction: p => (univers.factions.find(f => f.id === p.factionIds?.[0])?.nom || 'zzz') + '·' + p.nom,
         nom: p => p.nom,
       }}
-      groupe={p => univers.factions.find(f => f.id === p.faction)?.nom || 'Sans faction'}
+      groupe={p => p.factionIds?.length > 1 ? 'Multi-faction'
+        : univers.factions.find(f => f.id === p.factionIds?.[0])?.nom || 'Sans faction'}
       rendu={p => {
-        const f = univers.factions.find(x => x.id === p.faction)
-        return (<><span className="rond" style={{ background: f?.couleur || '#888' }} />
-          <span>{p.nom}<div className="sous">{p.role}{p.arbre ? ' · arbre ✓' : ''}</div></span></>)
+        const fs = (p.factionIds || []).map(id => univers.factions.find(x => x.id === id)).filter(Boolean)
+        return (<><span className="rond" style={{ background: fs[0]?.couleur || '#888' }} />
+          <span>{p.nom}<div className="sous">{p.role}{p.arbre ? ' · arbre ✓' : ''}{fs.length > 1 ? ` · ${fs.length} factions` : ''}</div></span></>)
       }}
       enfants={pnj && (
         <div key={pnj.id}>
@@ -47,23 +48,51 @@ export default function Pnjs() {
           <div className="rangee">
             <Champ label="Nom" value={pnj.nom} onChange={e => modifier(p => { p.nom = e.target.value })} />
             <Champ label="Rôle" value={pnj.role} onChange={e => modifier(p => { p.role = e.target.value })} />
-            <span><label>Faction</label>
-              <SelecteurFaction valeur={pnj.faction} surChange={v => modifier(p => { p.faction = v })} /></span>
           </div>
           <div className="rangee">
-            <Champ label="Poste (organigramme)" placeholder="Chef de l'Aile du Piston"
+            <Champ label="Image (URL)" placeholder="https://..." value={pnj.image}
+              onChange={e => modifier(p => { p.image = e.target.value })} />
+            {pnj.image && <span className="etroit">
+              <img src={pnj.image} alt={pnj.nom} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, marginTop: 18 }} />
+            </span>}
+          </div>
+          <p className="aide">Le stockage d'images en ligne (upload direct) arrive avec le passage à Supabase Storage. En attendant, colle l'URL d'une image déjà hébergée.</p>
+
+          <h3>Factions</h3>
+          <p className="aide">Un PNJ peut appartenir à plusieurs factions (organigrammes, rôles multiples). Précise un poste par faction si besoin, sinon le "Poste" général ci-dessous s'applique partout.</p>
+          <SelecteurFactions ids={pnj.factionIds} surChange={v => modifier(p => {
+            p.factionIds = v
+            Object.keys(p.rolesFactions).forEach(id => { if (!v.includes(id)) delete p.rolesFactions[id] })
+          })} />
+          {pnj.factionIds.map(fid => {
+            const f = univers.factions.find(x => x.id === fid)
+            if (!f) return null
+            return (
+              <div className="rangee" key={fid} style={{ marginTop: 6 }}>
+                <PuceFaction id={fid} />
+                <input placeholder={pnj.poste || 'Poste dans cette faction (sinon : poste général)'}
+                  value={pnj.rolesFactions[fid] || ''}
+                  onChange={e => modifier(p => { p.rolesFactions[fid] = e.target.value })} />
+              </div>
+            )
+          })}
+
+          <div className="rangee">
+            <Champ label="Poste général (organigramme)" placeholder="Chef de l'Aile du Piston"
               value={pnj.poste} onChange={e => modifier(p => { p.poste = e.target.value })} />
             <span><label>Supérieur hiérarchique</label>
               <select value={pnj.superieurId || ''} onChange={e => modifier(p => { p.superieurId = e.target.value || null })}>
                 <option value="">—</option>
-                {univers.pnjs.filter(x => x.id !== pnj.id && x.faction === pnj.faction)
+                {univers.pnjs.filter(x => x.id !== pnj.id && x.factionIds?.some(id => pnj.factionIds?.includes(id)))
                   .map(x => <option key={x.id} value={x.id}>{x.nom}</option>)}
               </select></span>
           </div>
-          <Champ label="Description" zone value={pnj.description}
-            onChange={e => modifier(p => { p.description = e.target.value })} />
-          <Champ label="Secrets Maître" zone value={pnj.secrets}
-            onChange={e => modifier(p => { p.secrets = e.target.value })} />
+          <label className="aide">Description</label>
+          <ChampEditable valeur={pnj.description} vide="Aucune description."
+            surChange={v => modifier(p => { p.description = v })} />
+          <label className="aide">Secrets Maître</label>
+          <ChampEditable valeur={pnj.secrets} vide="Aucun secret."
+            surChange={v => modifier(p => { p.secrets = v })} />
 
           <h3>Répliques types</h3>
           {pnj.repliques.map((r, i) => (

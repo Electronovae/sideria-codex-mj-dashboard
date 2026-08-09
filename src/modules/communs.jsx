@@ -21,6 +21,27 @@ export const SelecteurFaction = ({ valeur, surChange, avecVide = true }) => {
   )
 }
 
+// Sélection multiple de factions sous forme de puces cliquables (PNJ multi-faction).
+export const SelecteurFactions = ({ ids, surChange }) => {
+  const { univers } = useStudio()
+  const ens = new Set(ids || [])
+  const basculer = (id) => {
+    ens.has(id) ? ens.delete(id) : ens.add(id)
+    surChange([...ens])
+  }
+  return (
+    <div>
+      {univers.factions.map(f => (
+        <span key={f.id} className={'puce' + (ens.has(f.id) ? '' : ' off')}
+          style={{ borderColor: f.couleur }} onClick={() => basculer(f.id)}>
+          <span className="rond" style={{ background: f.couleur }} />{f.nom}
+        </span>
+      ))}
+      {univers.factions.length === 0 && <span className="aide">Aucune faction créée.</span>}
+    </div>
+  )
+}
+
 export const PuceFaction = ({ id }) => {
   const { univers } = useStudio()
   const f = univers.factions.find(x => x.id === id)
@@ -43,7 +64,7 @@ export const PucesPnjs = ({ ids, surChange }) => {
   return (
     <div>
       {univers.pnjs.map(p => {
-        const f = univers.factions.find(x => x.id === p.faction)
+        const f = univers.factions.find(x => x.id === p.factionIds?.[0])
         return (
           <span key={p.id} className={'puce' + (ens.has(p.id) ? '' : ' off')}
             style={{ borderColor: f?.couleur || 'var(--gris)' }}
@@ -423,7 +444,7 @@ function LigneRiche({ texte }) {
 const CHAMPS_TEXTE_PAR_TYPE = {
   pnj: ['description', 'secrets'],
   pj: ['notes', 'secrets'],
-  faction: ['description', 'objectifs', 'ressources'],
+  faction: ['histoire', 'description', 'objectifs', 'ressources', 'secrets'],
   lieu: ['description', 'secrets'],
   campagne: ['pitch', 'issues'],
   evenement: ['desc'],

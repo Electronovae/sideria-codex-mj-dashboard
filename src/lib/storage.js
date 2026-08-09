@@ -9,7 +9,7 @@ export function chargerLocal() {
     const brut = localStorage.getItem(CLE)
     if (brut) return normaliser(JSON.parse(brut))
   } catch (e) { console.warn('localStorage indisponible', e) }
-  return universInitial()
+  return normaliser(universInitial())
 }
 
 export function sauverLocal(univers) {

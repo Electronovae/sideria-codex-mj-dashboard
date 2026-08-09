@@ -68,7 +68,7 @@ export default function Frise() {
   const lignes = [
     { id: '__general__', nom: 'Général (sans PNJ/PJ)', type: 'GEN', faction: null },
     ...(filtreTypes.has('PJ') ? univers.joueurs.map(j => ({ id: j.id, nom: j.personnage, type: 'PJ', faction: j.faction })) : []),
-    ...(filtreTypes.has('PNJ') ? univers.pnjs.map(p => ({ id: p.id, nom: p.nom, type: 'PNJ', faction: p.faction })) : []),
+    ...(filtreTypes.has('PNJ') ? univers.pnjs.map(p => ({ id: p.id, nom: p.nom, type: 'PNJ', faction: p.factionIds?.[0] ?? null })) : []),
   ].filter(l => l.faction == null || filtreFac.has(l.faction))
   const indexLigne = Object.fromEntries(lignes.map((l, i) => [l.id, i]))
   const xDe = (j) => (j - vue.t0) * vue.ech
@@ -125,7 +125,7 @@ export default function Frise() {
       const titre = pnjX?.nom || lieuX?.nom || it.type || 'entrée'
       poser({ obj: { titre: `${j.personnage} × ${titre}`, desc: it.resume, debut: it.date, fin: null },
         ligne: indexLigne[j.id], x: xDe(it.date), larg: Math.min(140, Math.max(24, 12 + titre.length * 5.2)),
-        coul: faction(pnjX?.faction)?.couleur || '#8a8272', creux: true, titre, ponctuel: false })
+        coul: faction(pnjX?.factionIds?.[0])?.couleur || '#8a8272', creux: true, titre, ponctuel: false })
     })
   })
 

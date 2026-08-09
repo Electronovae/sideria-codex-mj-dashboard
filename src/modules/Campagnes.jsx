@@ -459,7 +459,7 @@ function ModeSession({ session, campagne, univers, maj, fermer }) {
           <h3 style={{ fontVariant: 'small-caps', color: 'var(--or)', marginTop: 0 }}>PNJ de la session</h3>
           {pnjs.length === 0 && <p className="aide">Aucun PNJ lié. Ajoute des PNJ clés à la campagne ou des participants aux événements.</p>}
           {pnjs.map(p => {
-            const f = univers.factions.find(x => x.id === p.faction)
+            const f = univers.factions.find(x => x.id === p.factionIds?.[0])
             const ouvert = pnjOuvert === p.id
             return (
               <div key={p.id} className="carte" style={{ borderLeftColor: f?.couleur || 'var(--or)', cursor: 'pointer' }}
