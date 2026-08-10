@@ -29,6 +29,9 @@ button{font:inherit;cursor:pointer;border-radius:2px}
 .btn:hover{background:rgba(201,162,39,.18)}
 .btn.plein{background:var(--or);color:var(--bleu-nuit);font-weight:700}
 .btn.clair{color:var(--encre);border-color:var(--gris)}
+.groupe-json{display:flex}
+.groupe-json .btn{border-radius:0}
+.groupe-json .btn:first-child{border-right:none}
 .btn.clair:hover{background:rgba(0,0,0,.06)}
 .btn.danger{border-color:var(--rouge);color:#c9695c}
 nav{background:var(--bleu-nuit);display:flex;gap:2px;padding:0 12px;flex-wrap:wrap}

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { chargerLocal, sauverLocal, exporterJson, importerJson, supabaseActif, pousserSupabase, tirerSupabase } from './lib/storage.js'
-import { exporterObsidian } from './lib/obsidian.js'
 import Tableau from './modules/Tableau.jsx'
 import Pnjs from './modules/Pnjs.jsx'
 import Joueurs from './modules/Joueurs.jsx'
@@ -141,9 +140,10 @@ export default function App() {
           {theme === 'clair' ? 'Mode sombre' : 'Mode clair'}</button>
         <button className={'btn' + (scinde ? ' plein' : '')} onClick={() => setScinde(v => !v)}>
           {scinde ? '◨ Quitter l\u2019écran scindé' : '◨ Écran scindé'}</button>
-        <button className="btn" onClick={() => exporterJson(univers)}>Exporter JSON</button>
-        <button className="btn" onClick={() => fichierRef.current.click()}>Importer JSON</button>
-        <button className="btn" onClick={() => exporterObsidian(univers)}>Export Obsidian (.zip)</button>
+        <div className="groupe-json">
+          <button className="btn" onClick={() => fichierRef.current.click()} title="Importer un fichier JSON">⬆ JSON</button>
+          <button className="btn" onClick={() => exporterJson(univers)} title="Exporter en JSON">⬇ JSON</button>
+        </div>
         {supabaseActif() && <>
           <button className="btn plein" onClick={pousser}>Pousser vers Supabase</button>
           <button className="btn" onClick={tirer}>Tirer depuis Supabase</button>
