@@ -42,7 +42,6 @@ export default function App() {
     try { localStorage.setItem('sideria-theme', theme) } catch {}
   }, [theme])
   const [statut, setStatut] = useState('local')
-  const [idSupabase, setIdSupabase] = useState(null)
   const fichierRef = useRef(null)
   const minuteur = useRef(null)
 
@@ -56,17 +55,13 @@ export default function App() {
       minuteurSb.current = setTimeout(async () => {
         try {
           setStatut('supabase…')
-          const id = await pousserSupabase(univers, idSupabaseRef.current)
-          idSupabaseRef.current = id
-          setIdSupabase(id)
+          await pousserSupabase(univers)
           setStatut('supabase ✓ ' + new Date().toLocaleTimeString())
         } catch (err) { setStatut('supabase : erreur (' + (err.message || '?') + ')') }
       }, 30000)
     }
     return () => { clearTimeout(minuteur.current); clearTimeout(minuteurSb.current) }
   }, [univers])
-  const idSupabaseRef = useRef(null)
-  useEffect(() => { idSupabaseRef.current = idSupabase }, [idSupabase])
 
   // maj(fn) : toutes les mutations passent par là (avec historique pour Ctrl+Z).
   const passe = useRef([]), futur = useRef([])
@@ -110,8 +105,7 @@ export default function App() {
   const pousser = async () => {
     try {
       setStatut('supabase…')
-      const id = await pousserSupabase(univers, idSupabase)
-      setIdSupabase(id)
+      await pousserSupabase(univers)
       setStatut('supabase ✓')
     } catch (err) { setStatut('erreur'); alert('Supabase : ' + err.message) }
   }
@@ -121,8 +115,7 @@ export default function App() {
       const res = await tirerSupabase()
       if (!res) { alert('Aucun univers sur Supabase.'); return }
       if (!confirm('Remplacer l\u2019univers local par la version Supabase ?')) return
-      setIdSupabase(res.id)
-      setUnivers(res.univers)
+      setUnivers(res)
       setStatut('supabase ✓')
     } catch (err) { alert('Supabase : ' + err.message) }
   }

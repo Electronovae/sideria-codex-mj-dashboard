@@ -1,6 +1,6 @@
 import { versJour } from './calendrier.js'
 
-export const uid = (p = 'x') => p + '_' + Math.random().toString(36).slice(2, 9)
+export const uid = () => crypto.randomUUID()
 
 // ── Gabarits d'entités ──────────────────────────────────────
 export const nouveauPnj = () => ({
