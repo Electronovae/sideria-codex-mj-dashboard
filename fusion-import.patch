@@ -1,0 +1,171 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index f2f17d8..e63410d 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -1,5 +1,5 @@
+ import React, { useEffect, useMemo, useRef, useState } from 'react'
+-import { chargerLocal, sauverLocal, exporterJson, importerJson, supabaseActif, pousserSupabase, tirerSupabase } from './lib/storage.js'
++import { chargerLocal, sauverLocal, exporterJson, importerJson, importerJsonFusion, supabaseActif, pousserSupabase, tirerSupabase } from './lib/storage.js'
+ import { exporterObsidian } from './lib/obsidian.js'
+ import Tableau from './modules/Tableau.jsx'
+ import Pnjs from './modules/Pnjs.jsx'
+@@ -45,6 +45,7 @@ export default function App() {
+   const [statut, setStatut] = useState('local')
+   const [idSupabase, setIdSupabase] = useState(null)
+   const fichierRef = useRef(null)
++  const fichierFusionRef = useRef(null)
+   const minuteur = useRef(null)
+ 
+   // Autosave local (800 ms) puis Supabase (30 s) après la dernière modification.
+@@ -108,6 +109,18 @@ export default function App() {
+     e.target.value = ''
+   }
+ 
++  // Fusion : le fichier ne contient que ce qui doit être ajouté/mis à jour
++  // (une session, un événement...), tout le reste de l'univers courant est conservé.
++  const surImportFusion = async (e) => {
++    const f = e.target.files[0]
++    if (!f) return
++    try {
++      const resultat = await importerJsonFusion(f, univers)
++      setUnivers(resultat)
++    } catch (err) { alert('Fusion impossible : ' + err.message) }
++    e.target.value = ''
++  }
++
+   const pousser = async () => {
+     try {
+       setStatut('supabase…')
+@@ -142,7 +155,8 @@ export default function App() {
+         <button className={'btn' + (scinde ? ' plein' : '')} onClick={() => setScinde(v => !v)}>
+           {scinde ? '◨ Quitter l\u2019écran scindé' : '◨ Écran scindé'}</button>
+         <button className="btn" onClick={() => exporterJson(univers)}>Exporter JSON</button>
+-        <button className="btn" onClick={() => fichierRef.current.click()}>Importer JSON</button>
++        <button className="btn" onClick={() => fichierRef.current.click()} title="Remplace tout l'univers par le contenu du fichier">Importer JSON</button>
++        <button className="btn" onClick={() => fichierFusionRef.current.click()} title="Ajoute/actualise seulement ce que contient le fichier (sessions, PNJ, événements...), sans toucher au reste">Importer JSON (fusion)</button>
+         <button className="btn" onClick={() => exporterObsidian(univers)}>Export Obsidian (.zip)</button>
+         {supabaseActif() && <>
+           <button className="btn plein" onClick={pousser}>Pousser vers Supabase</button>
+@@ -150,6 +164,7 @@ export default function App() {
+         </>}
+         {!supabaseActif() && <span className="statut" title="Renseigner .env pour activer">Supabase : non configuré</span>}
+         <input ref={fichierRef} type="file" accept=".json" style={{ display: 'none' }} onChange={surImport} />
++        <input ref={fichierFusionRef} type="file" accept=".json" style={{ display: 'none' }} onChange={surImportFusion} />
+       </header>
+       {!scinde && (
+         <nav>
+diff --git a/src/lib/modele.js b/src/lib/modele.js
+index aef939b..80b3323 100644
+--- a/src/lib/modele.js
++++ b/src/lib/modele.js
+@@ -135,6 +135,75 @@ export const normaliser = (u) => {
+   return u
+ }
+ 
++// ── Fusion : import incrémental (une session, quelques PNJ, etc.) ─
++// Contrairement à un import classique qui remplace tout l'univers, fusionnerUnivers()
++// prend un JSON partiel et upsert (ajoute ou met à jour par id) dans l'univers existant,
++// sans jamais rien supprimer. Le JSON partiel peut ne contenir que les clés qui t'intéressent
++// (ex: juste { "campagnes": [ { "id": "cmp_xxx", "sessions": [ {...} ] } ] }).
++const upsertParId = (listeExistante, listePartielle) => {
++  if (!Array.isArray(listePartielle)) return listeExistante
++  const copie = [...listeExistante]
++  listePartielle.forEach(item => {
++    if (!item || !item.id) return
++    const i = copie.findIndex(x => x.id === item.id)
++    if (i === -1) copie.push(item)
++    else copie[i] = { ...copie[i], ...item }
++  })
++  return copie
++}
++
++// Pour les sessions à l'intérieur d'une campagne : upsert par id, ou par code si l'id est absent
++// ou inconnu (pratique pour coller une session déjà codée DB00S04 sans connaître son id interne).
++const upsertSessions = (sessionsExistantes, sessionsPartielles) => {
++  if (!Array.isArray(sessionsPartielles)) return sessionsExistantes
++  const copie = [...sessionsExistantes]
++  sessionsPartielles.forEach(s => {
++    let i = -1
++    if (s.id) i = copie.findIndex(x => x.id === s.id)
++    if (i === -1 && s.code) i = copie.findIndex(x => x.code === s.code)
++    if (i === -1) copie.push({ ...nouvelleSession(), ...s })
++    else copie[i] = { ...copie[i], ...s, sections: s.sections ?? copie[i].sections, joueurIds: s.joueurIds ?? copie[i].joueurIds }
++  })
++  return copie
++}
++
++const upsertCampagnes = (campagnesExistantes, campagnesPartielles) => {
++  if (!Array.isArray(campagnesPartielles)) return campagnesExistantes
++  const copie = [...campagnesExistantes]
++  campagnesPartielles.forEach(c => {
++    let i = -1
++    if (c.id) i = copie.findIndex(x => x.id === c.id)
++    if (i === -1 && c.code) i = copie.findIndex(x => x.code === c.code)
++    if (i === -1) { copie.push(c); return }
++    const existante = copie[i]
++    copie[i] = { ...existante, ...c, sessions: upsertSessions(existante.sessions || [], c.sessions) }
++  })
++  return copie
++}
++
++export const fusionnerUnivers = (existant, partiel) => {
++  const u = structuredClone(existant)
++  if (partiel.meta) {
++    u.meta = { ...u.meta, ...partiel.meta }
++    if (Array.isArray(partiel.meta.saisons)) {
++      partiel.meta.saisons.forEach(s => {
++        const i = u.meta.saisons.findIndex(x => x.num === s.num)
++        if (i === -1) u.meta.saisons.push(s)
++        else u.meta.saisons[i] = { ...u.meta.saisons[i], ...s }
++      })
++    }
++  }
++  u.factions = upsertParId(u.factions, partiel.factions)
++  u.pnjs = upsertParId(u.pnjs, partiel.pnjs)
++  u.joueurs = upsertParId(u.joueurs, partiel.joueurs)
++  u.evenements = upsertParId(u.evenements, partiel.evenements)
++  u.lieux = upsertParId(u.lieux, partiel.lieux)
++  u.rapports = upsertParId(u.rapports, partiel.rapports)
++  u.arcs = upsertParId(u.arcs, partiel.arcs)
++  u.campagnes = upsertCampagnes(u.campagnes, partiel.campagnes)
++  return normaliser(u)
++}
++
+ export const nouvelleCampagne = () => ({
+   id: uid('cmp'), code: '', titre: 'Nouvelle campagne', factionId: null, saison: 1,
+   arcId: null, pitch: '', ton: '', duree: '', niveaux: '',
+diff --git a/src/lib/storage.js b/src/lib/storage.js
+index dd31318..596398e 100644
+--- a/src/lib/storage.js
++++ b/src/lib/storage.js
+@@ -1,5 +1,5 @@
+ import { supabase } from './supabase.js'
+-import { universInitial, normaliser } from './modele.js'
++import { universInitial, normaliser, fusionnerUnivers } from './modele.js'
+ 
+ const CLE = 'sideria-studio-univers'
+ 
+@@ -41,6 +41,23 @@ export function importerJson(fichier) {
+   })
+ }
+ 
++// Import « fusion » : le fichier n'a pas besoin d'être un univers complet.
++// Il peut ne contenir que ce qu'on veut ajouter/mettre à jour (une session, un événement,
++// un PNJ...) ; tout le reste de l'univers courant est conservé tel quel.
++export function importerJsonFusion(fichier, universActuel) {
++  return new Promise((resoudre, rejeter) => {
++    const lecteur = new FileReader()
++    lecteur.onload = () => {
++      try {
++        const partiel = JSON.parse(lecteur.result)
++        resoudre(fusionnerUnivers(universActuel, partiel))
++      } catch (e) { rejeter(e) }
++    }
++    lecteur.onerror = rejeter
++    lecteur.readAsText(fichier)
++  })
++}
++
+ // ── Supabase : un univers = une ligne JSONB ─────────────────
+ export const supabaseActif = () => supabase != null
+ 

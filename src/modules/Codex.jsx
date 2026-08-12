@@ -1,0 +1,254 @@
+import React, { useState } from 'react'
+import { useStudio, Texte, ChampEditable } from './communs.jsx'
+import { fmtDate } from '../lib/calendrier.js'
+import { STATUTS_SESSION } from '../lib/modele.js'
+
+// Le Codex : l'Obsidian embarqué. Chaque entité saisie dans le Studio a sa page,
+// naviguable par liens, avec les vues agrégées par faction, arc, PNJ, PJ.
+// Les champs de texte utilisent le composant partagé ChampEditable (communs.jsx).
+
+export default function Codex() {
+  const { univers, maj, codexCible, setCodexCible } = useStudio()
+  const [page, setPage] = useState({ type: 'accueil' })
+  React.useEffect(() => {
+    if (codexCible) { setPage(codexCible); setCodexCible(null) }
+  }, [codexCible])
+  const L = ({ type, id, children }) => (
+    <span onClick={() => setPage({ type, id })}
+      style={{ color: '#7a5c14', cursor: 'pointer', borderBottom: '1px dashed #c9a227' }}>{children}</span>
+  )
+  const f = id => univers.factions.find(x => x.id === id)
+  const pnj = id => univers.pnjs.find(x => x.id === id)
+
+  const sections = [
+    ['Factions', 'faction', univers.factions, x => x.nom],
+    ['Campagnes', 'campagne', univers.campagnes, x => (x.code ? x.code + ' · ' : '') + x.titre],
+    ['Arcs', 'arc', univers.arcs, x => x.nom],
+    ['PNJ', 'pnj', [...univers.pnjs].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), x => x.nom],
+    ['PJ', 'pj', univers.joueurs, x => x.personnage],
+    ['Lieux', 'lieu', univers.lieux, x => x.nom],
+    ['Rapports', 'rapport', univers.rapports, x => x.titre],
+    ['Événements', 'evenement', [...univers.evenements].sort((a, b) => a.debut - b.debut), x => x.titre],
+  ]
+
+  const Bloc = ({ titre, children }) => <><h3>{titre}</h3>{children}</>
+
+  function Page() {
+    const { type, id } = page
+    if (type === 'faction') {
+      const x = f(id); if (!x) return null
+      const membres = univers.pnjs.filter(p => p.factionIds?.includes(id))
+      const pjs = univers.joueurs.filter(j => j.faction === id)
+      const evts = univers.evenements.filter(e => e.factionId === id).sort((a, b) => a.debut - b.debut)
+      const camps = univers.campagnes.filter(c => c.factionId === id)
+      return <>
+        <h2><span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', background: x.couleur, marginRight: 8 }} />{x.nom}</h2>
+        {x.devise && <p style={{ fontStyle: 'italic' }}>« {x.devise} »</p>}
+        <ChampEditable valeur={x.description} vide="Aucune description."
+          surChange={v => maj(u => { u.factions.find(ff => ff.id === id).description = v })} />
+        {x.histoire && <Bloc titre="Histoire"><p style={{ whiteSpace: 'pre-wrap' }}><Texte>{x.histoire}</Texte></p></Bloc>}
+        {x.chefId && pnj(x.chefId) && <Bloc titre="Chef">
+          <div><L type="pnj" id={x.chefId}>{pnj(x.chefId).nom}</L> : {pnj(x.chefId).rolesFactions?.[id] || pnj(x.chefId).poste || pnj(x.chefId).role}</div></Bloc>}
+        {membres.length > 0 && <Bloc titre="Membres">{membres.map(m =>
+          <div key={m.id}><L type="pnj" id={m.id}>{m.nom}</L>{(m.rolesFactions?.[id] || m.role) && <> : {m.rolesFactions?.[id] || m.role}</>}{m.factionIds?.length > 1 && <> (multi-faction)</>}</div>)}</Bloc>}
+        {pjs.length > 0 && <Bloc titre="PJ affiliés">{pjs.map(j =>
+          <div key={j.id}><L type="pj" id={j.id}>{j.personnage}</L> ({j.joueur})</div>)}</Bloc>}
+        {camps.length > 0 && <Bloc titre="Campagnes">{camps.map(c =>
+          <div key={c.id}><L type="campagne" id={c.id}>{c.titre}</L> (Saison {c.saison})</div>)}</Bloc>}
+        {evts.length > 0 && <Bloc titre="Événements">{evts.map(e =>
+          <div key={e.id}><strong>{fmtDate(e.debut)}</strong> · <L type="evenement" id={e.id}>{e.titre}</L></div>)}</Bloc>}
+        {x.objectifs && <Bloc titre="Objectifs"><p>{x.objectifs}</p></Bloc>}
+        {x.ressources && <Bloc titre="Ressources"><p>{x.ressources}</p></Bloc>}
+        {x.secrets && <div className="carte" style={{ borderLeftColor: 'var(--rouge)' }}>
+          <label>Secrets Maître</label><p style={{ whiteSpace: 'pre-wrap' }}>{x.secrets}</p></div>}
+      </>
+    }
+    if (type === 'pnj') {
+      const x = pnj(id); if (!x) return null
+      const evts = univers.evenements.filter(e => e.participants.includes(id)).sort((a, b) => a.debut - b.debut)
+      const camps = univers.campagnes.filter(c => c.pnjIds.includes(id))
+      const dirs = univers.factions.filter(fa => fa.chefId === id)
+      const inters = univers.joueurs.flatMap(j => (j.historique || []).filter(i => i.pnjId === id).map(i => ({ ...i, j })))
+      const rapportsAuteur = univers.rapports.filter(rr => rr.auteurId === id)
+      return <>
+        <h2>{x.nom}</h2>
+        {x.image && <img src={x.image} alt={x.nom} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, float: 'right' }} />}
+        <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.role}
+          {(x.factionIds || []).map(fid => f(fid)).filter(Boolean).map(ff =>
+            <span key={ff.id}> · <L type="faction" id={ff.id}>{ff.nom}</L>{x.rolesFactions?.[ff.id] && ` (${x.rolesFactions[ff.id]})`}</span>)}
+          {dirs.map(d => <span key={d.id}> · dirige <L type="faction" id={d.id}>{d.nom}</L></span>)}</p>
+        <ChampEditable valeur={x.description} vide="Aucune description."
+          surChange={v => maj(u => { u.pnjs.find(pp => pp.id === id).description = v })} />
+        {x.repliques.length > 0 && <Bloc titre="Répliques">{x.repliques.filter(Boolean).map((r, i) =>
+          <p key={i} style={{ borderLeft: '3px solid var(--or)', paddingLeft: 8, fontStyle: 'italic' }}>{r}</p>)}</Bloc>}
+        {x.compteurs?.length > 0 && <Bloc titre="Compteurs">{x.compteurs.map(c =>
+          <div key={c.id}><strong>{c.nom}</strong> : {c.valeur ?? c.min} / {c.max}{c.description && <> · {c.description}</>}</div>)}</Bloc>}
+        {x.arbre && <Bloc titre="Arbre narratif"><p>{x.arbre.noeuds.length} nœuds, {x.arbre.transitions.length} transitions. Édition dans l'onglet PNJ.</p></Bloc>}
+        {x.secrets && <div className="carte" style={{ borderLeftColor: 'var(--rouge)' }}>
+          <label>Secrets Maître</label><p>{x.secrets}</p></div>}
+        {rapportsAuteur.length > 0 && <Bloc titre="Rapports rédigés">{rapportsAuteur.map(rr =>
+          <div key={rr.id}><L type="rapport" id={rr.id}>{rr.titre}</L> ({rr.type})</div>)}</Bloc>}
+        {(evts.length + camps.length + inters.length) > 0 && <Bloc titre="Apparaît dans">
+          {camps.map(c => <div key={c.id}>Campagne · <L type="campagne" id={c.id}>{c.titre}</L></div>)}
+          {evts.map(e => <div key={e.id}>{fmtDate(e.debut)} · <L type="evenement" id={e.id}>{e.titre}</L></div>)}
+          {inters.map((i, k) => <div key={k}>Interaction avec <L type="pj" id={i.j.id}>{i.j.personnage}</L>
+            {i.date != null && <> ({fmtDate(i.date)})</>} : {i.resume}</div>)}
+        </Bloc>}
+      </>
+    }
+    if (type === 'pj') {
+      const x = univers.joueurs.find(j => j.id === id); if (!x) return null
+      const reps = Object.entries(x.reputations || {}).filter(([, v]) => v !== 0)
+      return <>
+        <h2>{x.personnage}</h2>
+        <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.joueur} · {x.classe || 'classe ?'} niv. {x.niveau}
+          {x.faction && <> · <L type="faction" id={x.faction}>{f(x.faction)?.nom}</L></>}</p>
+        <ChampEditable valeur={x.notes} vide="Aucune note."
+          surChange={v => maj(u => { u.joueurs.find(jj => jj.id === id).notes = v })} />
+        {reps.length > 0 && <Bloc titre="Réputations">{reps.map(([fid, v]) =>
+          <div key={fid}><L type="faction" id={fid}>{f(fid)?.nom || fid}</L> : {v > 0 ? '+' : ''}{v}</div>)}</Bloc>}
+        {x.citations?.filter(Boolean).length > 0 && <Bloc titre="Citations">{x.citations.filter(Boolean).map((c, k) =>
+          <p key={k} className="citation">{c}</p>)}</Bloc>}
+        {x.historique.length > 0 && <Bloc titre="Historique">{x.historique.map((i, k) =>
+          <div key={k}>{i.date != null && <strong>{fmtDate(i.date)} · </strong>}
+            <em>{i.type}</em>
+            {pnj(i.pnjId) && <> · <L type="pnj" id={i.pnjId}>{pnj(i.pnjId).nom}</L></>}
+            {univers.lieux.find(ll => ll.id === i.lieuId) && <> · <L type="lieu" id={i.lieuId}>{univers.lieux.find(ll => ll.id === i.lieuId).nom}</L></>}
+            {i.resume && <> : {i.resume}</>}
+            {i.effet && <em> ({i.effet})</em>}</div>)}</Bloc>}
+      </>
+    }
+    if (type === 'campagne') {
+      const x = univers.campagnes.find(c => c.id === id); if (!x) return null
+      const evts = univers.evenements.filter(e => e.campagneId === id).sort((a, b) => a.debut - b.debut)
+      return <>
+        <h2>{x.code && x.code + ' : '}{x.titre}</h2>
+        <p style={{ color: 'var(--gris)' }}>
+          {x.factionId && <><L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L> · </>}
+          Saison {x.saison} · départ {x.depart} · {x.duree || '?'} sessions · niveaux {x.niveaux || '?'}</p>
+        {x.ton && <p style={{ fontStyle: 'italic' }}>{x.ton}</p>}
+        <ChampEditable valeur={x.pitch} vide="Aucun pitch."
+          surChange={v => maj(u => { u.campagnes.find(cc => cc.id === id).pitch = v })} />
+        {x.actes.map((a, i) => <div className="carte" key={a.id}>
+          <strong>Acte {i + 1}{a.titre && ' : ' + a.titre}</strong>
+          <p>{a.resume}</p>
+          {a.pivot && <p><em>Point pivot : {a.pivot}</em></p>}</div>)}
+        {(x.sessions || []).length > 0 && <Bloc titre="Sessions">{x.sessions.map(s => {
+          const es = univers.evenements.filter(e => e.sessionId === s.id).sort((a, b) => a.debut - b.debut)
+          return <div className="carte" key={s.id}>
+            <strong>{(STATUTS_SESSION.find(st => st.val === s.statut) || STATUTS_SESSION[0]).icone} {s.code ? s.code + ' · ' : ''}{s.titre}</strong>
+            {s.date != null && <span className="aide"> · {fmtDate(s.date)}</span>}
+            {s.resume && <div><Texte>{s.resume}</Texte></div>}
+            {es.map(e => <div key={e.id} style={{ paddingLeft: 10 }}>· <L type="evenement" id={e.id}>{e.titre}</L></div>)}
+          </div>
+        })}</Bloc>}
+        {x.pnjIds.length > 0 && <Bloc titre="PNJ clés">{x.pnjIds.map(pid => pnj(pid)).filter(Boolean)
+          .map(p => <span key={p.id} style={{ marginRight: 12 }}><L type="pnj" id={p.id}>{p.nom}</L></span>)}</Bloc>}
+        {evts.length > 0 && <Bloc titre="Autres événements de la campagne">{evts.filter(e => !e.sessionId).map(e =>
+          <div key={e.id}>{fmtDate(e.debut)} · <L type="evenement" id={e.id}>{e.titre}</L></div>)}</Bloc>}
+        {x.issues && <Bloc titre="Issues possibles"><p>{x.issues}</p></Bloc>}
+      </>
+    }
+    if (type === 'arc') {
+      const x = univers.arcs.find(a => a.id === id); if (!x) return null
+      const evts = univers.evenements.filter(e => e.arcId === id).sort((a, b) => a.debut - b.debut)
+      const persos = [...new Set(evts.flatMap(e => e.participants))].map(pid => pnj(pid)).filter(Boolean)
+      return <>
+        <h2><span style={{ display: 'inline-block', width: 14, height: 14, background: x.couleur, marginRight: 8 }} />{x.nom}</h2>
+        <p style={{ color: 'var(--gris)' }}>{fmtDate(x.debut, 'an')} → {fmtDate(x.fin, 'an')}</p>
+        <ChampEditable valeur={x.description} vide="Aucune description."
+          surChange={v => maj(u => { u.arcs.find(aa => aa.id === id).description = v })} />
+        <Bloc titre="Événements de l'arc">{evts.length ? evts.map(e =>
+          <div key={e.id}>{fmtDate(e.debut)} · <L type="evenement" id={e.id}>{e.titre}</L></div>)
+          : <p className="aide">Aucun. Rattache des événements à cet arc dans l'onglet Événements.</p>}</Bloc>
+        {persos.length > 0 && <Bloc titre="Personnages impliqués">{persos.map(p =>
+          <span key={p.id} style={{ marginRight: 12 }}><L type="pnj" id={p.id}>{p.nom}</L></span>)}</Bloc>}
+      </>
+    }
+    if (type === 'lieu') {
+      const x = univers.lieux.find(ll => ll.id === id); if (!x) return null
+      const enfants = univers.lieux.filter(ll => ll.parentId === id)
+      const parent = univers.lieux.find(ll => ll.id === x.parentId)
+      const passages = univers.joueurs.flatMap(jj =>
+        (jj.historique || []).filter(h => h.lieuId === id).map(h => ({ ...h, jj })))
+      return <>
+        <h2>{x.nom}</h2>
+        <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.type}
+          {parent && <> · dans <L type="lieu" id={parent.id}>{parent.nom}</L></>}
+          {x.factionId && <> · contrôlé par <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}</p>
+        <ChampEditable valeur={x.description} vide="Aucune description."
+          surChange={v => maj(u => { u.lieux.find(ll => ll.id === id).description = v })} />
+        {x.secrets && <div className="carte" style={{ borderLeftColor: 'var(--rouge)' }}>
+          <label>Secrets Maître</label><p>{x.secrets}</p></div>}
+        {enfants.length > 0 && <Bloc titre="Contient">{enfants.map(e =>
+          <div key={e.id}><L type="lieu" id={e.id}>{e.nom}</L> ({e.type})</div>)}</Bloc>}
+        {passages.length > 0 && <Bloc titre="Passages">{passages.map((p2, k) =>
+          <div key={k}><L type="pj" id={p2.jj.id}>{p2.jj.personnage}</L>{p2.date != null && <> ({fmtDate(p2.date)})</>} : {p2.resume || p2.type}</div>)}</Bloc>}
+      </>
+    }
+    if (type === 'rapport') {
+      const x = univers.rapports.find(rr => rr.id === id); if (!x) return null
+      const auteur = pnj(x.auteurId)
+      return <>
+        <h2>{x.titre}</h2>
+        <p style={{ color: 'var(--gris)', fontStyle: 'italic' }}>{x.type}
+          {auteur && <> · par <L type="pnj" id={auteur.id}>{auteur.nom}</L></>}
+          {x.factionId && <> · <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}
+          {x.date != null && <> · {fmtDate(x.date)}</>}
+          {x.visibleJoueurs && <> · visible joueurs</>}</p>
+        <ChampEditable valeur={x.contenu} vide="Contenu vide."
+          surChange={v => maj(u => { u.rapports.find(rr => rr.id === id).contenu = v })} />
+      </>
+    }
+    if (type === 'evenement') {
+      const x = univers.evenements.find(e => e.id === id); if (!x) return null
+      return <>
+        <h2>{x.titre}</h2>
+        <p style={{ color: 'var(--gris)' }}>{fmtDate(x.debut)}{x.fin != null && <> → {fmtDate(x.fin)}</>}
+          {x.arcId && univers.arcs.find(a => a.id === x.arcId) &&
+            <> · arc <L type="arc" id={x.arcId}>{univers.arcs.find(a => a.id === x.arcId).nom}</L></>}
+          {x.factionId && <> · <L type="faction" id={x.factionId}>{f(x.factionId)?.nom}</L></>}
+          {x.campagneId && univers.campagnes.find(c => c.id === x.campagneId) &&
+            <> · campagne <L type="campagne" id={x.campagneId}>{univers.campagnes.find(c => c.id === x.campagneId).titre}</L></>}</p>
+        <ChampEditable valeur={x.desc} vide="Aucune description."
+          surChange={v => maj(u => { u.evenements.find(ee => ee.id === id).desc = v })} />
+        {x.participants.length > 0 && <Bloc titre="Participants">{x.participants.map(pid => pnj(pid)).filter(Boolean)
+          .map(p => <span key={p.id} style={{ marginRight: 12 }}><L type="pnj" id={p.id}>{p.nom}</L></span>)}</Bloc>}
+      </>
+    }
+    if (type === 'accueil') {
+      const m = univers.meta
+      return <>
+        <h2>{m.nom}</h2>
+        <div style={{ fontStyle: "italic" }}><Texte>{m.these}</Texte></div>
+        {m.lignesForce.length > 0 && <Bloc titre="Lignes de force">{m.lignesForce.map(l =>
+          <div className="carte" key={l.id}><strong>{l.titre}</strong>
+            <div style={{ fontSize: '.9rem' }}><Texte>{l.description}</Texte></div></div>)}</Bloc>}
+        {m.arbitrages.length > 0 && <Bloc titre="Journal des arbitrages">{m.arbitrages.map(a =>
+          <div key={a.id}><strong>{a.date}</strong>{a.titre && <> · {a.titre}</>} : {a.decision}</div>)}</Bloc>}
+        <p className="aide" style={{ marginTop: 16 }}>Chaque entité a sa page (colonne de gauche, ou Ctrl+K pour chercher).
+        Double-clic sur un texte pour l'éditer directement ici. Les [[Nom]] sont des liens.</p>
+      </>
+    }
+    return <>
+      <h2>Codex</h2>
+      <p>Tout ce que tu saisis dans le Studio devient une page ici, liée au reste, comme dans Obsidian.
+      La page d'une faction agrège sa direction, ses membres, ses PJ, ses campagnes et ses événements.
+      Celle d'un PNJ liste partout où il apparaît, y compris le journal des PJ. Clique sur n'importe quel
+      nom souligné pour naviguer.</p>
+      <p className="aide">Le bouton "Export Obsidian (.zip)" de la barre du haut génère la version fichiers
+      de ces pages, à fusionner dans le vrai vault.</p>
+    </>
+  }
+
+  return <>
+    <div className="liste">
+      {sections.map(([titre, type, items, libelle]) => <div key={type}>
+        <div style={{ padding: '8px 14px 2px', font: '700 10px monospace', letterSpacing: '.15em', color: 'var(--gris)', textTransform: 'uppercase' }}>{titre} ({items.length})</div>
+        {items.map(it => <div key={it.id} className={'item' + (page.type === type && page.id === it.id ? ' sel' : '')}
+          onClick={() => setPage({ type, id: it.id })} style={{ paddingLeft: 22 }}>{libelle(it)}</div>)}
+      </div>)}
+    </div>
+    <div className="fiche">{Page()}</div>
+  </>
+}
