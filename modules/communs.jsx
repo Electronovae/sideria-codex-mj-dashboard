@@ -306,7 +306,7 @@ export const DateSiderienne = ({ label, valeur, surChange, optionnel = false }) 
 
 // Cadre générique liste (gauche) + fiche (droite), avec tri optionnel.
 // tris : { libellé: (item) => valeur } ; le premier est le tri par défaut.
-export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, libelleAjout = '+ Ajouter', tris = null, groupe = null }) => {
+export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, libelleAjout = '+ Ajouter', tris = null, groupe = null, entete = null }) => {
   const cles = tris ? Object.keys(tris) : []
   const [tri, setTri] = React.useState(cles[0] || null)
   const affiches = tri && tris
@@ -320,6 +320,7 @@ export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, lib
     <>
       <div className="liste">
         <button className="btn clair ajout" onClick={surAjout}>{libelleAjout}</button>
+        {entete}
         {tris && (
           <div style={{ padding: '0 14px 8px' }}>
             <label>Trier par</label>

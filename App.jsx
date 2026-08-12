@@ -11,28 +11,34 @@ import Frise from './modules/Frise.jsx'
 import Codex from './modules/Codex.jsx'
 import Graphe from './modules/Graphe.jsx'
 import Lieux from './modules/Lieux.jsx'
+import Bestiaire from './modules/Bestiaire.jsx'
 import Recherche from './modules/Recherche.jsx'
 import Rapports from './modules/Rapports.jsx'
 
 export const Ctx = React.createContext(null)
 
+// Ordre pensé comme un parcours plutôt qu'une liste plate de features :
+// 1) vue d'ensemble → 2) contenu de l'univers → 3) suivi de partie.
+// SEPARATEURS_APRES marque les ids après lesquels une séparation visuelle apparaît dans la nav.
 const MODULES = [
-  ['codex', 'Codex', Codex],
   ['tableau', 'Tableau de bord', Tableau],
-  ['campagnes', 'Méta & Campagnes', Campagnes],
-  ['evenements', 'Événements', Evenements],
-  ['rapports', 'Rapports', Rapports],
+  ['codex', 'Codex', Codex],
+  ['graphe', 'Graphe', Graphe],
   ['factions', 'Factions', Factions],
   ['lieux', 'Lieux', Lieux],
   ['pnjs', 'PNJ & Arbres', Pnjs],
+  ['bestiaire', 'Bestiaire', Bestiaire],
+  ['campagnes', 'Méta & Campagnes', Campagnes],
+  ['evenements', 'Événements', Evenements],
   ['joueurs', 'Joueurs', Joueurs],
   ['frise', 'Frise chronologique', Frise],
-  ['graphe', 'Graphe', Graphe],
+  ['rapports', 'Rapports', Rapports],
 ]
+const SEPARATEURS_APRES = new Set(['graphe', 'bestiaire'])
 
 export default function App() {
   const [univers, setUnivers] = useState(chargerLocal)
-  const [onglet, setOnglet] = useState('codex')
+  const [onglet, setOnglet] = useState('tableau')
   const [codexCible, setCodexCible] = useState(null)
   const [scinde, setScinde] = useState(false)
   const [ongletB, setOngletB] = useState('graphe')
@@ -154,7 +160,10 @@ export default function App() {
       {!scinde && (
         <nav>
           {MODULES.map(([id, titre]) => (
-            <button key={id} className={onglet === id ? 'actif' : ''} onClick={() => setOnglet(id)}>{titre}</button>
+            <React.Fragment key={id}>
+              <button className={onglet === id ? 'actif' : ''} onClick={() => setOnglet(id)}>{titre}</button>
+              {SEPARATEURS_APRES.has(id) && <span className="nav-sep" />}
+            </React.Fragment>
           ))}
         </nav>
       )}
