@@ -45,6 +45,9 @@ export const supabaseActif = () => supabase != null
 // Synchronise une table : upsert de toutes les lignes locales, puis suppression de celles
 // qui ne sont plus dans l'univers local. `versLigne` convertit une entité locale (camelCase)
 // en ligne Supabase (snake_case).
+// Garde-fou : si le local est vide alors que la table distante ne l'est pas, on ne supprime
+// rien (évite qu'un état local pas encore synchronisé, ex. juste après un déploiement, écrase
+// des données qui n'existaient que côté Supabase).
 async function syncTable(table, itemsLocaux, versLigne) {
   const lignes = itemsLocaux.map(versLigne)
   if (lignes.length) {
@@ -54,6 +57,10 @@ async function syncTable(table, itemsLocaux, versLigne) {
   const idsLocaux = lignes.map(l => l.id)
   const { data: existants, error: errSel } = await supabase.from(table).select('id')
   if (errSel) throw new Error(`${table} (lecture) : ${errSel.message}`)
+  if (idsLocaux.length === 0 && (existants || []).length > 0) {
+    console.warn(`${table} : local vide mais ${existants.length} ligne(s) côté Supabase, suppression ignorée par sécurité.`)
+    return
+  }
   const aSupprimer = (existants || []).map(e => e.id).filter(id => !idsLocaux.includes(id))
   if (aSupprimer.length) {
     const { error: errDel } = await supabase.from(table).delete().in('id', aSupprimer)
