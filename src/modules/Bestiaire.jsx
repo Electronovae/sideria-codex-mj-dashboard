@@ -74,7 +74,7 @@ export default function Bestiaire() {
       }}
       groupe={c => univers.factions.find(f => f.id === c.factionId)?.nom || 'Sans faction'}
       entete={
-        <div className="rangee" style={{ padding: '0 14px 10px', gap: 6 }}>
+        <div className="filtres-bestiaire">
           <button className={'btn etroit' + (filtre === 'toutes' ? ' plein' : ' clair')}
             onClick={() => setFiltre('toutes')}>
             Toutes ({univers.creatures.length})
