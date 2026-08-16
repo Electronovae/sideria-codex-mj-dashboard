@@ -243,6 +243,15 @@ export default function Frise() {
             </g>
           })}
           <line x1="0" y1={H_AXE} x2={largeur} y2={H_AXE} stroke="var(--axe)" strokeWidth="2" />
+          {univers.meta.dateCampagne != null && (() => {
+            const x = xDe(univers.meta.dateCampagne)
+            if (x < MARGE_G - 20 || x > largeur + 20) return null
+            return <g>
+              <line x1={x} y1={H_AXE} x2={x} y2={hauteur} stroke="var(--or)" strokeWidth="2" strokeDasharray="5 3" />
+              <path d={`M${x},${H_AXE} l7,-10 h-14 Z`} fill="var(--or)" />
+              <text x={x + 4} y={H_AXE - 2} style={{ font: '700 10px monospace', fill: 'var(--or)' }}>date de campagne</text>
+            </g>
+          })()}
           {liens.map((l, i) => (l.x > MARGE_G - 10 && l.x < largeur + 10) &&
             <line key={i} x1={l.x} y1={l.y1} x2={l.x} y2={l.y2} stroke="rgba(38,34,26,.35)" strokeDasharray="2 3" />)}
           {marques.map((m, i) => {
