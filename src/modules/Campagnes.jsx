@@ -78,7 +78,13 @@ export default function Campagnes() {
             return (a.saison - b.saison) || a.titre.localeCompare(b.titre, 'fr')
           })[i]
           acc.push(el)
-          camp.sessions.forEach(s => acc.push(
+          const sessionsTriees = [...camp.sessions].sort((a, b) => {
+            if (a.date != null && b.date != null) return a.date - b.date
+            if (a.date != null) return -1
+            if (b.date != null) return 1
+            return (a.code || '').localeCompare(b.code || '')
+          })
+          sessionsTriees.forEach(s => acc.push(
             <div key={s.id} className={'item' + (sessionSel === s.id ? ' sel' : '')}
               style={{ paddingLeft: 34, fontSize: '.82rem' }}
               onClick={() => { setSelId(camp.id); setSessionSel(s.id) }}>
