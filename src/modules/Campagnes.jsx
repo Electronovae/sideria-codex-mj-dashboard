@@ -138,7 +138,12 @@ export default function Campagnes() {
             })}>+ acte</button>
 
             <h3>Sessions</h3>
-            {c.sessions.map(s => (
+            {[...c.sessions].sort((a, b) => {
+              if (a.date != null && b.date != null) return a.date - b.date
+              if (a.date != null) return -1
+              if (b.date != null) return 1
+              return (a.code || '').localeCompare(b.code || '')
+            }).map(s => (
               <div className="carte" key={s.id} style={{ cursor: 'pointer' }} onClick={() => setSessionSel(s.id)}>
                 <strong><IconeStatutSession statut={s.statut} />{s.code ? s.code + ' · ' : ''}{s.titre}</strong>
                 <span className="aide"> · {s.date != null ? fmtDate(s.date) : 'sans date'} · {univers.evenements.filter(e => e.sessionId === s.id).length} événement(s) · {(s.joueurIds || []).length}/{univers.joueurs.length} joueur(s) présent(s) · cliquer pour éditer</span>
