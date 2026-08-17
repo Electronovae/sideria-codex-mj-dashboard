@@ -133,7 +133,12 @@ export default function Codex() {
           <strong>Acte {i + 1}{a.titre && ' : ' + a.titre}</strong>
           <p>{a.resume}</p>
           {a.pivot && <p><em>Point pivot : {a.pivot}</em></p>}</div>)}
-        {(x.sessions || []).length > 0 && <Bloc titre="Sessions">{x.sessions.map(s => {
+        {(x.sessions || []).length > 0 && <Bloc titre="Sessions">{[...x.sessions].sort((a, b) => {
+          if (a.date != null && b.date != null) return a.date - b.date
+          if (a.date != null) return -1
+          if (b.date != null) return 1
+          return (a.code || '').localeCompare(b.code || '')
+        }).map(s => {
           const es = univers.evenements.filter(e => e.sessionId === s.id).sort((a, b) => a.debut - b.debut)
           return <div className="carte" key={s.id}>
             <strong>{(STATUTS_SESSION.find(st => st.val === s.statut) || STATUTS_SESSION[0]).icone} {s.code ? s.code + ' · ' : ''}{s.titre}</strong>
