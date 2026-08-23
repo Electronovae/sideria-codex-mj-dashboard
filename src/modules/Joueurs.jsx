@@ -42,8 +42,8 @@ export default function Joueurs() {
         <div key={j.id}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
             <h2 style={{ flex: 1 }}>{j.personnage}</h2>
-            <a className="btn clair" href="fiches.html" target="_blank" rel="noreferrer"
-              style={{ textDecoration: 'none' }}>Fiches personnages ↗</a>
+            <a className="btn clair" href="/fiches" target="_blank" rel="noreferrer"
+              style={{ textDecoration: 'none' }}>Fiches personnage ↗</a>
           </div>
           <div className="rangee">
             <Champ label="Personnage" value={j.personnage} onChange={e => modifier(x => { x.personnage = e.target.value })} />
