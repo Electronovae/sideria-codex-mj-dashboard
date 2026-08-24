@@ -19,6 +19,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
     modifier, modifierJson, enregistrer, supprimer, suppression,
     televerserPortrait, televersement,
   } = useFiche(id)
+  const [confirmationSuppression, setConfirmationSuppression] = React.useState(false)
 
   if (chargement) return <div className="fiches-message">Chargement de la fiche…</div>
   if (erreur) return <div className="fiches-message fiches-message--erreur">{erreur}</div>
@@ -73,7 +74,6 @@ export default function FeuilleDePersonnage({ estMJ }) {
     modifier('montees_caracteristique', copie)
   }
 
-  const [confirmationSuppression, setConfirmationSuppression] = React.useState(false)
   const gererSuppression = async () => {
     const ok = await supprimer()
     if (ok) navigate('..')
