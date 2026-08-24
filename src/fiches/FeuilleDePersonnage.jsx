@@ -1,7 +1,10 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFiche } from './useFiche.js'
-import { COMPETENCES_PAR_CARAC, LIBELLES_COMPETENCES, LIBELLES_CARAC, LIBELLES_FACTIONS, modificateur } from './modeleFiche.js'
+import {
+  COMPETENCES_PAR_CARAC, LIBELLES_COMPETENCES, LIBELLES_CARAC, LIBELLES_FACTIONS,
+  PALIERS_MONTEE, modificateur,
+} from './modeleFiche.js'
 
 const ETAPES_CRISTALLITE = [
   ['0', 'Exposition'], ['1', 'Précoce'], ['1b', 'Consolidé'], ['2', 'Avancé'],
@@ -47,6 +50,25 @@ export default function FeuilleDePersonnage({ estMJ }) {
     </label>
   )
 
+  const attaques = fiche.attacks ?? []
+  const modifierAttaque = (i, ch, valeur) => {
+    const copie = attaques.map((a, idx) => idx === i ? { ...a, [ch]: valeur } : a)
+    modifier('attacks', copie)
+  }
+  const ajouterAttaque = () => modifier('attacks', [...attaques, { nom: '', bonus: '', degats: '' }])
+  const retirerAttaque = (i) => modifier('attacks', attaques.filter((_, idx) => idx !== i))
+
+  const inventaire = fiche.inventory ?? []
+  const modifierObjet = (i, valeur) => modifier('inventory', inventaire.map((o, idx) => idx === i ? valeur : o))
+  const ajouterObjet = () => modifier('inventory', [...inventaire, ''])
+  const retirerObjet = (i) => modifier('inventory', inventaire.filter((_, idx) => idx !== i))
+
+  const montees = fiche.montees_caracteristique ?? PALIERS_MONTEE.map(() => false)
+  const basculerMontee = (i) => {
+    const copie = montees.map((v, idx) => idx === i ? !v : v)
+    modifier('montees_caracteristique', copie)
+  }
+
   return (
     <div className="feuille">
       <div className="feuille-barre">
@@ -59,19 +81,23 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </button>
       </div>
 
-      {/* IDENTITÉ */}
       <section className="feuille-bloc">
         <h2>Identité</h2>
         <div className="fc-grille fc-grille--4">
           {champ('Nom', 'name')}
           {champ('Peuple / Origine', 'origin')}
-          {champ('Niveau', 'level', 'number')}
+          {champ('Niveau Sidérien', 'level', 'number')}
           {champ('XP', 'xp', 'number')}
+        </div>
+        <div className="fc-grille fc-grille--4" style={{ marginTop: 6 }}>
+          {champ('Indice de Défense (ID)', 'indice_defense', 'number')}
+          {champ('Initiative', 'initiative_bonus', 'number')}
+          {champ('Perception passive', 'perception_passive', 'number')}
+          {champ('SR de sort', 'sr_sort', 'number')}
         </div>
         <p className="feuille-note">Classe et sous-classe seront ajoutées à l'étape 2.</p>
       </section>
 
-      {/* CARACTÉRISTIQUES */}
       <section className="feuille-bloc">
         <h2>Caractéristiques</h2>
         <div className="carac-grille">
@@ -84,6 +110,13 @@ export default function FeuilleDePersonnage({ estMJ }) {
                 onChange={e => modifierJson('stats', cle, Number(e.target.value))}
               />
               <div className="carac-mod">{modificateur(fiche.stats?.[cle]) >= 0 ? '+' : ''}{modificateur(fiche.stats?.[cle])}</div>
+              <label className="carac-sauv">
+                <input
+                  type="checkbox"
+                  checked={!!fiche.saving_throw_proficiencies?.[cle]}
+                  onChange={e => modifierJson('saving_throw_proficiencies', cle, e.target.checked)}
+                /> Sauv.
+              </label>
               <div className="carac-competences">
                 {COMPETENCES_PAR_CARAC[cle].map(comp => (
                   <label key={comp} className="carac-comp">
@@ -103,11 +136,23 @@ export default function FeuilleDePersonnage({ estMJ }) {
             <input type="number" className="carac-valeur" value={fiche.stats?.ecl ?? 0}
               onChange={e => modifierJson('stats', 'ecl', Number(e.target.value))} />
             <div className="carac-mod">{modificateur(fiche.stats?.ecl ?? 0) >= 0 ? '+' : ''}{modificateur(fiche.stats?.ecl ?? 0)}</div>
+            <p style={{ fontSize: '.68em', color: 'var(--gris)', fontStyle: 'italic', marginTop: 4 }}>Cristallite (CON/ÉCL) · Conduit · Traceur</p>
+          </div>
+        </div>
+
+        <div className="feuille-sousbloc">
+          <h3>Montées de caractéristique</h3>
+          <div className="montees-grille">
+            {PALIERS_MONTEE.map((palier, i) => (
+              <label key={palier} className="montee-case">
+                <input type="checkbox" checked={!!montees[i]} onChange={() => basculerMontee(i)} />
+                Niv. {palier}
+              </label>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* COMBAT */}
       <section className="feuille-bloc">
         <h2>Combat &amp; Ressources</h2>
         <div className="fc-grille fc-grille--6">
@@ -118,11 +163,28 @@ export default function FeuilleDePersonnage({ estMJ }) {
           {champ('Vitesse (m/tour)', 'speed', 'number')}
           {champ('Dés de résistance restants', 'hit_dice_remaining', 'number')}
         </div>
-        <div className="fc-grille fc-grille--4">
-          {champ('Mana max', 'mana_max', 'number')}
-          {champ('Mana actuel', 'mana_current', 'number')}
-          {champ('Fragments max', 'fragments_max', 'number')}
-          {champ('Fragments actuels', 'fragments_current', 'number')}
+
+        <div className="feuille-sousbloc">
+          <h3>Armure et défense</h3>
+          <div className="fc-grille fc-grille--3">
+            {champ('Armure', 'armor_name')}
+            {champ('Bouclier', 'shield_name')}
+            {champ('Résistances / Immunités', 'resistances')}
+          </div>
+        </div>
+
+        <div className="feuille-sousbloc">
+          <h3>Convertisseur &amp; ressource spéciale</h3>
+          <div className="fc-grille fc-grille--4">
+            {champ('Type de convertisseur', 'convertisseur_type')}
+            {champ('Mana max', 'mana_max', 'number')}
+            {champ('Mana actuel', 'mana_current', 'number')}
+            {champ('Type de ressource spéciale', 'ressource_speciale_type')}
+          </div>
+          <div className="fc-grille fc-grille--3">
+            {champ('Ressource max', 'fragments_max', 'number')}
+            {champ('Ressource actuelle', 'fragments_current', 'number')}
+          </div>
         </div>
 
         <div className="feuille-sousbloc">
@@ -132,6 +194,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
             {champJson('Utilisées', 'spark', 'current', 'number')}
             {champJson('Maximum', 'spark', 'max', 'number')}
           </div>
+          <p className="feuille-note">Progression : 1d8 → 1d10 → 1d12 → 1d20</p>
         </div>
 
         <div className="feuille-sousbloc">
@@ -169,7 +232,24 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      {/* SERMENT D'ÉTHER */}
+      <section className="feuille-bloc">
+        <h2>Attaques</h2>
+        <table className="feuille-table">
+          <thead><tr><th>Nom de l'attaque</th><th>Bonus</th><th>Dégâts / Type / Notes</th><th></th></tr></thead>
+          <tbody>
+            {attaques.map((a, i) => (
+              <tr key={i}>
+                <td><input value={a.nom ?? ''} onChange={e => modifierAttaque(i, 'nom', e.target.value)} /></td>
+                <td><input value={a.bonus ?? ''} onChange={e => modifierAttaque(i, 'bonus', e.target.value)} style={{ width: 60 }} /></td>
+                <td><input value={a.degats ?? ''} onChange={e => modifierAttaque(i, 'degats', e.target.value)} /></td>
+                <td><button className="ligne-suppr" onClick={() => retirerAttaque(i)}>✕</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button className="fiches-btn fiches-btn--discret" style={{ marginTop: 8 }} onClick={ajouterAttaque}>+ Ajouter une attaque</button>
+      </section>
+
       <section className="feuille-bloc">
         <h2>Serment d'Éther</h2>
         <div className="fc-grille fc-grille--3">
@@ -179,7 +259,6 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      {/* FACTIONS */}
       <section className="feuille-bloc">
         <h2>Réputation des factions</h2>
         <div className="fc-grille fc-grille--3">
@@ -196,34 +275,48 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      {/* TRAITS & LIENS */}
       <section className="feuille-bloc">
         <h2>Traits, idéaux et liens</h2>
         <div className="fc-grille fc-grille--2">
           {champ('Trait de caractère', 'personality_trait')}
           {champ('Idéal', 'ideal')}
           {champ('Lien / attache', 'bond')}
-          {champ('Défaut / ligne rouge', 'flaw')}
+          {champ('Défaut', 'flaw')}
         </div>
-        <div className="fc-grille fc-grille--3">
+        <div className="fc-grille fc-grille--2">
+          {champ('Peur / ligne rouge', 'fear_redline')}
+        </div>
+        <div className="fc-grille fc-grille--3" style={{ marginTop: 8 }}>
           {champListe('Alliés de confiance', 'relations', 'allies')}
           {champListe('Ennemis / rivaux', 'relations', 'enemies')}
           {champListe('Dettes / obligations', 'relations', 'debts')}
         </div>
       </section>
 
-      {/* MONNAIE & NOTES */}
       <section className="feuille-bloc">
-        <h2>Monnaie &amp; notes libres</h2>
-        <div className="fc-grille fc-grille--5">
-          {champJson('LE', 'currency', 'pp', 'number')}
+        <h2>Inventaire</h2>
+        {inventaire.map((objet, i) => (
+          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+            <input value={objet} onChange={e => modifierObjet(i, e.target.value)} style={{ flex: 1 }} />
+            <button className="ligne-suppr" onClick={() => retirerObjet(i)}>✕</button>
+          </div>
+        ))}
+        <button className="fiches-btn fiches-btn--discret" style={{ marginTop: 4 }} onClick={ajouterObjet}>+ Ajouter un objet</button>
+
+        <div className="fc-grille fc-grille--6" style={{ marginTop: 14 }}>
+          {champJson('LE', 'currency', 'le', 'number')}
+          {champJson('PP', 'currency', 'pp', 'number')}
           {champJson('PO', 'currency', 'po', 'number')}
           {champJson('PA', 'currency', 'pa', 'number')}
           {champJson('PC', 'currency', 'pc', 'number')}
           {champJson('Cristaux', 'currency', 'cristaux', 'number')}
         </div>
+      </section>
+
+      <section className="feuille-bloc">
+        <h2>Notes libres</h2>
         <label className="fc-champ fc-champ--zone">
-          <span>Notes libres</span>
+          <span>Notes</span>
           <textarea rows={6} value={fiche.notes ?? ''} onChange={e => modifier('notes', e.target.value)} />
         </label>
         {estMJ && (

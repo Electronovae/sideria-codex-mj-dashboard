@@ -1,8 +1,11 @@
-.fiches-app{min-height:100vh;background:var(--fond2);color:var(--encre);font-family:'Crimson Pro',Georgia,serif;}
-.fiches-header{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--bleu);color:var(--texte-clair);border-bottom:2px solid var(--or);}
-.fiches-header-titre{font-weight:700;letter-spacing:.02em;}
-.fiches-header-titre em{font-style:italic;color:var(--or-clair);font-weight:400;}
-.fiches-header-joueur{margin-left:auto;font-size:.9em;}
+/* Réutilise la charte réelle du dashboard : Palatino, petites capitales, palette --bleu/--or/--parch */
+.fiches-app{min-height:100vh;background:var(--fond2);color:var(--encre);
+  font:14px/1.5 "Palatino Linotype",Palatino,"Book Antiqua",serif;}
+.fiches-header{display:flex;align-items:center;gap:14px;padding:10px 18px;background:var(--bleu);
+  color:var(--texte-clair);border-bottom:3px solid var(--or);flex-wrap:wrap;}
+.fiches-header-titre{font-size:1.05rem;font-variant:small-caps;letter-spacing:.08em;}
+.fiches-header-titre em{font-style:normal;color:var(--or-clair);}
+.fiches-header-joueur{margin-left:auto;font-size:.85em;}
 .fiches-badge{background:var(--or);color:var(--bleu-nuit);font-size:.7em;font-weight:700;padding:1px 6px;border-radius:3px;margin-left:6px;}
 .fiches-main{padding:20px;max-width:960px;margin:0 auto;}
 
@@ -11,29 +14,31 @@
 .fiches-message--succes{color:var(--vert);}
 
 .fiches-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--fond2);}
-.fiches-carte{background:var(--carte);border:1px solid var(--champ-bord);border-radius:6px;padding:28px 32px;max-width:420px;width:100%;box-shadow:0 4px 20px rgba(0,0,0,.15);}
-.fiches-carte h1{font-family:'Cinzel',serif;font-size:1.3em;color:var(--bleu);margin-bottom:4px;}
+.fiches-carte{background:var(--carte);border:1px solid var(--champ-bord);border-radius:4px;padding:28px 32px;max-width:420px;width:100%;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.fiches-carte h1{font-size:1.2em;font-variant:small-caps;letter-spacing:.05em;color:var(--bleu);margin-bottom:4px;}
 .fiches-souscarte{color:var(--gris);font-style:italic;margin-bottom:18px;font-size:.9em;}
-.fiches-carte-titre{font-family:'Cinzel',serif;font-weight:700;color:var(--bleu);margin-bottom:14px;font-size:1.05em;}
+.fiches-carte-titre{font-variant:small-caps;font-weight:700;color:var(--bleu);margin-bottom:14px;font-size:1.1em;letter-spacing:.04em;}
 
 .fiches-form{display:flex;flex-direction:column;gap:10px;}
-.fiches-form label{font-size:.85em;font-weight:600;color:var(--bleu);}
+.fiches-form label{font-size:.8em;font-weight:700;color:var(--bleu);font-variant:small-caps;letter-spacing:.04em;}
 .fiches-form input, .feuille input, .feuille textarea{
-  background:var(--champ);border:1px solid var(--champ-bord);border-radius:3px;padding:6px 8px;
+  background:var(--champ);border:1px solid var(--champ-bord);border-radius:2px;padding:6px 8px;
   font-family:inherit;font-size:.95em;color:var(--encre);width:100%;
 }
 .fiches-form--inline{flex-direction:row;align-items:center;margin-top:10px;}
 .fiches-form--inline input{flex:1;}
 
-.fiches-btn{background:var(--or);color:var(--bleu-nuit);border:none;border-radius:4px;padding:8px 16px;font-weight:700;cursor:pointer;font-family:inherit;}
+/* Réutilise les classes .btn existantes du dashboard plutôt que d'en inventer */
+.fiches-btn{background:var(--or);color:var(--bleu-nuit);border:none;border-radius:2px;padding:6px 14px;
+  font-weight:700;cursor:pointer;font-family:inherit;font-size:.85em;}
 .fiches-btn:disabled{opacity:.5;cursor:default;}
-.fiches-btn--discret{background:transparent;color:var(--texte-clair);border:1px solid var(--champ-bord);font-weight:400;}
-.fiches-header .fiches-btn--discret{color:var(--texte-clair);}
-.feuille-barre .fiches-btn--discret{color:var(--encre);}
+.fiches-btn--discret{background:transparent;border:1px solid var(--gris);color:inherit;font-weight:400;}
+.fiches-header .fiches-btn--discret{border-color:var(--or);color:var(--texte-clair);}
+.fiches-header .fiches-btn--discret:hover{background:rgba(201,162,39,.18);}
 
 .fiches-liste{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .fiches-item{display:flex;justify-content:space-between;width:100%;text-align:left;padding:10px 12px;
-  background:var(--champ);border:1px solid var(--champ-bord);border-radius:4px;cursor:pointer;font-family:inherit;}
+  background:var(--champ);border:1px solid var(--champ-bord);border-radius:2px;cursor:pointer;font-family:inherit;}
 .fiches-item:hover{border-color:var(--or);}
 .fiches-item-nom{font-weight:700;color:var(--bleu);}
 .fiches-item-meta{color:var(--gris);font-size:.85em;}
@@ -44,10 +49,11 @@
 .feuille-barre--basse{justify-content:flex-end;padding-top:10px;}
 .feuille-statut{margin-left:auto;font-size:.85em;color:var(--gris);font-style:italic;}
 
-.feuille-bloc{background:var(--carte);border:1px solid var(--champ-bord);border-radius:5px;padding:14px 16px;}
-.feuille-bloc h2{font-family:'Cinzel',serif;font-size:1em;color:var(--bleu);border-bottom:1px solid var(--or);padding-bottom:6px;margin-bottom:10px;letter-spacing:.02em;}
+.feuille-bloc{background:var(--carte);border:1px solid var(--champ-bord);border-radius:3px;padding:14px 16px;}
+.feuille-bloc h2{font-variant:small-caps;font-size:1.05em;letter-spacing:.05em;color:var(--bleu);
+  border-bottom:2px solid var(--or);padding-bottom:6px;margin-bottom:10px;}
 .feuille-sousbloc{margin-top:12px;}
-.feuille-sousbloc h3{font-family:'Cinzel',serif;font-size:.85em;color:var(--bleu);margin-bottom:6px;}
+.feuille-sousbloc h3{font-variant:small-caps;font-size:.9em;letter-spacing:.04em;color:var(--bleu);margin-bottom:6px;}
 .feuille-note{color:var(--gris);font-style:italic;font-size:.8em;margin-top:6px;}
 
 .fc-grille{display:grid;gap:10px;margin-bottom:8px;}
@@ -57,23 +63,32 @@
 .fc-grille--5{grid-template-columns:repeat(5,1fr);}
 .fc-grille--6{grid-template-columns:repeat(6,1fr);}
 .fc-champ{display:flex;flex-direction:column;gap:3px;font-size:.85em;}
-.fc-champ span{font-weight:600;color:var(--bleu);}
+.fc-champ span{font-weight:700;color:var(--bleu);font-variant:small-caps;letter-spacing:.03em;}
 .fc-champ--case{flex-direction:row;align-items:center;gap:6px;}
 .fc-champ--zone{margin-top:8px;}
 .fc-champ--mj textarea{border-color:var(--rouge);}
 
 .carac-grille{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-.carac-bloc{border:1px solid var(--champ-bord);border-radius:4px;padding:8px;text-align:center;background:var(--champ);}
+.carac-bloc{border:1px solid var(--champ-bord);border-radius:2px;padding:8px;text-align:center;background:var(--champ);}
 .carac-bloc--ecl{border-color:#6b4b8a;}
-.carac-nom{font-family:'Cinzel',serif;font-size:.75em;font-weight:700;color:var(--bleu);margin-bottom:4px;}
+.carac-nom{font-variant:small-caps;font-size:.8em;font-weight:700;color:var(--bleu);margin-bottom:4px;letter-spacing:.03em;}
 .carac-valeur{width:50px;text-align:center;font-size:1.1em;font-weight:700;margin:0 auto 2px;}
-.carac-mod{font-size:.8em;color:var(--gris);margin-bottom:6px;}
+.carac-mod{font-size:.8em;color:var(--gris);margin-bottom:4px;}
+.carac-sauv{display:flex;align-items:center;justify-content:center;gap:4px;font-size:.72em;margin-bottom:6px;color:var(--gris);}
 .carac-competences{display:flex;flex-direction:column;gap:2px;text-align:left;font-size:.75em;}
 .carac-comp{display:flex;align-items:center;gap:4px;}
 
 .feuille-table{width:100%;border-collapse:collapse;font-size:.85em;}
-.feuille-table th{text-align:left;color:var(--bleu);border-bottom:1px solid var(--or);padding:3px 6px;}
+.feuille-table th{text-align:left;font-variant:small-caps;color:var(--bleu);border-bottom:1px solid var(--or);padding:3px 6px;}
 .feuille-table td{padding:3px 6px;border-bottom:1px solid var(--champ-bord);}
+.feuille-table input{border:none;background:transparent;padding:2px 4px;}
+.feuille-table input:focus{background:var(--champ);border-radius:2px;}
+
+.montees-grille{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
+.montee-case{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.75em;color:var(--gris);}
+
+.ligne-suppr{background:transparent;border:1px solid var(--rouge);color:#c9695c;border-radius:2px;
+  padding:2px 8px;font-size:.75em;cursor:pointer;font-family:inherit;}
 
 @media (max-width:640px){
   .fc-grille--3,.fc-grille--4,.fc-grille--5,.fc-grille--6{grid-template-columns:repeat(2,1fr);}

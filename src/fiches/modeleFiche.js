@@ -8,20 +8,23 @@ export function nouvelleFiche(nom) {
     skill_proficiencies: {},
     saving_throw_proficiencies: {},
     hp_max: 0, hp_current: 0, hp_temp: 0,
-    armor_class: 10, initiative_bonus: 0, speed: 9,
+    armor_class: 10, indice_defense: 10, initiative_bonus: 0, speed: 9,
+    perception_passive: 10, sr_sort: 10,
     hit_dice_type: 8, hit_dice_remaining: 1,
-    mana_max: 0, mana_current: 0,
+    mana_max: 0, mana_current: 0, convertisseur_type: '',
+    fragments_max: 0, fragments_current: 0, ressource_speciale_type: '',
     cristallite: 0,
-    fragments_max: 0, fragments_current: 0,
+    montees_caracteristique: [false, false, false, false, false, false, false, false, false, false],
     factions: {
       academie: 0, kessavar: 0, flotte_drax: 0, inquisition: 0, conseil_sept: 0,
       dragon_blanc: 0, vouivre_jais: 0, serment_ether: 0, culte_sans_nom: 0,
     },
     attacks: [],
+    armor_name: '', shield_name: '', resistances: '',
     equipment: {},
     inventory: [],
-    currency: { pa: 0, pc: 0, po: 0, pp: 0, cristaux: 0 },
-    personality_trait: '', ideal: '', bond: '', flaw: '',
+    currency: { le: 0, pp: 0, po: 0, pa: 0, pc: 0, cristaux: 0 },
+    personality_trait: '', ideal: '', bond: '', flaw: '', fear_redline: '',
     notes: '',
     death_saves_success: 0, death_saves_failure: 0, is_stable: false,
     conditions: [],
@@ -31,6 +34,8 @@ export function nouvelleFiche(nom) {
     relations: { allies: [], enemies: [], debts: [] },
   }
 }
+
+export const PALIERS_MONTEE = [3, 7, 11, 15, 19, 23, 27, 31, 35, 39]
 
 // Compétences liées à chaque caractéristique, pour l'affichage de la fiche.
 export const COMPETENCES_PAR_CARAC = {
