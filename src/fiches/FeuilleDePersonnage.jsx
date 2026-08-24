@@ -14,7 +14,11 @@ const ETAPES_CRISTALLITE = [
 export default function FeuilleDePersonnage({ estMJ }) {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { fiche, chargement, erreur, enregistrement, modifiee, dernierEnregistrement, modifier, modifierJson, enregistrer } = useFiche(id)
+  const {
+    fiche, chargement, erreur, enregistrement, modifiee, dernierEnregistrement,
+    modifier, modifierJson, enregistrer, supprimer, suppression,
+    televerserPortrait, televersement,
+  } = useFiche(id)
 
   if (chargement) return <div className="fiches-message">Chargement de la fiche…</div>
   if (erreur) return <div className="fiches-message fiches-message--erreur">{erreur}</div>
@@ -69,6 +73,16 @@ export default function FeuilleDePersonnage({ estMJ }) {
     modifier('montees_caracteristique', copie)
   }
 
+  const [confirmationSuppression, setConfirmationSuppression] = React.useState(false)
+  const gererSuppression = async () => {
+    const ok = await supprimer()
+    if (ok) navigate('..')
+  }
+  const gererFichierPortrait = (e) => {
+    const fichier = e.target.files?.[0]
+    if (fichier) televerserPortrait(fichier)
+  }
+
   return (
     <div className="feuille">
       <div className="feuille-barre">
@@ -79,10 +93,34 @@ export default function FeuilleDePersonnage({ estMJ }) {
         <button className="fiches-btn" disabled={!modifiee || enregistrement} onClick={enregistrer}>
           Enregistrer la fiche
         </button>
+        {!confirmationSuppression ? (
+          <button className="fiches-btn fiches-btn--danger" onClick={() => setConfirmationSuppression(true)}>
+            Supprimer le personnage
+          </button>
+        ) : (
+          <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span style={{ fontSize: '.8em', color: 'var(--rouge)' }}>Suppression définitive, confirmer ?</span>
+            <button className="fiches-btn fiches-btn--danger" disabled={suppression} onClick={gererSuppression}>
+              {suppression ? 'Suppression…' : 'Oui, supprimer'}
+            </button>
+            <button className="fiches-btn fiches-btn--discret" onClick={() => setConfirmationSuppression(false)}>Annuler</button>
+          </span>
+        )}
       </div>
 
       <section className="feuille-bloc">
         <h2>Identité</h2>
+        <div className="feuille-portrait">
+          {fiche.avatar_url ? (
+            <img src={fiche.avatar_url} alt="Portrait du personnage" className="feuille-portrait-img" />
+          ) : (
+            <div className="feuille-portrait-vide">Aucun portrait</div>
+          )}
+          <label className="fiches-btn fiches-btn--discret" style={{ cursor: 'pointer' }}>
+            {televersement ? 'Envoi…' : 'Changer le portrait'}
+            <input type="file" accept="image/*" onChange={gererFichierPortrait} disabled={televersement} style={{ display: 'none' }} />
+          </label>
+        </div>
         <div className="fc-grille fc-grille--4">
           {champ('Nom', 'name')}
           {champ('Peuple / Origine', 'origin')}

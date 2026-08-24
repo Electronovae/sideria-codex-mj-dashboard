@@ -98,3 +98,11 @@
 .fiches-banniere{background:var(--or-clair,#e6c96a);color:var(--bleu-nuit);padding:8px 18px;
   display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:.85em;}
 .fiches-banniere .fiches-form--inline input{width:140px;}
+
+.fiches-btn--danger{background:transparent;border:1px solid var(--rouge);color:#c9695c;}
+.fiches-btn--danger:hover{background:rgba(156,58,46,.12);}
+
+.feuille-portrait{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.feuille-portrait-img{width:84px;height:84px;object-fit:cover;border-radius:4px;border:2px solid var(--or);}
+.feuille-portrait-vide{width:84px;height:84px;border:1px dashed var(--champ-bord);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-size:.7em;color:var(--gris);text-align:center;padding:4px;}
