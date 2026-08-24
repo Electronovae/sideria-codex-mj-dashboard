@@ -4,11 +4,13 @@ import { authActif, sessionActuelle, surChangementSession, obtenirOuCreerPlayer,
 import Login from './Login.jsx'
 import Selection from './Selection.jsx'
 import FeuilleDePersonnage from './FeuilleDePersonnage.jsx'
+import BanniereMotDePasse from './BanniereMotDePasse.jsx'
 
 export default function FichesApp() {
   const [session, setSession] = useState(undefined) // undefined = pas encore vérifié
   const [player, setPlayer] = useState(null)
   const [erreur, setErreur] = useState(null)
+  const [banniereIgnoree, setBanniereIgnoree] = useState(false)
 
   useEffect(() => {
     sessionActuelle().then(setSession)
@@ -43,6 +45,7 @@ export default function FichesApp() {
   }
 
   const estMJ = player.role === 'admin' || player.role === 'mj'
+  const proposerMotDePasse = !player.password_defini && !banniereIgnoree
 
   return (
     <div className="fiches-app">
@@ -53,6 +56,13 @@ export default function FichesApp() {
         </span>
         <button className="fiches-btn fiches-btn--discret" onClick={deconnexion}>Se déconnecter</button>
       </header>
+      {proposerMotDePasse && (
+        <BanniereMotDePasse
+          player={player}
+          onDefini={() => setPlayer({ ...player, password_defini: true })}
+          onIgnorer={() => setBanniereIgnoree(true)}
+        />
+      )}
       <main className="fiches-main">
         <Routes>
           <Route path="/" element={<Selection player={player} estMJ={estMJ} />} />

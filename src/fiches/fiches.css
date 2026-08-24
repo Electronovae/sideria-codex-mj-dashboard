@@ -94,3 +94,7 @@
   .fc-grille--3,.fc-grille--4,.fc-grille--5,.fc-grille--6{grid-template-columns:repeat(2,1fr);}
   .carac-grille{grid-template-columns:repeat(2,1fr);}
 }
+
+.fiches-banniere{background:var(--or-clair,#e6c96a);color:var(--bleu-nuit);padding:8px 18px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:.85em;}
+.fiches-banniere .fiches-form--inline input{width:140px;}
