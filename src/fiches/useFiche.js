@@ -42,7 +42,7 @@ export function useFiche(characterId) {
     if (!fiche) return
     setEnregistrement(true)
     setErreur(null)
-    const { id, created_at, updated_at, class_primary_id, class_secondary_id, ...donnees } = fiche
+    const { id, created_at, updated_at, ...donnees } = fiche
     const { error } = await supabase.from('characters').update(donnees).eq('id', characterId)
     setEnregistrement(false)
     if (error) { setErreur(error.message); return false }

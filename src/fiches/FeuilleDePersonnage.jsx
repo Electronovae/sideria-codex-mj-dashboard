@@ -1,6 +1,7 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFiche } from './useFiche.js'
+import SectionClasse from './SectionClasse.jsx'
 import {
   COMPETENCES_PAR_CARAC, LIBELLES_COMPETENCES, LIBELLES_CARAC, LIBELLES_FACTIONS,
   PALIERS_MONTEE, modificateur,
@@ -133,8 +134,10 @@ export default function FeuilleDePersonnage({ estMJ }) {
           {champ('Perception passive', 'perception_passive', 'number')}
           {champ('SR de sort', 'sr_sort', 'number')}
         </div>
-        <p className="feuille-note">Classe et sous-classe seront ajoutées à l'étape 2.</p>
+        <p className="feuille-note">Classe et sous-classe ci-dessous. Les features se débloquent avec les Fragments gagnés en jeu.</p>
       </section>
+
+      <SectionClasse fiche={fiche} modifier={modifier} characterId={id} />
 
       <section className="feuille-bloc">
         <h2>Caractéristiques</h2>
