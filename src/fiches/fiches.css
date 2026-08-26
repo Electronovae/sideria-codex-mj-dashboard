@@ -95,6 +95,8 @@
 @media (max-width:640px){
   .fc-grille--3,.fc-grille--4,.fc-grille--5,.fc-grille--6{grid-template-columns:repeat(2,1fr);}
   .carac-grille{grid-template-columns:repeat(2,1fr);}
+  .jauges-grille{grid-template-columns:1fr;}
+  .sceau{min-width:72px;padding:6px 8px;}
 }
 
 .fiches-banniere{background:var(--or-clair,#e6c96a);color:var(--bleu-nuit);padding:8px 18px;
@@ -138,6 +140,64 @@
   letter-spacing:.03em;cursor:pointer;}
 .classe-filtre-btn:hover{border-color:var(--or);color:var(--bleu);}
 .classe-filtre-btn.actif{background:var(--or);border-color:var(--or);color:var(--bleu-nuit);font-weight:700;}
+
+/* ── Jauges visuelles (PV / Mana / Ressource) ── */
+.jauges-grille{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.jauge-visuelle{background:var(--champ);border:1px solid var(--champ-bord);border-radius:3px;padding:8px 10px;}
+.jauge-visuelle-tete{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.jauge-visuelle-label{font-variant:small-caps;font-size:.78em;font-weight:700;color:var(--bleu);letter-spacing:.03em;}
+.jauge-visuelle-chiffres{display:flex;align-items:center;gap:3px;font-size:.85em;}
+.jauge-visuelle-chiffres input{width:38px;text-align:center;padding:2px 3px;}
+.jauge-visuelle-slash{color:var(--gris);}
+.jauge-visuelle-temp{margin-left:6px;font-size:.75em;color:var(--vert);font-style:italic;white-space:nowrap;}
+.jauge-visuelle-barre{height:14px;background:var(--fond2);border:1px solid var(--champ-bord);border-radius:7px;
+  overflow:hidden;cursor:pointer;}
+.jauge-visuelle-remplissage{height:100%;transition:width .15s ease;}
+
+/* ── Accordéons (Combat) ── */
+.feuille-accordeon{margin-top:10px;border-top:1px dashed var(--champ-bord);padding-top:8px;}
+.feuille-accordeon summary{cursor:pointer;font-variant:small-caps;font-size:.9em;letter-spacing:.04em;
+  color:var(--bleu);font-weight:700;list-style:none;}
+.feuille-accordeon summary::-webkit-details-marker{display:none;}
+.feuille-accordeon summary::before{content:'▸ ';color:var(--or);}
+.feuille-accordeon[open] summary::before{content:'▾ ';}
+.feuille-accordeon > div,.feuille-accordeon > p{margin-top:8px;}
+
+/* ── Attaques en cartes ── */
+.attaques-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+.attaque-carte{background:var(--champ);border:1px solid var(--champ-bord);border-left:3px solid var(--or);
+  border-radius:2px;padding:8px 10px;}
+.attaque-carte-tete{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.attaque-nom{flex:1;font-weight:700;color:var(--bleu);border:none;background:transparent;padding:2px 0;}
+.attaque-nom:focus{background:var(--carte);border-radius:2px;padding:2px 4px;}
+.attaque-carte-corps{display:flex;flex-direction:column;gap:6px;}
+.attaque-champ{display:flex;flex-direction:column;gap:2px;font-size:.78em;}
+.attaque-champ span{color:var(--gris);font-variant:small-caps;letter-spacing:.03em;}
+
+/* ── Sceaux de faction (réputation) ── */
+.sceaux-grille{display:flex;flex-wrap:wrap;gap:8px;}
+.sceau{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;min-width:84px;
+  background:var(--champ);border:2px solid var(--sceau-couleur,var(--champ-bord));border-radius:50%/38%;
+  cursor:pointer;font-family:inherit;color:var(--encre);}
+.sceau:hover{background:var(--carte);}
+.sceau--ouvert{background:var(--sceau-couleur,var(--or));color:var(--bleu-nuit);}
+.sceau-nom{font-size:.72em;font-variant:small-caps;letter-spacing:.02em;text-align:center;line-height:1.15;}
+.sceau-val{font-weight:700;font-size:.9em;}
+
+/* ── Traits en fiches/citations (rôle-play) ── */
+.fiches-cartes-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.fiche-carte{background:var(--champ);border:1px solid var(--champ-bord);border-left:3px solid var(--or);
+  border-radius:2px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+.fiche-carte--defaut{border-left-color:var(--rouge);}
+.fiche-carte-label{font-variant:small-caps;font-size:.72em;color:var(--gris);letter-spacing:.03em;}
+.fiche-carte textarea{border:none;background:transparent;padding:0;font-family:"Palatino Linotype",Palatino,"Book Antiqua",serif;
+  font-style:italic;color:var(--encre);resize:vertical;}
+.fiche-carte textarea:focus{background:var(--carte);border-radius:2px;padding:2px 4px;}
+
+/* ── Journal narratif ── */
+.journal-entree{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.journal-puce{color:var(--or);font-weight:700;font-size:1.1em;line-height:1.6;}
+.journal-entree textarea{flex:1;font-style:italic;}
 
 /* ── Bandeau vitals : toujours visible, ce qu'on regarde en pleine bagarre ── */
 .feuille-vitals{display:flex;gap:0;background:var(--bleu);border-radius:3px;overflow:hidden;

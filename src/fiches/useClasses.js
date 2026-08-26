@@ -30,6 +30,20 @@ export function useClasses() {
   return { classes, chargement }
 }
 
+export function useFactionsMonde() {
+  const [factions, setFactions] = useState([])
+  const [chargement, setChargement] = useState(true)
+
+  useEffect(() => {
+    supabase.from('factions').select('id, nom, couleur').order('nom')
+      .then(({ data }) => {
+        setFactions((data ?? []).filter(f => f.nom !== 'Monde'))
+        setChargement(false)
+      })
+  }, [])
+
+  return { factions, chargement }
+}
 export function useFeaturesDebloquees(characterId) {
   const [debloquees, setDebloquees] = useState(new Set())
   const [chargement, setChargement] = useState(true)

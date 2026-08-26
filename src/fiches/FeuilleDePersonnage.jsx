@@ -2,9 +2,9 @@ import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFiche } from './useFiche.js'
 import SectionClasse from './SectionClasse.jsx'
-import { useClasses } from './useClasses.js'
+import { useClasses, useFactionsMonde } from './useClasses.js'
 import {
-  COMPETENCES_PAR_CARAC, LIBELLES_COMPETENCES, LIBELLES_CARAC, LIBELLES_FACTIONS,
+  COMPETENCES_PAR_CARAC, LIBELLES_COMPETENCES, LIBELLES_CARAC,
   PALIERS_MONTEE, ORIGINES, modificateur,
 } from './modeleFiche.js'
 
@@ -12,6 +12,40 @@ const ETAPES_CRISTALLITE = [
   ['0', 'Exposition'], ['1', 'Précoce'], ['1b', 'Consolidé'], ['2', 'Avancé'],
   ['3', 'Critique'], ['4', 'Terminal'], ['5', 'Passage'], ['6', 'Fusion'],
 ]
+
+// Jauge cliquable/glissable : on ajuste la valeur en cliquant dans la barre,
+// ou on tape une valeur précise dans les champs. couleurAuto colore PV en fonction du %.
+function JaugeVisuelle({ label, valeur, max, onChangeValeur, onChangeMax, couleurAuto, extra }) {
+  const v = valeur ?? 0
+  const m = max ?? 0
+  const pct = m > 0 ? Math.max(0, Math.min(100, (v / m) * 100)) : 0
+  let couleur = 'var(--or)'
+  if (couleurAuto) {
+    couleur = pct > 60 ? 'var(--vert)' : pct > 30 ? 'var(--or)' : 'var(--rouge)'
+  }
+  const gererClic = (e) => {
+    if (!m) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    onChangeValeur(Math.round(ratio * m))
+  }
+  return (
+    <div className="jauge-visuelle">
+      <div className="jauge-visuelle-tete">
+        <span className="jauge-visuelle-label">{label}</span>
+        <span className="jauge-visuelle-chiffres">
+          <input type="number" value={v} onChange={e => onChangeValeur(Number(e.target.value))} />
+          <span className="jauge-visuelle-slash">/</span>
+          <input type="number" value={m} onChange={e => onChangeMax(Number(e.target.value))} />
+          {extra}
+        </span>
+      </div>
+      <div className="jauge-visuelle-barre" onClick={gererClic} title="Cliquer pour ajuster">
+        <div className="jauge-visuelle-remplissage" style={{ width: pct + '%', background: couleur }} />
+      </div>
+    </div>
+  )
+}
 
 export default function FeuilleDePersonnage({ estMJ }) {
   const { id } = useParams()
@@ -23,7 +57,10 @@ export default function FeuilleDePersonnage({ estMJ }) {
   } = useFiche(id)
   const [confirmationSuppression, setConfirmationSuppression] = React.useState(false)
   const [ongletActif, setOngletActif] = React.useState('identite')
+  const [factionAAjouter, setFactionAAjouter] = React.useState('')
+  const [factionOuverte, setFactionOuverte] = React.useState(null)
   const { classes } = useClasses()
+  const { factions: mondeFactions } = useFactionsMonde()
 
   const sauvegardesDeClasse = React.useMemo(() => {
     if (!fiche) return new Set()
@@ -88,6 +125,11 @@ export default function FeuilleDePersonnage({ estMJ }) {
     const copie = montees.map((v, idx) => idx === i ? !v : v)
     modifier('montees_caracteristique', copie)
   }
+
+  const journal = fiche.journal ?? []
+  const modifierEntreeJournal = (i, valeur) => modifier('journal', journal.map((e, idx) => idx === i ? { ...e, texte: valeur } : e))
+  const ajouterEntreeJournal = () => modifier('journal', [...journal, { id: crypto.randomUUID(), texte: '' }])
+  const retirerEntreeJournal = (i) => modifier('journal', journal.filter((_, idx) => idx !== i))
 
   const ONGLETS = [
     { id: 'identite', label: 'Identité' },
@@ -292,51 +334,81 @@ export default function FeuilleDePersonnage({ estMJ }) {
       </section>
 
       <section className="feuille-bloc" hidden={ongletActif !== 'combat'}>
+        <h2>Attaques</h2>
+        <div className="attaques-grille">
+          {attaques.map((a, i) => (
+            <div className="attaque-carte" key={i}>
+              <div className="attaque-carte-tete">
+                <input className="attaque-nom" placeholder="Nom de l'attaque" value={a.nom ?? ''}
+                  onChange={e => modifierAttaque(i, 'nom', e.target.value)} />
+                <button className="ligne-suppr" onClick={() => retirerAttaque(i)}>✕</button>
+              </div>
+              <div className="attaque-carte-corps">
+                <label className="attaque-champ attaque-champ--bonus">
+                  <span>Bonus</span>
+                  <input value={a.bonus ?? ''} placeholder="+5" onChange={e => modifierAttaque(i, 'bonus', e.target.value)} />
+                </label>
+                <label className="attaque-champ attaque-champ--degats">
+                  <span>Dégâts / Type / Notes</span>
+                  <input value={a.degats ?? ''} placeholder="1d8+3 tranchant" onChange={e => modifierAttaque(i, 'degats', e.target.value)} />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+        {attaques.length === 0 && <p className="feuille-note">Aucune attaque pour l'instant.</p>}
+        <button className="fiches-btn fiches-btn--discret" style={{ marginTop: 10 }} onClick={ajouterAttaque}>+ Ajouter une attaque</button>
+      </section>
+
+      <section className="feuille-bloc" hidden={ongletActif !== 'combat'}>
         <h2>Combat &amp; Ressources</h2>
-        <div className="fc-grille fc-grille--6">
-          {champ('PV Max', 'hp_max', 'number')}
-          {champ('PV Actuels', 'hp_current', 'number')}
+
+        <div className="jauges-grille">
+          <JaugeVisuelle label="Points de vie" valeur={fiche.hp_current} max={fiche.hp_max} couleurAuto
+            onChangeValeur={v => modifier('hp_current', v)} onChangeMax={v => modifier('hp_max', v)}
+            extra={fiche.hp_temp ? <span className="jauge-visuelle-temp">+{fiche.hp_temp} temp.</span> : null} />
+          <JaugeVisuelle label="Mana" valeur={fiche.mana_current} max={fiche.mana_max}
+            onChangeValeur={v => modifier('mana_current', v)} onChangeMax={v => modifier('mana_max', v)} />
+          <JaugeVisuelle label={fiche.ressource_speciale_type || 'Fragments'} valeur={fiche.fragments_current} max={fiche.fragments_max}
+            onChangeValeur={v => modifier('fragments_current', v)} onChangeMax={v => modifier('fragments_max', v)} />
+        </div>
+
+        <div className="fc-grille fc-grille--4" style={{ marginTop: 12 }}>
           {champ('PV Temp.', 'hp_temp', 'number')}
           {champ('GRD', 'armor_class', 'number')}
           {champ('Vitesse (m/tour)', 'speed', 'number')}
           {champ('Dés de résistance restants', 'hit_dice_remaining', 'number')}
         </div>
 
-        <div className="feuille-sousbloc">
-          <h3>Armure et défense</h3>
+        <details className="feuille-accordeon">
+          <summary>Armure et défense</summary>
           <div className="fc-grille fc-grille--3">
             {champ('Armure', 'armor_name')}
             {champ('Bouclier', 'shield_name')}
             {champ('Résistances / Immunités', 'resistances')}
           </div>
-        </div>
+        </details>
 
-        <div className="feuille-sousbloc">
-          <h3>Convertisseur &amp; ressource spéciale</h3>
-          <div className="fc-grille fc-grille--4">
+        <details className="feuille-accordeon">
+          <summary>Convertisseur</summary>
+          <div className="fc-grille fc-grille--2">
             {champ('Type de convertisseur', 'convertisseur_type')}
-            {champ('Mana max', 'mana_max', 'number')}
-            {champ('Mana actuel', 'mana_current', 'number')}
             {champ('Type de ressource spéciale', 'ressource_speciale_type')}
           </div>
-          <div className="fc-grille fc-grille--3">
-            {champ('Ressource max', 'fragments_max', 'number')}
-            {champ('Ressource actuelle', 'fragments_current', 'number')}
-          </div>
-        </div>
+        </details>
 
-        <div className="feuille-sousbloc">
-          <h3>Étincelle</h3>
+        <details className="feuille-accordeon">
+          <summary>Étincelle</summary>
           <div className="fc-grille fc-grille--3">
             {champJson('Dé actuel', 'spark', 'die')}
             {champJson('Utilisées', 'spark', 'current', 'number')}
             {champJson('Maximum', 'spark', 'max', 'number')}
           </div>
           <p className="feuille-note">Progression : 1d8 → 1d10 → 1d12 → 1d20</p>
-        </div>
+        </details>
 
-        <div className="feuille-sousbloc">
-          <h3>Jets de mort</h3>
+        <details className="feuille-accordeon">
+          <summary>Jets de mort</summary>
           <div className="fc-grille fc-grille--3">
             {champ('Succès', 'death_saves_success', 'number')}
             {champ('Échecs', 'death_saves_failure', 'number')}
@@ -345,90 +417,138 @@ export default function FeuilleDePersonnage({ estMJ }) {
               <span>Stabilisé</span>
             </label>
           </div>
-        </div>
-
-        <div className="feuille-sousbloc">
-          <h3>Cristallite</h3>
-          <table className="feuille-table">
-            <thead><tr><th>Stade</th><th>Nom</th></tr></thead>
-            <tbody>
-              {ETAPES_CRISTALLITE.map(([code, nom]) => (
-                <tr key={code}>
-                  <td>{code}</td>
-                  <td>
-                    <label className="fc-champ--case">
-                      <input
-                        type="radio" name="cristallite" checked={String(fiche.cristallite) === code}
-                        onChange={() => modifier('cristallite', code)}
-                      /> {nom}
-                    </label>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        </details>
       </section>
 
-      <section className="feuille-bloc" hidden={ongletActif !== 'combat'}>
-        <h2>Attaques</h2>
+      <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
+        <h2>Cristallite</h2>
         <table className="feuille-table">
-          <thead><tr><th>Nom de l'attaque</th><th>Bonus</th><th>Dégâts / Type / Notes</th><th></th></tr></thead>
+          <thead><tr><th>Stade</th><th>Nom</th></tr></thead>
           <tbody>
-            {attaques.map((a, i) => (
-              <tr key={i}>
-                <td><input value={a.nom ?? ''} onChange={e => modifierAttaque(i, 'nom', e.target.value)} /></td>
-                <td><input value={a.bonus ?? ''} onChange={e => modifierAttaque(i, 'bonus', e.target.value)} style={{ width: 60 }} /></td>
-                <td><input value={a.degats ?? ''} onChange={e => modifierAttaque(i, 'degats', e.target.value)} /></td>
-                <td><button className="ligne-suppr" onClick={() => retirerAttaque(i)}>✕</button></td>
+            {ETAPES_CRISTALLITE.map(([code, nom]) => (
+              <tr key={code}>
+                <td>{code}</td>
+                <td>
+                  <label className="fc-champ--case">
+                    <input
+                      type="radio" name="cristallite" checked={String(fiche.cristallite) === code}
+                      onChange={() => modifier('cristallite', code)}
+                    /> {nom}
+                  </label>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <button className="fiches-btn fiches-btn--discret" style={{ marginTop: 8 }} onClick={ajouterAttaque}>+ Ajouter une attaque</button>
-      </section>
-
-      <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
-        <h2>Serment d'Éther</h2>
-        <div className="fc-grille fc-grille--3">
-          {champJson('Faction', 'oath', 'faction')}
-          {champJson('Statut', 'oath', 'statut')}
-          {champJson('Termes', 'oath', 'termes')}
-        </div>
       </section>
 
       <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
         <h2>Réputation des factions</h2>
-        <div className="fc-grille fc-grille--3">
-          {Object.entries(LIBELLES_FACTIONS).map(([cle, libelle]) => (
-            <label key={cle} className="fc-champ">
-              <span>{libelle}</span>
-              <input
-                type="number" min="-5" max="4"
-                value={fiche.factions?.[cle] ?? 0}
-                onChange={e => modifierJson('factions', cle, Number(e.target.value))}
-              />
-            </label>
-          ))}
+        {Object.keys(fiche.factions || {}).length === 0 && (
+          <p className="feuille-note">Aucune faction ajoutée pour l'instant.</p>
+        )}
+        <div className="sceaux-grille">
+          {Object.keys(fiche.factions || {}).map(fid => {
+            const f = mondeFactions.find(x => x.id === fid)
+            const val = fiche.factions?.[fid] ?? 0
+            return (
+              <button key={fid} type="button"
+                className={'sceau' + (factionOuverte === fid ? ' sceau--ouvert' : '')}
+                style={{ '--sceau-couleur': f?.couleur || '#888' }}
+                onClick={() => setFactionOuverte(factionOuverte === fid ? null : fid)}>
+                <span className="sceau-nom">{f?.nom || 'Faction inconnue'}</span>
+                <span className="sceau-val">{val > 0 ? '+' : ''}{val}</span>
+              </button>
+            )
+          })}
+        </div>
+        {factionOuverte && (fiche.factions || {})[factionOuverte] !== undefined && (() => {
+          const f = mondeFactions.find(x => x.id === factionOuverte)
+          const val = fiche.factions?.[factionOuverte] ?? 0
+          return (
+            <div className="jauge-rep" style={{ marginTop: 10 }}>
+              <span className="nom">
+                <span style={{ background: f?.couleur || '#888', display: 'inline-block', width: 9, height: 9, borderRadius: '50%', marginRight: 6 }} />
+                {f?.nom || 'Faction inconnue'}
+              </span>
+              <input type="range" min="-4" max="4" step="1" value={val}
+                onChange={e => modifierJson('factions', factionOuverte, Number(e.target.value))} />
+              <span className="val">{val > 0 ? '+' : ''}{val}</span>
+              <button className="ligne-suppr" onClick={() => {
+                const copie = { ...fiche.factions }
+                delete copie[factionOuverte]
+                modifier('factions', copie)
+                setFactionOuverte(null)
+              }}>✕</button>
+            </div>
+          )
+        })()}
+        <div className="fc-grille fc-grille--3" style={{ alignItems: 'end', marginTop: 12 }}>
+          <label className="fc-champ">
+            <span>Ajouter une faction</span>
+            <select value={factionAAjouter} onChange={e => setFactionAAjouter(e.target.value)}>
+              <option value="">— Choisir —</option>
+              {mondeFactions.filter(f => !(fiche.factions || {})[f.id]).map(f => (
+                <option key={f.id} value={f.id}>{f.nom}</option>
+              ))}
+            </select>
+          </label>
+          <button className="fiches-btn fiches-btn--discret" disabled={!factionAAjouter} onClick={() => {
+            modifierJson('factions', factionAAjouter, 0)
+            setFactionOuverte(factionAAjouter)
+            setFactionAAjouter('')
+          }}>+ Ajouter</button>
         </div>
       </section>
 
       <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
         <h2>Traits, idéaux et liens</h2>
-        <div className="fc-grille fc-grille--2">
-          {champ('Trait de caractère', 'personality_trait')}
-          {champ('Idéal', 'ideal')}
-          {champ('Lien / attache', 'bond')}
-          {champ('Défaut', 'flaw')}
+        <div className="fiches-cartes-grille">
+          <div className="fiche-carte">
+            <span className="fiche-carte-label">Trait de caractère</span>
+            <textarea rows={2} value={fiche.personality_trait ?? ''} placeholder="« ... »"
+              onChange={e => modifier('personality_trait', e.target.value)} />
+          </div>
+          <div className="fiche-carte">
+            <span className="fiche-carte-label">Idéal</span>
+            <textarea rows={2} value={fiche.ideal ?? ''} placeholder="« ... »"
+              onChange={e => modifier('ideal', e.target.value)} />
+          </div>
+          <div className="fiche-carte">
+            <span className="fiche-carte-label">Lien / attache</span>
+            <textarea rows={2} value={fiche.bond ?? ''} placeholder="« ... »"
+              onChange={e => modifier('bond', e.target.value)} />
+          </div>
+          <div className="fiche-carte fiche-carte--defaut">
+            <span className="fiche-carte-label">Défaut</span>
+            <textarea rows={2} value={fiche.flaw ?? ''} placeholder="« ... »"
+              onChange={e => modifier('flaw', e.target.value)} />
+          </div>
+          <div className="fiche-carte fiche-carte--defaut">
+            <span className="fiche-carte-label">Peur / ligne rouge</span>
+            <textarea rows={2} value={fiche.fear_redline ?? ''} placeholder="« ... »"
+              onChange={e => modifier('fear_redline', e.target.value)} />
+          </div>
         </div>
-        <div className="fc-grille fc-grille--2">
-          {champ('Peur / ligne rouge', 'fear_redline')}
-        </div>
-        <div className="fc-grille fc-grille--3" style={{ marginTop: 8 }}>
+        <div className="fc-grille fc-grille--3" style={{ marginTop: 10 }}>
           {champListe('Alliés de confiance', 'relations', 'allies')}
           {champListe('Ennemis / rivaux', 'relations', 'enemies')}
           {champListe('Dettes / obligations', 'relations', 'debts')}
         </div>
+      </section>
+
+      <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
+        <h2>Journal</h2>
+        <p className="feuille-note">Petites notes qui s'accumulent au fil des sessions.</p>
+        {journal.map((entree, i) => (
+          <div className="journal-entree" key={entree.id ?? i}>
+            <span className="journal-puce">§</span>
+            <textarea rows={2} value={entree.texte ?? ''} placeholder="Ce qui s'est passé, ce qu'on a appris, ce qu'on a ressenti…"
+              onChange={e => modifierEntreeJournal(i, e.target.value)} />
+            <button className="ligne-suppr" onClick={() => retirerEntreeJournal(i)}>✕</button>
+          </div>
+        ))}
+        <button className="fiches-btn fiches-btn--discret" style={{ marginTop: 6 }} onClick={ajouterEntreeJournal}>+ Nouvelle entrée</button>
       </section>
 
       <section className="feuille-bloc" hidden={ongletActif !== 'sac'}>
@@ -449,6 +569,11 @@ export default function FeuilleDePersonnage({ estMJ }) {
           {champJson('PC', 'currency', 'pc', 'number')}
           {champJson('Cristaux', 'currency', 'cristaux', 'number')}
         </div>
+        <label className="fc-champ fc-champ--zone" style={{ marginTop: 12 }}>
+          <span>Taux de conversion</span>
+          <textarea rows={2} placeholder="Ex. 1 PO = 10 PA = 100 PC · 1 PP = 5 PO · 1 Cristal = ..."
+            value={fiche.conversion_monnaie ?? ''} onChange={e => modifier('conversion_monnaie', e.target.value)} />
+        </label>
       </section>
 
       <section className="feuille-bloc" hidden={ongletActif !== 'notes'}>

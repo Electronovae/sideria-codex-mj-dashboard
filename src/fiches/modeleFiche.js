@@ -67,13 +67,6 @@ export const LIBELLES_CARAC = {
   int: 'Intelligence', sag: 'Sagesse', cha: 'Charisme',
 }
 
-export const LIBELLES_FACTIONS = {
-  academie: 'Académie', kessavar: 'Kessavar', flotte_drax: 'Flotte Drax',
-  inquisition: 'Inquisition', conseil_sept: 'Conseil des Sept',
-  dragon_blanc: 'Dragon Blanc', vouivre_jais: 'Vouivre Jais',
-  serment_ether: "Serment d'Éther", culte_sans_nom: 'Culte sans Nom',
-}
-
 export function modificateur(valeur) {
   return Math.floor((Number(valeur ?? 10) - 10) / 2)
 }
