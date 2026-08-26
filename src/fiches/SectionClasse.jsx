@@ -4,6 +4,7 @@ import { useClasses, useFeaturesDebloquees } from './useClasses.js'
 function BlocClasse({ titre, classeId, subclassId, onChoisirClasse, onChoisirSubclasse, classes, fiche, modifier, debloquees, basculer }) {
   const classe = classes.find(c => c.id === classeId)
   const subclasse = classe?.subclasses.find(s => s.id === subclassId)
+  const [filtre, setFiltre] = React.useState('toutes') // 'toutes' | 'obtenues'
 
   const fragmentsUtilises = [...(classe?.features ?? []), ...(subclasse?.features ?? [])]
     .filter(f => debloquees.has(f.id))
@@ -20,8 +21,10 @@ function BlocClasse({ titre, classeId, subclassId, onChoisirClasse, onChoisirSub
             onChange={e => basculer(f.id, e.target.checked)}
           />
           <span className="classe-feature-nom">{f.nom}</span>
-          {f.cout_fragments > 0 && <span className="classe-feature-cout">{f.cout_fragments}F</span>}
-          {f.niveau_requis > 1 && <span className="classe-feature-niveau">niv.{f.niveau_requis}</span>}
+          <span className="classe-feature-meta">
+            {f.cout_fragments > 0 && <span className="classe-feature-cout">{f.cout_fragments}F</span>}
+            {f.niveau_requis > 1 && <span className="classe-feature-niveau">niv.{f.niveau_requis}</span>}
+          </span>
         </label>
         <p className="classe-feature-desc">{f.description}</p>
       </div>
@@ -63,14 +66,31 @@ function BlocClasse({ titre, classeId, subclassId, onChoisirClasse, onChoisirSub
           )}
           <p className="feuille-note">Fragments utilisés sur cette classe : {fragmentsUtilises}</p>
 
+          <div className="classe-filtre">
+            <button type="button" className={'classe-filtre-btn' + (filtre === 'toutes' ? ' actif' : '')}
+              onClick={() => setFiltre('toutes')}>
+              Toutes
+            </button>
+            <button type="button" className={'classe-filtre-btn' + (filtre === 'obtenues' ? ' actif' : '')}
+              onClick={() => setFiltre('obtenues')}>
+              Obtenues ({[...(classe.features ?? []), ...(subclasse?.features ?? [])].filter(f => debloquees.has(f.id)).length})
+            </button>
+          </div>
+
           <div className="classe-features">
-            {classe.features.map(listeFeature)}
+            {classe.features.filter(f => filtre === 'toutes' || debloquees.has(f.id)).map(listeFeature)}
+            {filtre === 'obtenues' && !classe.features.some(f => debloquees.has(f.id)) && (
+              <p className="feuille-note">Aucune compétence de classe obtenue pour l'instant.</p>
+            )}
           </div>
 
           {subclasse && (
             <div className="classe-features classe-features--sub">
               <h4>{subclasse.nom}</h4>
-              {subclasse.features.map(listeFeature)}
+              {subclasse.features.filter(f => filtre === 'toutes' || debloquees.has(f.id)).map(listeFeature)}
+              {filtre === 'obtenues' && !subclasse.features.some(f => debloquees.has(f.id)) && (
+                <p className="feuille-note">Aucune compétence de sous-classe obtenue pour l'instant.</p>
+              )}
             </div>
           )}
         </>

@@ -121,11 +121,21 @@
 .classe-feature{padding:4px 6px;border-radius:2px;}
 .classe-feature:hover{background:var(--carte);}
 .classe-feature--verrouillee{opacity:.45;}
-.classe-feature-ligne{display:flex;align-items:center;gap:6px;font-size:.85em;font-weight:600;color:var(--bleu);}
-.classe-feature-nom{flex:1;}
-.classe-feature-cout{background:var(--or);color:var(--bleu-nuit);border-radius:2px;padding:0 5px;font-size:.75em;font-weight:700;}
-.classe-feature-niveau{color:var(--gris);font-size:.75em;font-style:italic;}
+.classe-feature-ligne{display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:8px;
+  font-size:.85em;font-weight:600;color:var(--bleu);cursor:pointer;}
+.classe-feature-ligne input{margin:0;flex:none;}
+.classe-feature-nom{text-align:left;min-width:0;}
+.classe-feature-meta{display:flex;gap:6px;justify-self:end;}
+.classe-feature-cout{background:var(--or);color:var(--bleu-nuit);border-radius:2px;padding:0 5px;font-size:.75em;font-weight:700;white-space:nowrap;}
+.classe-feature-niveau{color:var(--gris);font-size:.75em;font-style:italic;white-space:nowrap;}
 .classe-feature-desc{font-size:.78em;color:var(--gris);margin:2px 0 0 24px;}
+
+.classe-filtre{display:inline-flex;gap:4px;margin:6px 0 4px;}
+.classe-filtre-btn{background:var(--champ);border:1px solid var(--champ-bord);color:var(--gris);
+  border-radius:2px;padding:4px 10px;font-family:inherit;font-size:.75em;font-variant:small-caps;
+  letter-spacing:.03em;cursor:pointer;}
+.classe-filtre-btn:hover{border-color:var(--or);color:var(--bleu);}
+.classe-filtre-btn.actif{background:var(--or);border-color:var(--or);color:var(--bleu-nuit);font-weight:700;}
 
 /* ── Bandeau vitals : toujours visible, ce qu'on regarde en pleine bagarre ── */
 .feuille-vitals{display:flex;gap:0;background:var(--bleu);border-radius:3px;overflow:hidden;
