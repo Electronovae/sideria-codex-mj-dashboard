@@ -2,9 +2,10 @@ import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFiche } from './useFiche.js'
 import SectionClasse from './SectionClasse.jsx'
+import { useClasses } from './useClasses.js'
 import {
   COMPETENCES_PAR_CARAC, LIBELLES_COMPETENCES, LIBELLES_CARAC, LIBELLES_FACTIONS,
-  PALIERS_MONTEE, modificateur,
+  PALIERS_MONTEE, ORIGINES, modificateur,
 } from './modeleFiche.js'
 
 const ETAPES_CRISTALLITE = [
@@ -22,6 +23,18 @@ export default function FeuilleDePersonnage({ estMJ }) {
   } = useFiche(id)
   const [confirmationSuppression, setConfirmationSuppression] = React.useState(false)
   const [ongletActif, setOngletActif] = React.useState('identite')
+  const { classes } = useClasses()
+
+  const sauvegardesDeClasse = React.useMemo(() => {
+    if (!fiche) return new Set()
+    const ids = [fiche?.class_id, fiche?.class_secondaire_id].filter(Boolean)
+    const s = new Set()
+    ids.forEach(cid => {
+      const c = classes.find(x => x.id === cid)
+      ;(c?.saving_throws || []).forEach(code => s.add(code))
+    })
+    return s
+  }, [classes, fiche?.class_id, fiche?.class_secondaire_id])
 
   if (chargement) return <div className="fiches-message">Chargement de la fiche…</div>
   if (erreur) return <div className="fiches-message fiches-message--erreur">{erreur}</div>
@@ -96,61 +109,79 @@ export default function FeuilleDePersonnage({ estMJ }) {
 
   return (
     <div className="feuille">
-      <div className="feuille-barre">
-        <button className="fiches-btn fiches-btn--discret" onClick={() => navigate('..')}>← Retour</button>
-        <div className="feuille-statut">
-          {enregistrement ? 'Enregistrement…' : modifiee ? 'Modifications non enregistrées' : dernierEnregistrement ? `Enregistré à ${dernierEnregistrement.toLocaleTimeString()}` : 'À jour'}
-        </div>
-        <button className="fiches-btn" disabled={!modifiee || enregistrement} onClick={enregistrer}>
-          Enregistrer la fiche
-        </button>
-        {!confirmationSuppression ? (
-          <button className="fiches-btn fiches-btn--danger" onClick={() => setConfirmationSuppression(true)}>
-            Supprimer le personnage
+      <div className="feuille-sticky">
+        <div className="feuille-barre">
+          <button className="fiches-btn fiches-btn--discret" onClick={() => navigate('..')}>← Retour</button>
+          <div className="feuille-statut">
+            {enregistrement ? 'Enregistrement…' : modifiee ? 'Modifications non enregistrées' : dernierEnregistrement ? `Enregistré à ${dernierEnregistrement.toLocaleTimeString()}` : 'À jour'}
+          </div>
+          <button className="fiches-btn" disabled={!modifiee || enregistrement} onClick={enregistrer}>
+            Enregistrer la fiche
           </button>
-        ) : (
-          <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ fontSize: '.8em', color: 'var(--rouge)' }}>Suppression définitive, confirmer ?</span>
-            <button className="fiches-btn fiches-btn--danger" disabled={suppression} onClick={gererSuppression}>
-              {suppression ? 'Suppression…' : 'Oui, supprimer'}
+          {!confirmationSuppression ? (
+            <button className="fiches-btn fiches-btn--danger" onClick={() => setConfirmationSuppression(true)}>
+              Supprimer le personnage
             </button>
-            <button className="fiches-btn fiches-btn--discret" onClick={() => setConfirmationSuppression(false)}>Annuler</button>
-          </span>
-        )}
-      </div>
+          ) : (
+            <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: '.8em', color: 'var(--rouge)' }}>Suppression définitive, confirmer ?</span>
+              <button className="fiches-btn fiches-btn--danger" disabled={suppression} onClick={gererSuppression}>
+                {suppression ? 'Suppression…' : 'Oui, supprimer'}
+              </button>
+              <button className="fiches-btn fiches-btn--discret" onClick={() => setConfirmationSuppression(false)}>Annuler</button>
+            </span>
+          )}
+        </div>
 
-      <div className="feuille-vitals">
-        <div className="vital vital--pv">
-          <span className="vital-label">PV</span>
-          <span className="vital-valeur">{fiche.hp_current ?? 0}<span className="vital-sur">/{fiche.hp_max ?? 0}</span></span>
-          {fiche.hp_temp ? <span className="vital-extra">+{fiche.hp_temp} temp.</span> : null}
+        <div className="feuille-vitals">
+          <div className="vital vital--pv">
+            <span className="vital-label">PV</span>
+            <span className="vital-valeur">{fiche.hp_current ?? 0}<span className="vital-sur">/{fiche.hp_max ?? 0}</span></span>
+            {fiche.hp_temp ? <span className="vital-extra">+{fiche.hp_temp} temp.</span> : null}
+          </div>
+          <div className="vital">
+            <span className="vital-label">GRD</span>
+            <span className="vital-valeur">{fiche.armor_class ?? 10}</span>
+          </div>
+          <div className="vital">
+            <span className="vital-label">Mana</span>
+            <span className="vital-valeur">{fiche.mana_current ?? 0}<span className="vital-sur">/{fiche.mana_max ?? 0}</span></span>
+          </div>
+          <div className="vital">
+            <span className="vital-label">Fragments</span>
+            <span className="vital-valeur">{fiche.fragments_current ?? 0}<span className="vital-sur">/{fiche.fragments_max ?? 0}</span></span>
+          </div>
+          <div className="vital vital--cristallite">
+            <span className="vital-label">Cristallite</span>
+            <span className="vital-valeur">{ETAPES_CRISTALLITE.find(([code]) => code === String(fiche.cristallite))?.[1] || '—'}</span>
+          </div>
         </div>
-        <div className="vital">
-          <span className="vital-label">GRD</span>
-          <span className="vital-valeur">{fiche.armor_class ?? 10}</span>
+        <div className="feuille-vitals feuille-vitals--carac">
+          {Object.entries(LIBELLES_CARAC).map(([cle, libelle]) => (
+            <div key={cle} className="vital vital--carac">
+              <span className="vital-label">{libelle.slice(0, 3)}</span>
+              <span className="vital-valeur">{fiche.stats?.[cle] ?? 10}
+                <span className="vital-sur">{modificateur(fiche.stats?.[cle]) >= 0 ? ' +' : ' '}{modificateur(fiche.stats?.[cle])}</span>
+              </span>
+            </div>
+          ))}
+          <div className="vital vital--carac">
+            <span className="vital-label">ÉCL</span>
+            <span className="vital-valeur">{fiche.stats?.ecl ?? 0}
+              <span className="vital-sur">{modificateur(fiche.stats?.ecl ?? 0) >= 0 ? ' +' : ' '}{modificateur(fiche.stats?.ecl ?? 0)}</span>
+            </span>
+          </div>
         </div>
-        <div className="vital">
-          <span className="vital-label">Mana</span>
-          <span className="vital-valeur">{fiche.mana_current ?? 0}<span className="vital-sur">/{fiche.mana_max ?? 0}</span></span>
-        </div>
-        <div className="vital">
-          <span className="vital-label">{fiche.ressource_speciale_type || 'Ressource'}</span>
-          <span className="vital-valeur">{fiche.fragments_current ?? 0}<span className="vital-sur">/{fiche.fragments_max ?? 0}</span></span>
-        </div>
-        <div className="vital vital--cristallite">
-          <span className="vital-label">Cristallite</span>
-          <span className="vital-valeur">{ETAPES_CRISTALLITE.find(([code]) => code === String(fiche.cristallite))?.[1] || '—'}</span>
-        </div>
-      </div>
 
-      <nav className="feuille-tabs">
-        {ONGLETS.map(o => (
-          <button key={o.id} className={'feuille-tab' + (ongletActif === o.id ? ' actif' : '')}
-            onClick={() => setOngletActif(o.id)}>
-            {o.label}
-          </button>
-        ))}
-      </nav>
+        <nav className="feuille-tabs">
+          {ONGLETS.map(o => (
+            <button key={o.id} className={'feuille-tab' + (ongletActif === o.id ? ' actif' : '')}
+              onClick={() => setOngletActif(o.id)}>
+              {o.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
       <section className="feuille-bloc" hidden={ongletActif !== 'identite'}>
         <h2>Identité</h2>
@@ -167,9 +198,29 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
         <div className="fc-grille fc-grille--4">
           {champ('Nom', 'name')}
-          {champ('Peuple / Origine', 'origin')}
+          <label className="fc-champ">
+            <span>Peuple / Origine</span>
+            <select value={fiche.origin ?? ''} onChange={e => modifier('origin', e.target.value)}>
+              <option value="">— Aucune —</option>
+              {!ORIGINES.includes(fiche.origin) && fiche.origin && (
+                <option value={fiche.origin}>{fiche.origin}</option>
+              )}
+              {ORIGINES.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
           {champ('Niveau Sidérien', 'level', 'number')}
-          {champ('XP', 'xp', 'number')}
+          <div className="fc-champ fc-champ--compteur">
+            <span>Fragments</span>
+            <div className="compteur">
+              <button type="button" className="compteur-btn" onClick={() => modifier('fragments_current', Math.max(0, (fiche.fragments_current ?? 0) - 1))}>−</button>
+              <input type="number" className="compteur-valeur" value={fiche.fragments_current ?? 0}
+                onChange={e => modifier('fragments_current', Number(e.target.value))} />
+              <span className="compteur-sur">/</span>
+              <input type="number" className="compteur-max" value={fiche.fragments_max ?? 0}
+                onChange={e => modifier('fragments_max', Number(e.target.value))} />
+              <button type="button" className="compteur-btn" onClick={() => modifier('fragments_current', (fiche.fragments_current ?? 0) + 1)}>+</button>
+            </div>
+          </div>
         </div>
         <div className="fc-grille fc-grille--4" style={{ marginTop: 6 }}>
           {champ('Indice de Défense (ID)', 'indice_defense', 'number')}
@@ -196,12 +247,13 @@ export default function FeuilleDePersonnage({ estMJ }) {
                 onChange={e => modifierJson('stats', cle, Number(e.target.value))}
               />
               <div className="carac-mod">{modificateur(fiche.stats?.[cle]) >= 0 ? '+' : ''}{modificateur(fiche.stats?.[cle])}</div>
-              <label className="carac-sauv">
+              <label className={'carac-sauv' + (sauvegardesDeClasse.has(cle) ? ' carac-sauv--classe' : '')}>
                 <input
                   type="checkbox"
                   checked={!!fiche.saving_throw_proficiencies?.[cle]}
                   onChange={e => modifierJson('saving_throw_proficiencies', cle, e.target.checked)}
-                /> Sauv.
+                />
+                <span>Sauv.{sauvegardesDeClasse.has(cle) ? ' ★' : ''}</span>
               </label>
               <div className="carac-competences">
                 {COMPETENCES_PAR_CARAC[cle].map(comp => (

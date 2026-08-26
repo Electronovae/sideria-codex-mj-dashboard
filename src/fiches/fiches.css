@@ -45,9 +45,10 @@
 .fiches-vide{color:var(--gris);font-style:italic;margin-bottom:14px;}
 
 .feuille{display:flex;flex-direction:column;gap:16px;}
-.feuille-barre{display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--fond2);padding:8px 0;z-index:5;}
+.feuille-barre{display:flex;align-items:center;gap:12px;padding:8px 0;}
 .feuille-barre--basse{justify-content:flex-end;padding-top:10px;}
 .feuille-statut{margin-left:auto;font-size:.85em;color:var(--gris);font-style:italic;}
+.feuille-sticky{position:sticky;top:0;background:var(--fond2);z-index:5;padding-bottom:6px;}
 
 .feuille-bloc{background:var(--carte);border:1px solid var(--champ-bord);border-radius:3px;padding:14px 16px;}
 .feuille-bloc h2{font-variant:small-caps;font-size:1.05em;letter-spacing:.05em;color:var(--bleu);
@@ -74,7 +75,8 @@
 .carac-nom{font-variant:small-caps;font-size:.8em;font-weight:700;color:var(--bleu);margin-bottom:4px;letter-spacing:.03em;}
 .carac-valeur{width:50px;text-align:center;font-size:1.1em;font-weight:700;margin:0 auto 2px;}
 .carac-mod{font-size:.8em;color:var(--gris);margin-bottom:4px;}
-.carac-sauv{display:flex;align-items:center;justify-content:center;gap:4px;font-size:.72em;margin-bottom:6px;color:var(--gris);}
+.carac-sauv{display:flex;align-items:center;gap:4px;font-size:.72em;margin-bottom:6px;color:var(--gris);text-align:left;}
+.carac-sauv--classe{color:var(--bleu);font-weight:700;}
 .carac-competences{display:flex;flex-direction:column;gap:2px;text-align:left;font-size:.75em;}
 .carac-comp{display:flex;align-items:center;gap:4px;}
 
@@ -139,7 +141,7 @@
 
 /* ── Bandeau vitals : toujours visible, ce qu'on regarde en pleine bagarre ── */
 .feuille-vitals{display:flex;gap:0;background:var(--bleu);border-radius:3px;overflow:hidden;
-  border:1px solid var(--bleu-nuit);position:sticky;top:44px;z-index:4;}
+  border:1px solid var(--bleu-nuit);margin-top:4px;}
 .vital{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:8px 6px;border-right:1px solid rgba(230,201,106,.25);color:var(--texte-clair);min-width:0;}
 .vital:last-child{border-right:none;}
@@ -150,10 +152,13 @@
 .vital-extra{font-size:.6em;color:var(--or-clair);margin-top:1px;}
 .vital--pv{background:rgba(156,58,46,.22);}
 .vital--cristallite .vital-valeur{font-size:.85em;}
+.feuille-vitals--carac{background:var(--bleu-nuit);}
+.feuille-vitals--carac .vital{padding:5px 4px;}
+.feuille-vitals--carac .vital-valeur{font-size:.95em;}
 
 /* ── Onglets du dossier ── */
-.feuille-tabs{display:flex;gap:4px;overflow-x:auto;position:sticky;top:calc(44px + 54px);z-index:4;
-  background:var(--fond2);padding:6px 0 2px;-webkit-overflow-scrolling:touch;}
+.feuille-tabs{display:flex;gap:4px;overflow-x:auto;background:var(--fond2);padding:6px 0 0;
+  -webkit-overflow-scrolling:touch;}
 .feuille-tab{flex:none;background:var(--carte);border:1px solid var(--champ-bord);border-bottom:none;
   border-radius:4px 4px 0 0;padding:8px 14px;font-family:inherit;font-size:.82em;font-variant:small-caps;
   letter-spacing:.03em;color:var(--gris);cursor:pointer;position:relative;top:1px;}
@@ -161,8 +166,18 @@
 .feuille-tab.actif{color:var(--bleu);font-weight:700;background:var(--carte);
   border-color:var(--or);box-shadow:0 -2px 0 var(--or) inset;}
 
+/* ── Compteur (Fragments, etc.) : valeur / max éditables avec +/- ── */
+.fc-champ--compteur{gap:3px;}
+.compteur{display:flex;align-items:center;gap:4px;}
+.compteur-btn{background:var(--champ);border:1px solid var(--champ-bord);color:var(--bleu);
+  width:22px;height:22px;line-height:1;border-radius:2px;cursor:pointer;font-family:inherit;font-weight:700;flex:none;}
+.compteur-btn:hover{border-color:var(--or);}
+.compteur-valeur,.compteur-max{width:44px;text-align:center;flex:none;}
+.compteur-sur{color:var(--gris);}
+
 @media (max-width:640px){
-  .feuille-vitals{top:88px;}
+  .feuille-vitals{flex-wrap:wrap;}
+  .vital--carac{flex-basis:14.28%;}
   .vital-label{font-size:.6em;}
   .vital-valeur{font-size:1em;}
 }

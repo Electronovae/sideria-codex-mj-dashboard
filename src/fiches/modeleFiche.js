@@ -37,6 +37,12 @@ export function nouvelleFiche(nom) {
 
 export const PALIERS_MONTEE = [3, 7, 11, 15, 19, 23, 27, 31, 35, 39]
 
+// Placeholder : liste à compléter avec les vrais peuples/origines de Sidéria.
+// (le menu garde toujours la valeur existante d'un personnage même si elle n'est pas dans cette liste)
+export const ORIGINES = [
+  'Humain', 'Autre',
+]
+
 // Compétences liées à chaque caractéristique, pour l'affichage de la fiche.
 export const COMPETENCES_PAR_CARAC = {
   for: ['athletisme'],
