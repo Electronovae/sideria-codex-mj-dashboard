@@ -38,6 +38,7 @@ export default function Bestiaire() {
   const { univers, maj } = useStudio()
   const [selId, setSelId] = useState(univers.creatures[0]?.id ?? null)
   const [filtre, setFiltre] = useState('toutes') // 'toutes' | 'equilibrees' | 'a-faire'
+  const [triFactionParCode, setTriFactionParCode] = useState(false)
   const creature = univers.creatures.find(c => c.id === selId)
 
   const visibles = univers.creatures.filter(c => {
@@ -66,7 +67,11 @@ export default function Bestiaire() {
       items={visibles} selId={selId} surSel={setSelId} surAjout={ajouter}
       libelleAjout="+ Nouvelle créature"
       tris={{
-        faction: c => (univers.factions.find(f => f.id === c.factionId)?.nom || 'zzz') + '·' + c.nom,
+        faction: c => {
+          const nomFaction = univers.factions.find(f => f.id === c.factionId)?.nom || 'zzz'
+          const sousTri = triFactionParCode ? (c.code || 'zzz') : c.nom
+          return nomFaction + '·' + sousTri
+        },
         nom: c => c.nom,
         code: c => c.code,
         puissance: c => c.facteurPuissance ?? -1,
@@ -87,6 +92,11 @@ export default function Bestiaire() {
             onClick={() => setFiltre('a-faire')}>
             ⚠ À rééquilibrer ({univers.creatures.length - nbEquilibrees})
           </button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, textTransform: 'none', letterSpacing: 0, fontSize: '.8rem', marginTop: 8 }}>
+            <input type="checkbox" style={{ width: 'auto' }} checked={triFactionParCode}
+              onChange={e => setTriFactionParCode(e.target.checked)} />
+            Dans le tri "par faction", trier par code plutôt qu'alphabétiquement
+          </label>
         </div>
       }
       rendu={c => {

@@ -17,7 +17,14 @@ export default function Campagnes() {
   const [selId, setSelId] = useState(null) // null = méta-campagne
   const [tri, setTri] = useState('saison')
   const [sessionSel, setSessionSel] = useState(null)
+  const [ouvertes, setOuvertes] = useState(() => new Set())
   const c = univers.campagnes.find(x => x.id === selId)
+
+  const basculerOuverte = (id) => setOuvertes(prev => {
+    const n = new Set(prev)
+    if (n.has(id)) n.delete(id); else n.add(id)
+    return n
+  })
 
   const ajouter = () => {
     const n = nouvelleCampagne()
@@ -59,41 +66,39 @@ export default function Campagnes() {
             return fa.localeCompare(fb, 'fr')
           }
           return (a.saison - b.saison) || a.titre.localeCompare(b.titre, 'fr')
-        }).map(x => {
-          const f = univers.factions.find(ff => ff.id === x.factionId)
-          return (
-            <div key={x.id} className={'item' + (x.id === selId ? ' sel' : '')} onClick={() => { setSelId(x.id); setSessionSel(null) }}>
-              <span className="rond" style={{ background: f?.couleur || '#888' }} />
-              <span>{x.code ? x.code + ' · ' : ''}{x.titre}<div className="sous">Saison {x.saison} · {f?.nom || 'faction ?'}</div></span>
-            </div>
-          )
-        }).reduce((acc, el, i) => {
-          const camp = [...univers.campagnes].sort((a, b) => {
-            if (tri === 'titre') return a.titre.localeCompare(b.titre, 'fr')
-            if (tri === 'faction') {
-              const fa = univers.factions.find(f => f.id === a.factionId)?.nom || 'zzz'
-              const fb = univers.factions.find(f => f.id === b.factionId)?.nom || 'zzz'
-              return fa.localeCompare(fb, 'fr')
-            }
-            return (a.saison - b.saison) || a.titre.localeCompare(b.titre, 'fr')
-          })[i]
-          acc.push(el)
+        }).map(camp => {
+          const f = univers.factions.find(ff => ff.id === camp.factionId)
+          const depliee = ouvertes.has(camp.id)
           const sessionsTriees = [...camp.sessions].sort((a, b) => {
             if (a.date != null && b.date != null) return a.date - b.date
             if (a.date != null) return -1
             if (b.date != null) return 1
             return (a.code || '').localeCompare(b.code || '')
           })
-          sessionsTriees.forEach(s => acc.push(
-            <div key={s.id} className={'item' + (sessionSel === s.id ? ' sel' : '')}
-              style={{ paddingLeft: 34, fontSize: '.82rem' }}
-              onClick={() => { setSelId(camp.id); setSessionSel(s.id) }}>
-              <span style={{ color: 'var(--gris)' }}>└</span>
-              <span><IconeStatutSession statut={s.statut} />{s.code ? s.code + ' · ' : ''}{s.titre}
-                <div className="sous">{s.date != null ? fmtDate(s.date) : 'sans date'}</div></span>
-            </div>))
-          return acc
-        }, [])}
+          return (
+            <React.Fragment key={camp.id}>
+              <div className={'item' + (camp.id === selId && !sessionSel ? ' sel' : '')}
+                onClick={() => { setSelId(camp.id); setSessionSel(null); basculerOuverte(camp.id) }}>
+                <span style={{ color: 'var(--gris)', width: 14, display: 'inline-block' }}>{depliee ? '▾' : '▸'}</span>
+                <span className="rond" style={{ background: f?.couleur || '#888' }} />
+                <span>{camp.code ? camp.code + ' · ' : ''}{camp.titre}
+                  <div className="sous">Saison {camp.saison} · {f?.nom || 'faction ?'} · {camp.sessions.length} session(s)</div></span>
+              </div>
+              {depliee && sessionsTriees.map(s => (
+                <div key={s.id} className={'item' + (sessionSel === s.id ? ' sel' : '')}
+                  style={{ paddingLeft: 34, fontSize: '.82rem' }}
+                  onClick={(e) => { e.stopPropagation(); setSelId(camp.id); setSessionSel(s.id) }}>
+                  <span style={{ color: 'var(--gris)' }}>└</span>
+                  <span><IconeStatutSession statut={s.statut} />{s.code ? s.code + ' · ' : ''}{s.titre}
+                    <div className="sous">{s.date != null ? fmtDate(s.date) : 'sans date'}</div></span>
+                </div>
+              ))}
+              {depliee && sessionsTriees.length === 0 && (
+                <div className="sous" style={{ paddingLeft: 34, paddingBottom: 6 }}>Aucune session pour l'instant.</div>
+              )}
+            </React.Fragment>
+          )
+        })}
       </div>
       <div className="fiche">
         {selId === null ? <Meta meta={univers.meta} modifier={modifierMeta} />
