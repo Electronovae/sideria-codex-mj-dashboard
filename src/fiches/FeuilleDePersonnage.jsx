@@ -21,6 +21,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
     televerserPortrait, televersement,
   } = useFiche(id)
   const [confirmationSuppression, setConfirmationSuppression] = React.useState(false)
+  const [ongletActif, setOngletActif] = React.useState('identite')
 
   if (chargement) return <div className="fiches-message">Chargement de la fiche…</div>
   if (erreur) return <div className="fiches-message fiches-message--erreur">{erreur}</div>
@@ -75,6 +76,15 @@ export default function FeuilleDePersonnage({ estMJ }) {
     modifier('montees_caracteristique', copie)
   }
 
+  const ONGLETS = [
+    { id: 'identite', label: 'Identité' },
+    { id: 'carac', label: 'Caractéristiques' },
+    { id: 'combat', label: 'Combat' },
+    { id: 'role', label: 'Rôle-play' },
+    { id: 'sac', label: 'Inventaire' },
+    { id: 'notes', label: 'Notes' },
+  ]
+
   const gererSuppression = async () => {
     const ok = await supprimer()
     if (ok) navigate('..')
@@ -109,7 +119,40 @@ export default function FeuilleDePersonnage({ estMJ }) {
         )}
       </div>
 
-      <section className="feuille-bloc">
+      <div className="feuille-vitals">
+        <div className="vital vital--pv">
+          <span className="vital-label">PV</span>
+          <span className="vital-valeur">{fiche.hp_current ?? 0}<span className="vital-sur">/{fiche.hp_max ?? 0}</span></span>
+          {fiche.hp_temp ? <span className="vital-extra">+{fiche.hp_temp} temp.</span> : null}
+        </div>
+        <div className="vital">
+          <span className="vital-label">GRD</span>
+          <span className="vital-valeur">{fiche.armor_class ?? 10}</span>
+        </div>
+        <div className="vital">
+          <span className="vital-label">Mana</span>
+          <span className="vital-valeur">{fiche.mana_current ?? 0}<span className="vital-sur">/{fiche.mana_max ?? 0}</span></span>
+        </div>
+        <div className="vital">
+          <span className="vital-label">{fiche.ressource_speciale_type || 'Ressource'}</span>
+          <span className="vital-valeur">{fiche.fragments_current ?? 0}<span className="vital-sur">/{fiche.fragments_max ?? 0}</span></span>
+        </div>
+        <div className="vital vital--cristallite">
+          <span className="vital-label">Cristallite</span>
+          <span className="vital-valeur">{ETAPES_CRISTALLITE.find(([code]) => code === String(fiche.cristallite))?.[1] || '—'}</span>
+        </div>
+      </div>
+
+      <nav className="feuille-tabs">
+        {ONGLETS.map(o => (
+          <button key={o.id} className={'feuille-tab' + (ongletActif === o.id ? ' actif' : '')}
+            onClick={() => setOngletActif(o.id)}>
+            {o.label}
+          </button>
+        ))}
+      </nav>
+
+      <section className="feuille-bloc" hidden={ongletActif !== 'identite'}>
         <h2>Identité</h2>
         <div className="feuille-portrait">
           {fiche.avatar_url ? (
@@ -137,9 +180,11 @@ export default function FeuilleDePersonnage({ estMJ }) {
         <p className="feuille-note">Classe et sous-classe ci-dessous. Les features se débloquent avec les Fragments gagnés en jeu.</p>
       </section>
 
-      <SectionClasse fiche={fiche} modifier={modifier} characterId={id} />
+      <div hidden={ongletActif !== 'identite'}>
+        <SectionClasse fiche={fiche} modifier={modifier} characterId={id} />
+      </div>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'carac'}>
         <h2>Caractéristiques</h2>
         <div className="carac-grille">
           {Object.entries(LIBELLES_CARAC).map(([cle, libelle]) => (
@@ -194,7 +239,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'combat'}>
         <h2>Combat &amp; Ressources</h2>
         <div className="fc-grille fc-grille--6">
           {champ('PV Max', 'hp_max', 'number')}
@@ -273,7 +318,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'combat'}>
         <h2>Attaques</h2>
         <table className="feuille-table">
           <thead><tr><th>Nom de l'attaque</th><th>Bonus</th><th>Dégâts / Type / Notes</th><th></th></tr></thead>
@@ -291,7 +336,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
         <button className="fiches-btn fiches-btn--discret" style={{ marginTop: 8 }} onClick={ajouterAttaque}>+ Ajouter une attaque</button>
       </section>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
         <h2>Serment d'Éther</h2>
         <div className="fc-grille fc-grille--3">
           {champJson('Faction', 'oath', 'faction')}
@@ -300,7 +345,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
         <h2>Réputation des factions</h2>
         <div className="fc-grille fc-grille--3">
           {Object.entries(LIBELLES_FACTIONS).map(([cle, libelle]) => (
@@ -316,7 +361,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
         <h2>Traits, idéaux et liens</h2>
         <div className="fc-grille fc-grille--2">
           {champ('Trait de caractère', 'personality_trait')}
@@ -334,7 +379,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'sac'}>
         <h2>Inventaire</h2>
         {inventaire.map((objet, i) => (
           <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
@@ -354,7 +399,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
         </div>
       </section>
 
-      <section className="feuille-bloc">
+      <section className="feuille-bloc" hidden={ongletActif !== 'notes'}>
         <h2>Notes libres</h2>
         <label className="fc-champ fc-champ--zone">
           <span>Notes</span>

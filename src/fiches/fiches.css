@@ -126,3 +126,33 @@
 .classe-feature-cout{background:var(--or);color:var(--bleu-nuit);border-radius:2px;padding:0 5px;font-size:.75em;font-weight:700;}
 .classe-feature-niveau{color:var(--gris);font-size:.75em;font-style:italic;}
 .classe-feature-desc{font-size:.78em;color:var(--gris);margin:2px 0 0 24px;}
+
+/* ── Bandeau vitals : toujours visible, ce qu'on regarde en pleine bagarre ── */
+.feuille-vitals{display:flex;gap:0;background:var(--bleu);border-radius:3px;overflow:hidden;
+  border:1px solid var(--bleu-nuit);position:sticky;top:44px;z-index:4;}
+.vital{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 6px;border-right:1px solid rgba(230,201,106,.25);color:var(--texte-clair);min-width:0;}
+.vital:last-child{border-right:none;}
+.vital-label{font-variant:small-caps;font-size:.66em;letter-spacing:.06em;color:var(--or-clair);margin-bottom:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.vital-valeur{font-size:1.15em;font-weight:700;line-height:1;}
+.vital-sur{font-size:.65em;font-weight:400;color:var(--or-clair);opacity:.8;}
+.vital-extra{font-size:.6em;color:var(--or-clair);margin-top:1px;}
+.vital--pv{background:rgba(156,58,46,.22);}
+.vital--cristallite .vital-valeur{font-size:.85em;}
+
+/* ── Onglets du dossier ── */
+.feuille-tabs{display:flex;gap:4px;overflow-x:auto;position:sticky;top:calc(44px + 54px);z-index:4;
+  background:var(--fond2);padding:6px 0 2px;-webkit-overflow-scrolling:touch;}
+.feuille-tab{flex:none;background:var(--carte);border:1px solid var(--champ-bord);border-bottom:none;
+  border-radius:4px 4px 0 0;padding:8px 14px;font-family:inherit;font-size:.82em;font-variant:small-caps;
+  letter-spacing:.03em;color:var(--gris);cursor:pointer;position:relative;top:1px;}
+.feuille-tab:hover{color:var(--bleu);}
+.feuille-tab.actif{color:var(--bleu);font-weight:700;background:var(--carte);
+  border-color:var(--or);box-shadow:0 -2px 0 var(--or) inset;}
+
+@media (max-width:640px){
+  .feuille-vitals{top:88px;}
+  .vital-label{font-size:.6em;}
+  .vital-valeur{font-size:1em;}
+}
