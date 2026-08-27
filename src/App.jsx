@@ -38,7 +38,7 @@ const MODULES = [
 ]
 const SEPARATEURS_APRES = new Set(['graphe', 'wiki'])
 
-export default function App() {
+export default function App({ deconnexion }) {
   const [univers, setUnivers] = useState(chargerLocal)
   const [onglet, setOnglet] = useState('tableau')
   const [codexCible, setCodexCible] = useState(null)
@@ -149,6 +149,7 @@ export default function App() {
           <button className="btn" onClick={tirer}>Tirer depuis Supabase</button>
         </>}
         {!supabaseActif() && <span className="statut" title="Renseigner .env pour activer">Supabase : non configuré</span>}
+        {deconnexion && <button className="btn" onClick={deconnexion} style={{ marginLeft: 'auto' }}>Se déconnecter</button>}
         <input ref={fichierRef} type="file" accept=".json" style={{ display: 'none' }} onChange={surImport} />
       </header>
       {!scinde && (
