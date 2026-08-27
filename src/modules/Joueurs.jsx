@@ -133,16 +133,6 @@ export default function Joueurs() {
           ))}
           <button className="btn clair" onClick={() => modifier(x => { x.citations.push('') })}>+ citation</button>
 
-          <h3>Réputations par faction (−4 à +4)</h3>
-          {univers.factions.filter(f => f.id !== 'monde').map(f => (
-            <div className="jauge-rep" key={f.id}>
-              <span className="nom"><span style={{ background: f.couleur, display: 'inline-block', width: 9, height: 9, borderRadius: '50%', marginRight: 6 }} />{f.nom}</span>
-              <input type="range" min="-4" max="4" step="1" value={j.reputations[f.id] ?? 0}
-                onChange={e => modifier(x => { x.reputations[f.id] = +e.target.value })} />
-              <span className="val">{(j.reputations[f.id] ?? 0) > 0 ? '+' : ''}{j.reputations[f.id] ?? 0}</span>
-            </div>
-          ))}
-
           <h3>Sessions jouées ({sessionsJouees.length})</h3>
           <p className="aide">Coché depuis l'onglet Méta et Campagnes, fiche de la session. Utile pour retrouver qui était là quand.</p>
           {sessionsJouees.length
