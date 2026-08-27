@@ -14,6 +14,7 @@ import Lieux from './modules/Lieux.jsx'
 import Bestiaire from './modules/Bestiaire.jsx'
 import Recherche from './modules/Recherche.jsx'
 import Rapports from './modules/Rapports.jsx'
+import Wiki from './modules/Wiki.jsx'
 
 export const Ctx = React.createContext(null)
 
@@ -28,13 +29,14 @@ const MODULES = [
   ['lieux', 'Lieux', Lieux],
   ['pnjs', 'PNJ & Arbres', Pnjs],
   ['bestiaire', 'Bestiaire', Bestiaire],
+  ['wiki', 'Classes', Wiki],
   ['campagnes', 'Méta & Campagnes', Campagnes],
   ['evenements', 'Événements', Evenements],
   ['joueurs', 'Joueurs', Joueurs],
   ['frise', 'Frise chronologique', Frise],
   ['rapports', 'Rapports', Rapports],
 ]
-const SEPARATEURS_APRES = new Set(['graphe', 'bestiaire'])
+const SEPARATEURS_APRES = new Set(['graphe', 'wiki'])
 
 export default function App() {
   const [univers, setUnivers] = useState(chargerLocal)
