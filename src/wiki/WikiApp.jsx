@@ -3,11 +3,12 @@ import { useClasses } from '../fiches/useClasses.js'
 import Accueil from './Accueil.jsx'
 import ListeClasses from './ListeClasses.jsx'
 import FicheClasse from './FicheClasse.jsx'
+import PageCaracteristiques from './PageCaracteristiques.jsx'
 import './wiki.css'
 
 export default function WikiApp() {
   const { classes, chargement } = useClasses()
-  const [vue, setVue] = useState('accueil') // 'accueil' | 'classes' | 'fiche'
+  const [vue, setVue] = useState('accueil') // 'accueil' | 'classes' | 'fiche' | 'caracteristiques'
   const [selId, setSelId] = useState(null)
   const classe = classes.find(c => c.id === selId)
 
@@ -33,6 +34,9 @@ export default function WikiApp() {
       )}
       {vue === 'fiche' && classe && (
         <FicheClasse classe={classe} onRetour={() => { setSelId(null); setVue('classes') }} />
+      )}
+      {vue === 'caracteristiques' && (
+        <PageCaracteristiques onRetour={() => setVue('accueil')} />
       )}
     </div>
   )

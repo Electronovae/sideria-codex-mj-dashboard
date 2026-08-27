@@ -8,7 +8,8 @@ const ETAPES = [
   },
   {
     titre: '2. Répartis tes caractéristiques',
-    texte: 'Force, Dextérité, Constitution, Intelligence, Sagesse, Charisme, Éclat. La méthode (points, jet de dés...) est celle que ton MJ utilise à sa table.',
+    texte: 'For, Dex, Con, Int, Sag, Cha et Éclat (7e caractéristique sidérienne). Méthode de lancer détaillée, table des modificateurs et bonus de peuple.',
+    action: 'caracteristiques',
   },
   {
     titre: '3. Note tes techniques de départ',
@@ -57,7 +58,9 @@ export default function Accueil({ onNaviguer }) {
             <p className="wiki-etape-texte">{e.texte}</p>
             {e.action && (
               <button className="wiki-etape-lien" onClick={() => onNaviguer(e.action)}>
-                {e.action === 'fiches' ? 'Aller créer ma fiche →' : 'Voir les classes →'}
+                {e.action === 'fiches' ? 'Aller créer ma fiche →'
+                  : e.action === 'caracteristiques' ? 'Voir la méthode →'
+                  : 'Voir les classes →'}
               </button>
             )}
           </div>
