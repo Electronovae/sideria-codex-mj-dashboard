@@ -1,7 +1,63 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useStudio, Champ, SelecteurFaction, ListeFiche, DateSiderienne, Texte } from './communs.jsx'
 import { nouveauJoueur, nouvelleEntreeHistorique, TYPES_HISTORIQUE } from '../lib/modele.js'
 import { fmtDate } from '../lib/calendrier.js'
+import { supabase } from '../lib/supabase.js'
+
+// Lien de référence vers la vraie fiche technique du joueur (tables Player/characters de Romain,
+// jamais modifiées ici : lecture seule). On stocke juste characterId sur le PJ du Studio.
+let CACHE_CLASSES = null
+function nomClasse(id, subId) {
+  if (!CACHE_CLASSES || !id) return null
+  const c = CACHE_CLASSES.find(x => x.id === id)
+  if (!c) return null
+  const s = subId ? c.subclasses?.find(x => x.id === subId) : null
+  return s ? `${c.nom} · ${s.nom}` : c.nom
+}
+
+function LienFicheJoueur({ joueur, modifier }) {
+  const [options, setOptions] = useState(null)
+  const [personnage, setPersonnage] = useState(undefined) // undefined = pas encore chargé
+
+  useEffect(() => {
+    if (!supabase) return
+    if (!CACHE_CLASSES) {
+      supabase.from('classes_sideria').select('id, nom, subclasses_sideria(id, nom)').then(({ data }) => {
+        CACHE_CLASSES = (data || []).map(c => ({ ...c, subclasses: c.subclasses_sideria }))
+      })
+    }
+    supabase.from('characters').select('id, name, level').order('name').then(({ data }) => setOptions(data || []))
+  }, [])
+
+  useEffect(() => {
+    if (!supabase || !joueur.characterId) { setPersonnage(null); return }
+    supabase.from('characters').select('id, name, level, class_id, subclass_id')
+      .eq('id', joueur.characterId).maybeSingle()
+      .then(({ data }) => setPersonnage(data || null))
+  }, [joueur.characterId])
+
+  if (!supabase) return null
+
+  return (
+    <div className="carte" style={{ marginBottom: 12 }}>
+      <label>Fiche technique liée (classe, niveau, sorts débloqués)</label>
+      <select value={joueur.characterId || ''} onChange={e => modifier(x => { x.characterId = e.target.value || null })}>
+        <option value="">— non liée —</option>
+        {(options || []).map(c => <option key={c.id} value={c.id}>{c.name} (niv. {c.level})</option>)}
+      </select>
+      {joueur.characterId && personnage && (
+        <p className="aide" style={{ marginTop: 6 }}>
+          {personnage.name} · niveau {personnage.level}
+          {nomClasse(personnage.class_id, personnage.subclass_id) ? ` · ${nomClasse(personnage.class_id, personnage.subclass_id)}` : ''}
+          {' · '}<a href="/fiches" target="_blank" rel="noreferrer">ouvrir les fiches ↗</a>
+        </p>
+      )}
+      {joueur.characterId && personnage === null && (
+        <p className="aide" style={{ color: 'var(--rouge)', marginTop: 6 }}>Fiche introuvable (supprimée côté joueur ?).</p>
+      )}
+    </div>
+  )
+}
 
 export default function Joueurs() {
   const { univers, maj } = useStudio()
@@ -45,6 +101,7 @@ export default function Joueurs() {
             <a className="btn clair" href="/fiches" target="_blank" rel="noreferrer"
               style={{ textDecoration: 'none' }}>Fiches personnage ↗</a>
           </div>
+          <LienFicheJoueur joueur={j} modifier={modifier} />
           <div className="rangee">
             <Champ label="Personnage" value={j.personnage} onChange={e => modifier(x => { x.personnage = e.target.value })} />
             <Champ label="Joueur / Joueuse" value={j.joueur} onChange={e => modifier(x => { x.joueur = e.target.value })} />
