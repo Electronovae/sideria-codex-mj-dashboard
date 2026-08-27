@@ -319,7 +319,7 @@ export const ListeFiche = ({ items, selId, surSel, surAjout, rendu, enfants, lib
   return (
     <>
       <div className="liste">
-        <button className="btn clair ajout" onClick={surAjout}>{libelleAjout}</button>
+        {surAjout && <button className="btn clair ajout" onClick={surAjout}>{libelleAjout}</button>}
         {entete}
         {tris && (
           <div style={{ padding: '0 14px 8px' }}>
