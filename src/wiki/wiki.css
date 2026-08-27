@@ -72,3 +72,11 @@
 @media (min-width:720px){
   .wiki-page{padding-top:32px}
 }
+
+.wiki-etapes{display:flex;flex-direction:column;gap:10px}
+.wiki-etape{background:var(--carte);border:1px solid var(--parch-mid);border-radius:6px;padding:12px 14px}
+.wiki-etape-titre{font-weight:600;color:var(--titre);margin-bottom:4px;font-size:.92rem}
+.wiki-etape-texte{font-size:.85rem;line-height:1.55;color:var(--encre);margin-bottom:6px}
+.wiki-etape-lien{background:none;border:none;color:var(--bleu);font-size:.82rem;font-weight:600;
+  padding:0;cursor:pointer;font-family:inherit}
+[data-theme="sombre"] .wiki-etape-lien{color:var(--or-clair)}
