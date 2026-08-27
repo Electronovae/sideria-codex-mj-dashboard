@@ -141,9 +141,7 @@ export default function App({ deconnexion }) {
           {theme === 'clair' ? 'Mode sombre' : 'Mode clair'}</button>
         <button className={'btn' + (scinde ? ' plein' : '')} onClick={() => setScinde(v => !v)}>
           {scinde ? '◨ Quitter l\u2019écran scindé' : '◨ Écran scindé'}</button>
-        <button className="btn" onClick={() => exporterJson(univers)}>Exporter JSON</button>
-        <button className="btn" onClick={() => fichierRef.current.click()}>Importer JSON</button>
-        <button className="btn" onClick={() => exporterObsidian(univers)}>Export Obsidian (.zip)</button>
+        <a className="btn" href="/" target="_blank" rel="noopener noreferrer">Wiki des classes ↗</a>
         {supabaseActif() && <>
           <button className="btn plein" onClick={pousser}>Pousser vers Supabase</button>
           <button className="btn" onClick={tirer}>Tirer depuis Supabase</button>
