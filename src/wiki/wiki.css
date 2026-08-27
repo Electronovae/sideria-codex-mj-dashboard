@@ -1,0 +1,74 @@
+.wiki-app{min-height:100vh;background:var(--parch);color:var(--encre);
+  font:15px/1.6 "Palatino Linotype",Palatino,"Book Antiqua",serif}
+
+.wiki-page{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+
+.wiki-retour{background:none;border:none;color:var(--bleu);font-size:.85rem;
+  padding:8px 0;margin-bottom:4px;cursor:pointer;font-family:inherit}
+[data-theme="sombre"] .wiki-retour{color:var(--or-clair)}
+
+.wiki-entete h1{font-size:1.5rem;color:var(--titre);font-variant:small-caps;
+  letter-spacing:.03em;margin-bottom:6px}
+.wiki-sous-titre{color:var(--gris);font-size:.85rem;margin-bottom:14px}
+
+.wiki-recherche{width:100%;padding:11px 14px;font-size:1rem;border:1px solid var(--champ-bord);
+  border-radius:8px;background:var(--champ);color:var(--encre);margin-bottom:18px}
+.wiki-recherche:focus{outline:2px solid var(--or);outline-offset:-1px}
+
+.wiki-liste-classes{display:flex;flex-direction:column;gap:10px}
+
+.wiki-carte-classe{display:block;width:100%;text-align:left;background:var(--carte);
+  border:1px solid var(--parch-mid);border-left:4px solid var(--or);border-radius:6px;
+  padding:14px 16px;font-family:inherit;color:inherit;cursor:pointer}
+.wiki-carte-classe:active{background:rgba(201,162,39,.12)}
+
+.wiki-carte-tete{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.wiki-pastille{width:12px;height:12px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.25)}
+.wiki-carte-nom{font-size:1.05rem;font-weight:600;color:var(--titre)}
+.wiki-libelle-discret{font-size:.72rem;color:var(--gris);text-transform:uppercase;letter-spacing:.04em}
+
+.wiki-carte-accroche{font-size:.88rem;color:var(--encre);line-height:1.5;margin-bottom:10px}
+
+.wiki-tags{display:flex;flex-wrap:wrap;gap:6px}
+.wiki-tag{font-size:.72rem;padding:3px 9px;border-radius:20px;
+  background:rgba(201,162,39,.14);color:var(--encre);border:1px solid var(--parch-mid)}
+
+.wiki-vide{padding:40px 0;text-align:center;color:var(--gris);font-style:italic}
+
+.wiki-citation{border-left:3px solid var(--or);padding:4px 10px;font-style:italic;
+  color:var(--gris);margin:6px 0 10px}
+
+.wiki-corps{margin-top:6px}
+.wiki-description{margin:0 0 14px;line-height:1.65}
+
+.wiki-encart{background:var(--carte);border:1px solid var(--parch-mid);border-left:4px solid var(--or-clair);
+  border-radius:6px;padding:12px 14px;margin-bottom:10px}
+.wiki-encart-titre{font-weight:600;color:var(--titre);margin-bottom:4px;font-size:.92rem}
+
+.wiki-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.wiki-stat{background:var(--fond2);border-radius:6px;padding:8px 10px}
+.wiki-stat-label{font-size:.7rem;color:var(--gris);text-transform:uppercase;letter-spacing:.03em}
+.wiki-stat-valeur{font-size:.88rem;margin-top:2px}
+
+.wiki-onglets{display:flex;gap:4px;border-bottom:2px solid var(--parch-mid);margin:16px 0 14px}
+.wiki-onglet{flex:1;background:none;border:none;padding:10px 4px;font-size:.85rem;font-weight:600;
+  color:var(--gris);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit}
+.wiki-onglet.actif{color:var(--bleu);border-bottom-color:var(--or)}
+[data-theme="sombre"] .wiki-onglet.actif{color:var(--or-clair)}
+
+.wiki-sous-titre-section{font-size:1rem;color:var(--titre);margin:20px 0 10px;
+  border-bottom:1px solid var(--parch-mid);padding-bottom:4px}
+
+.wiki-feature{background:var(--carte);border:1px solid var(--parch-mid);border-radius:6px;
+  padding:12px 14px;margin-bottom:8px}
+.wiki-feature-nom{font-weight:600;color:var(--titre);margin-bottom:4px;font-size:.92rem}
+.wiki-feature-texte{font-size:.86rem;line-height:1.55;color:var(--encre)}
+
+.wiki-pastilles-sous-classes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.wiki-pastille-sous-classe{font-size:.78rem;padding:6px 12px;border-radius:20px;
+  background:var(--fond2);color:var(--gris);border:1px solid var(--parch-mid);cursor:pointer}
+.wiki-pastille-sous-classe.actif{background:var(--or);color:var(--bleu-nuit);border-color:var(--or);font-weight:600}
+
+@media (min-width:720px){
+  .wiki-page{padding-top:32px}
+}
