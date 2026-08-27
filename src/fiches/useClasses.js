@@ -7,9 +7,9 @@ export function useClasses() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('classes_sideria').select('id, nom, de_vie, jauges, fragments_cadence, ordre, saving_throws').order('ordre'),
-      supabase.from('subclasses_sideria').select('id, class_id, nom'),
-      supabase.from('features_sideria').select('id, class_id, subclass_id, nom, cout_fragments, niveau_requis, description, ordre').order('ordre'),
+      supabase.from('classes_sideria').select('id, nom, de_vie, jauges, fragments_cadence, ordre, saving_throws, flavour, description, description_extra, base, legendaire, multiclassage, subclasses_label').order('ordre'),
+      supabase.from('subclasses_sideria').select('id, class_id, nom, tagline, flavour, mechanics'),
+      supabase.from('features_sideria').select('id, class_id, subclass_id, nom, cout_fragments, niveau_requis, description, ordre, texte_complet').order('ordre'),
     ]).then(([rc, rs, rf]) => {
       const cls = rc.data ?? []
       const subs = rs.data ?? []
