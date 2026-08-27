@@ -26,6 +26,7 @@ export const nouveauJoueur = () => ({
   faction: null, superieurId: null, notes: '', secrets: '', citations: [],
   reputations: {},      // factionId -> -4..+4
   historique: [],       // { id, type, date, pnjId, lieuId, resume, effet }
+  characterId: null,    // uuid vers characters.id (fiche technique réelle du joueur), lecture seule
 })
 
 export const TYPES_HISTORIQUE = ['interaction', 'combat', 'lieu', 'révélation', 'autre']
