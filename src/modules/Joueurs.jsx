@@ -17,7 +17,6 @@ function nomClasse(id, subId) {
 
 function LienFicheJoueur({ joueur, modifier }) {
   const [options, setOptions] = useState(null)
-  const [personnage, setPersonnage] = useState(undefined) // undefined = pas encore chargé
 
   useEffect(() => {
     if (!supabase) return
@@ -29,32 +28,39 @@ function LienFicheJoueur({ joueur, modifier }) {
     supabase.from('characters').select('id, name, level').order('name').then(({ data }) => setOptions(data || []))
   }, [])
 
+  // Dès qu'un characterId est renseigné, on synchronise personnage/joueur/classe/niveau depuis
+  // la vraie fiche : le reste de l'appli (Codex, Graphe, Frise, Recherche, export Obsidian, Supabase)
+  // continue de lire ces champs normalement, sans rien savoir du lien.
   useEffect(() => {
-    if (!supabase || !joueur.characterId) { setPersonnage(null); return }
-    supabase.from('characters').select('id, name, level, class_id, subclass_id')
-      .eq('id', joueur.characterId).maybeSingle()
-      .then(({ data }) => setPersonnage(data || null))
+    if (!supabase || !joueur.characterId) return
+    let annule = false
+    Promise.all([
+      supabase.from('characters').select('name, level, class_id, subclass_id').eq('id', joueur.characterId).maybeSingle(),
+      supabase.from('Player').select('name_player').eq('character_id', joueur.characterId).maybeSingle(),
+    ]).then(([{ data: perso }, { data: pl }]) => {
+      if (annule || !perso) return
+      modifier(x => {
+        x.personnage = perso.name
+        x.niveau = perso.level
+        x.classe = nomClasse(perso.class_id, perso.subclass_id) || x.classe
+        if (pl?.name_player) x.joueur = pl.name_player
+      })
+    })
+    return () => { annule = true }
   }, [joueur.characterId])
 
   if (!supabase) return null
 
   return (
-    <div className="carte" style={{ marginBottom: 12 }}>
-      <label>Fiche technique liée (classe, niveau, sorts débloqués)</label>
+    <div className="carte" style={{ marginBottom: 16 }}>
+      <label>Fiche technique liée</label>
       <select value={joueur.characterId || ''} onChange={e => modifier(x => { x.characterId = e.target.value || null })}>
         <option value="">— non liée —</option>
         {(options || []).map(c => <option key={c.id} value={c.id}>{c.name} (niv. {c.level})</option>)}
       </select>
-      {joueur.characterId && personnage && (
-        <p className="aide" style={{ marginTop: 6 }}>
-          {personnage.name} · niveau {personnage.level}
-          {nomClasse(personnage.class_id, personnage.subclass_id) ? ` · ${nomClasse(personnage.class_id, personnage.subclass_id)}` : ''}
-          {' · '}<a href="/fiches" target="_blank" rel="noreferrer">ouvrir les fiches ↗</a>
-        </p>
-      )}
-      {joueur.characterId && personnage === null && (
-        <p className="aide" style={{ color: 'var(--rouge)', marginTop: 6 }}>Fiche introuvable (supprimée côté joueur ?).</p>
-      )}
+      {joueur.characterId
+        ? <p className="aide" style={{ marginTop: 6 }}>Synchronisé depuis la fiche du joueur. <a href="/fiches" target="_blank" rel="noreferrer">ouvrir les fiches ↗</a></p>
+        : <p className="aide" style={{ marginTop: 6 }}>Sélectionne la fiche du joueur pour remplir automatiquement son nom, sa classe et son niveau.</p>}
     </div>
   )
 }
@@ -103,13 +109,6 @@ export default function Joueurs() {
           </div>
           <LienFicheJoueur joueur={j} modifier={modifier} />
           <div className="rangee">
-            <Champ label="Personnage" value={j.personnage} onChange={e => modifier(x => { x.personnage = e.target.value })} />
-            <Champ label="Joueur / Joueuse" value={j.joueur} onChange={e => modifier(x => { x.joueur = e.target.value })} />
-          </div>
-          <div className="rangee">
-            <Champ label="Classe" value={j.classe} onChange={e => modifier(x => { x.classe = e.target.value })} />
-            <Champ label="Niveau" type="number" min="1" max="40" value={j.niveau}
-              onChange={e => modifier(x => { x.niveau = +e.target.value })} />
             <span><label>Faction actuelle</label>
               <SelecteurFaction valeur={j.faction} surChange={v => modifier(x => { x.faction = v })} /></span>
           </div>
