@@ -53,6 +53,21 @@ export default function App({ deconnexion }) {
   const [statut, setStatut] = useState('local')
   const fichierRef = useRef(null)
   const minuteur = useRef(null)
+  const [navOuvert, setNavOuvert] = useState(false)
+  const [menuOuvert, setMenuOuvert] = useState(false)
+  const [listeOuverte, setListeOuverte] = useState(false)
+  const [aListe, setAListe] = useState(false)
+  const principalRef = useRef(null)
+
+  // Sur mobile, la nav et le menu d'actions se referment au changement d'onglet ;
+  // on détecte aussi si le module affiché a une colonne .liste pour proposer le bouton bascule.
+  useEffect(() => {
+    setNavOuvert(false); setMenuOuvert(false); setListeOuverte(false)
+    const id = requestAnimationFrame(() => {
+      setAListe(!!principalRef.current?.querySelector('.liste'))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [onglet, scinde])
 
   // Autosave local (800 ms) puis Supabase (30 s) après la dernière modification.
   const minuteurSb = useRef(null)
@@ -134,24 +149,42 @@ export default function App({ deconnexion }) {
   return (
     <Ctx.Provider value={ctx}>
       <header>
+        <button className="btn bouton-burger" aria-label="Ouvrir la navigation" onClick={() => setNavOuvert(v => !v)}>☰</button>
         <h1>Sidéria Studio</h1>
-        <span className="statut">sauvegarde : {statut}</span>
+        <span className="statut cacher-mobile">sauvegarde : {statut}</span>
         <span className="sep" />
-        <button className="btn" onClick={() => setTheme(th => th === 'clair' ? 'sombre' : 'clair')}>
-          {theme === 'clair' ? 'Mode sombre' : 'Mode clair'}</button>
-        <button className={'btn' + (scinde ? ' plein' : '')} onClick={() => setScinde(v => !v)}>
-          {scinde ? '◨ Quitter l\u2019écran scindé' : '◨ Écran scindé'}</button>
-        <a className="btn" href="/" target="_blank" rel="noopener noreferrer">Wiki des classes ↗</a>
-        {supabaseActif() && <>
-          <button className="btn plein" onClick={pousser}>Pousser vers Supabase</button>
-          <button className="btn" onClick={tirer}>Tirer depuis Supabase</button>
-        </>}
-        {!supabaseActif() && <span className="statut" title="Renseigner .env pour activer">Supabase : non configuré</span>}
-        {deconnexion && <button className="btn" onClick={deconnexion} style={{ marginLeft: 'auto' }}>Se déconnecter</button>}
+        <div className="actions-entete cacher-mobile">
+          <button className="btn" onClick={() => setTheme(th => th === 'clair' ? 'sombre' : 'clair')}>
+            {theme === 'clair' ? 'Mode sombre' : 'Mode clair'}</button>
+          <button className={'btn' + (scinde ? ' plein' : '')} onClick={() => setScinde(v => !v)}>
+            {scinde ? '◨ Quitter l\u2019écran scindé' : '◨ Écran scindé'}</button>
+          <a className="btn" href="/" target="_blank" rel="noopener noreferrer">Wiki des classes ↗</a>
+          {supabaseActif() && <>
+            <button className="btn plein" onClick={pousser}>Pousser vers Supabase</button>
+            <button className="btn" onClick={tirer}>Tirer depuis Supabase</button>
+          </>}
+          {!supabaseActif() && <span className="statut" title="Renseigner .env pour activer">Supabase : non configuré</span>}
+        </div>
+        {deconnexion && <button className="btn cacher-mobile" onClick={deconnexion}>Se déconnecter</button>}
+        <button className="btn afficher-mobile bouton-menu-mobile" aria-label="Plus d'actions" onClick={() => setMenuOuvert(v => !v)}>⋮</button>
         <input ref={fichierRef} type="file" accept=".json" style={{ display: 'none' }} onChange={surImport} />
       </header>
+      {menuOuvert && (
+        <div className="menu-mobile-deroulant afficher-mobile">
+          <span className="statut">sauvegarde : {statut}</span>
+          <button className="btn" onClick={() => setTheme(th => th === 'clair' ? 'sombre' : 'clair')}>
+            {theme === 'clair' ? 'Mode sombre' : 'Mode clair'}</button>
+          <a className="btn" href="/" target="_blank" rel="noopener noreferrer">Wiki des classes ↗</a>
+          {supabaseActif() && <>
+            <button className="btn plein" onClick={pousser}>Pousser vers Supabase</button>
+            <button className="btn" onClick={tirer}>Tirer depuis Supabase</button>
+          </>}
+          {!supabaseActif() && <span className="statut" title="Renseigner .env pour activer">Supabase : non configuré</span>}
+          {deconnexion && <button className="btn danger" onClick={deconnexion}>Se déconnecter</button>}
+        </div>
+      )}
       {!scinde && (
-        <nav>
+        <nav className={navOuvert ? 'ouvert' : ''}>
           {MODULES.map(([id, titre]) => (
             <React.Fragment key={id}>
               <button className={onglet === id ? 'actif' : ''} onClick={() => setOnglet(id)}>{titre}</button>
@@ -160,10 +193,15 @@ export default function App({ deconnexion }) {
           ))}
         </nav>
       )}
+      {aListe && !scinde && (
+        <button className="btn bouton-toggle-liste afficher-mobile" onClick={() => setListeOuverte(v => !v)}>
+          {listeOuverte ? '✕ Fermer la liste' : '☰ Voir la liste'}
+        </button>
+      )}
       {!scinde ? (
-        <main><Module /></main>
+        <main ref={principalRef} className={listeOuverte ? 'liste-ouverte' : ''}><Module /></main>
       ) : (
-        <main className="scinde">
+        <main ref={principalRef} className="scinde">
           <section className="panneau">
             <div className="barre-panneau">
               <select value={onglet} onChange={e => setOnglet(e.target.value)}>
