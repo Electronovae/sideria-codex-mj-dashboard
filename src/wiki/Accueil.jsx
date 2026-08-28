@@ -40,7 +40,7 @@ const SECTIONS = [
   { titre: 'Équipement', accroche: 'Armes, armures, outils, consommables et services courants.', action: 'equipement' },
   { titre: 'Jouer à Sidéria', accroche: 'Caractéristiques, compétences, combat, aventure, montures et marchandises.', action: 'jouer' },
   { titre: 'Progression & multiclassage', accroche: "XP, Fragments de Progression, Indice de Discipline.", action: 'progression' },
-  { titre: 'Sorts', accroche: '86 sorts répartis en 11 disciplines. Arrive bientôt.', action: null },
+  { titre: 'Sorts', accroche: '339 sorts répartis en 11 disciplines.', action: 'sorts' },
 ]
 
 export default function Accueil({ onNaviguer }) {

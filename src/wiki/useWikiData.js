@@ -60,3 +60,23 @@ export function useRegles() {
   }, [])
   return { regles, chargement }
 }
+
+export function useDisciplinesSorts() {
+  const [disciplines, setDisciplines] = useState([])
+  const [chargement, setChargement] = useState(true)
+  useEffect(() => {
+    supabase.from('disciplines_sorts_sideria').select('*').order('ordre')
+      .then(({ data }) => { setDisciplines(data ?? []); setChargement(false) })
+  }, [])
+  return { disciplines, chargement }
+}
+
+export function useSorts() {
+  const [sorts, setSorts] = useState([])
+  const [chargement, setChargement] = useState(true)
+  useEffect(() => {
+    supabase.from('sorts_sideria').select('*').order('ordre')
+      .then(({ data }) => { setSorts(data ?? []); setChargement(false) })
+  }, [])
+  return { sorts, chargement }
+}

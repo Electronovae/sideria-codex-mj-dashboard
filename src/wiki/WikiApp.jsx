@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useClasses } from '../fiches/useClasses.js'
-import { usePeuples, useHistoriques, useDons, useObjets, useServices, useRegles } from './useWikiData.js'
+import { usePeuples, useHistoriques, useDons, useObjets, useServices, useRegles, useDisciplinesSorts, useSorts } from './useWikiData.js'
 import Accueil from './Accueil.jsx'
 import ListeClasses from './ListeClasses.jsx'
 import FicheClasse from './FicheClasse.jsx'
@@ -10,6 +10,7 @@ import Dons from './Dons.jsx'
 import Equipement from './Equipement.jsx'
 import Progression from './Progression.jsx'
 import JouerASideria from './JouerASideria.jsx'
+import Sorts from './Sorts.jsx'
 import './wiki.css'
 
 export default function WikiApp() {
@@ -20,6 +21,8 @@ export default function WikiApp() {
   const { objets, chargement: chargementObjets } = useObjets()
   const { services, chargement: chargementServices } = useServices()
   const { regles, chargement: chargementRegles } = useRegles()
+  const { disciplines, chargement: chargementDisciplines } = useDisciplinesSorts()
+  const { sorts, chargement: chargementSorts } = useSorts()
   const [vue, setVue] = useState('accueil') // 'accueil' | 'classes' | 'fiche' | 'caracteristiques' | 'origines' | 'dons' | 'equipement' | 'progression'
   const [selId, setSelId] = useState(null)
   const classe = classes.find(c => c.id === selId)
@@ -66,6 +69,10 @@ export default function WikiApp() {
       )}
       {vue === 'jouer' && (
         <JouerASideria regles={regles} chargement={chargementRegles} onRetour={() => setVue('accueil')} />
+      )}
+      {vue === 'sorts' && (
+        <Sorts disciplines={disciplines} sorts={sorts}
+          chargement={chargementDisciplines || chargementSorts} onRetour={() => setVue('accueil')} />
       )}
     </div>
   )
