@@ -9,6 +9,7 @@ import Origines from './Origines.jsx'
 import Dons from './Dons.jsx'
 import Equipement from './Equipement.jsx'
 import Progression from './Progression.jsx'
+import JouerASideria from './JouerASideria.jsx'
 import './wiki.css'
 
 export default function WikiApp() {
@@ -62,6 +63,9 @@ export default function WikiApp() {
       )}
       {vue === 'progression' && (
         <Progression regles={regles} chargement={chargementRegles} onRetour={() => setVue('accueil')} />
+      )}
+      {vue === 'jouer' && (
+        <JouerASideria regles={regles} chargement={chargementRegles} onRetour={() => setVue('accueil')} />
       )}
     </div>
   )

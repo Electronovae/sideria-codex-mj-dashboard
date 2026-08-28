@@ -19,7 +19,7 @@ const ETAPES = [
   {
     titre: '4. Choisis ton équipement',
     texte: "Armes et armures autorisées dépendent de ta classe : c'est indiqué dans le bloc \u00ab Bases \u00bb en haut de chaque fiche de classe.",
-    action: 'classes',
+    action: 'equipement',
   },
   {
     titre: '5. Défini ton personnage',
@@ -31,6 +31,16 @@ const ETAPES = [
     texte: 'Une fois ces choix faits, direction les fiches de personnage pour tout renseigner officiellement.',
     action: 'fiches',
   },
+]
+
+const SECTIONS = [
+  { titre: 'Parcourir les 16 classes', accroche: 'Techniques complètes, spécialisations, capacités légendaires.', action: 'classes' },
+  { titre: 'Origines', accroche: 'Peuples et historiques : bonus de départ, compétences, capacités narratives.', action: 'origines' },
+  { titre: 'Dons', accroche: 'Génériques, de maîtrise ou de classe. Acquis aux niveaux 1, 10, 20, 30 et 40.', action: 'dons' },
+  { titre: 'Équipement', accroche: 'Armes, armures, outils, consommables et services courants.', action: 'equipement' },
+  { titre: 'Jouer à Sidéria', accroche: 'Caractéristiques, compétences, combat, aventure, montures et marchandises.', action: 'jouer' },
+  { titre: 'Progression & multiclassage', accroche: "XP, Fragments de Progression, Indice de Discipline.", action: 'progression' },
+  { titre: 'Sorts', accroche: '86 sorts répartis en 11 disciplines. Arrive bientôt.', action: null },
 ]
 
 export default function Accueil({ onNaviguer }) {
@@ -51,31 +61,28 @@ export default function Accueil({ onNaviguer }) {
         </button>
       </div>
 
-      <button className="wiki-carte-classe" style={{ marginBottom: 20, marginTop: 20 }} onClick={() => onNaviguer('classes')}>
-        <div className="wiki-carte-tete">
-          <span className="wiki-pastille" style={{ background: 'var(--or)' }} />
-          <span className="wiki-carte-nom">Parcourir les 16 classes</span>
-        </div>
-        <p className="wiki-carte-accroche">Techniques complètes, spécialisations, capacités légendaires.</p>
-      </button>
+      <p className="wiki-description" style={{ marginTop: 16, marginBottom: 22 }}>
+        Sidéria est une cité tentaculaire où l'Éther irrigue tout : l'industrie, la magie, les inégalités
+        entre l'Arcadie et les Bas-Fonds. Ce codex rassemble tout ce qu'il te faut pour y créer et jouer
+        un personnage — classes, origines, dons, équipement et règles de base.
+      </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
-        <button className="wiki-carte-classe" onClick={() => onNaviguer('origines')}>
-          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Origines</span>
-          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>Peuples & historiques</p>
-        </button>
-        <button className="wiki-carte-classe" onClick={() => onNaviguer('dons')}>
-          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Dons</span>
-          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>Génériques, maîtrise, classe</p>
-        </button>
-        <button className="wiki-carte-classe" onClick={() => onNaviguer('equipement')}>
-          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Équipement</span>
-          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>Armes, armures, services</p>
-        </button>
-        <button className="wiki-carte-classe" onClick={() => onNaviguer('progression')}>
-          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Progression</span>
-          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>XP, Fragments, multiclassage</p>
-        </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+        {SECTIONS.map(s => (
+          <button
+            key={s.titre}
+            className="wiki-carte-classe"
+            disabled={!s.action}
+            style={!s.action ? { opacity: .55, cursor: 'default' } : undefined}
+            onClick={() => s.action && onNaviguer(s.action)}
+          >
+            <div className="wiki-carte-tete">
+              <span className="wiki-pastille" style={{ background: 'var(--or)' }} />
+              <span className="wiki-carte-nom">{s.titre}</span>
+            </div>
+            <p className="wiki-carte-accroche" style={{ marginBottom: 0 }}>{s.accroche}</p>
+          </button>
+        ))}
       </div>
 
       <h2 className="wiki-sous-titre-section" style={{ marginTop: 0 }}>Créer un personnage</h2>
@@ -89,6 +96,7 @@ export default function Accueil({ onNaviguer }) {
                 {e.action === 'fiches' ? 'Aller créer ma fiche →'
                   : e.action === 'caracteristiques' ? 'Voir la méthode →'
                   : e.action === 'origines' ? 'Voir les origines →'
+                  : e.action === 'equipement' ? "Voir l'équipement →"
                   : 'Voir les classes →'}
               </button>
             )}

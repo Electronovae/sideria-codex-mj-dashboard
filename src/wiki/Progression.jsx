@@ -46,6 +46,8 @@ export default function Progression({ regles, chargement, onRetour }) {
     return <div className="wiki-page"><p className="wiki-vide">Chargement…</p></div>
   }
 
+  const sections = regles.filter(r => !r.section.startsWith('jouer_'))
+
   return (
     <div className="wiki-page">
       <button className="wiki-retour" onClick={onRetour}>← Accueil</button>
@@ -54,7 +56,7 @@ export default function Progression({ regles, chargement, onRetour }) {
         <p className="wiki-sous-titre">Environ une session par niveau. Alternative simple : monter d'un niveau par session.</p>
       </div>
 
-      {regles.map((r, i) => (
+      {sections.map((r, i) => (
         <div key={r.section}>
           <h2 className="wiki-sous-titre-section" style={{ marginTop: i === 0 ? 0 : 20 }}>{r.titre}</h2>
           {r.contenu && (
