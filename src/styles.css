@@ -100,3 +100,51 @@ table.grille input,table.grille select{padding:3px 5px;font-size:.82rem}
 .sous-titre-liste{padding:8px 14px 2px;font:700 10px var(--mono);letter-spacing:.15em;
   color:var(--gris);text-transform:uppercase}
 .citation{border-left:3px solid var(--or);padding:4px 10px;font-style:italic;margin:5px 0}
+
+/* ---------- Mobile ---------- */
+.bouton-burger,.bouton-menu-mobile{display:none}
+.afficher-mobile{display:none}
+.menu-mobile-deroulant{display:none}
+
+@media (max-width:760px){
+  .cacher-mobile{display:none !important}
+  .afficher-mobile{display:flex}
+  .bouton-burger,.bouton-menu-mobile{display:inline-flex;align-items:center;justify-content:center;
+    padding:4px 10px;font-size:1.1rem;line-height:1}
+  header{padding:8px 10px;gap:8px}
+  header h1{font-size:.92rem;flex:1}
+  .sep{flex:0}
+  .actions-entete{display:none}
+  .menu-mobile-deroulant{display:flex;flex-direction:column;gap:8px;background:var(--bleu-nuit);
+    padding:12px;border-bottom:3px solid var(--or)}
+  .menu-mobile-deroulant .btn{width:100%;text-align:center;padding:9px 12px}
+
+  nav{display:none}
+  nav.ouvert{display:flex;flex-direction:column;gap:0;padding:6px 0;max-height:60vh;overflow-y:auto}
+  nav.ouvert button{width:100%;text-align:left;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+  nav .nav-sep{display:none}
+
+  .bouton-toggle-liste{width:100%;border-radius:0;padding:9px;justify-content:center;
+    border-width:0 0 1px;background:var(--fond2)}
+
+  main{flex-direction:column}
+  main.scinde{display:flex;flex-direction:column}
+  main.scinde .panneau{flex:none;height:50vh}
+  main.scinde .panneau:first-child{border-right:none;border-bottom:2px solid var(--parch-mid)}
+
+  /* Pattern liste + fiche : un seul des deux visible à la fois sur mobile. */
+  main:not(.scinde) .liste{display:none}
+  main:not(.scinde).liste-ouverte .liste{display:block;width:100%;height:100%;overflow-y:auto}
+  main:not(.scinde).liste-ouverte .fiche{display:none}
+  main:not(.scinde) .fiche{width:100%}
+
+  .fiche{padding:14px 14px 40px}
+  .tableau-bord{grid-template-columns:1fr}
+  .rangee{flex-direction:column;gap:0}
+  .rangee .etroit{flex:none}
+  .jauge-rep{flex-wrap:wrap}
+  .jauge-rep .nom{width:100%}
+  .filtres-bestiaire{padding:0 10px 10px}
+  table.grille{display:block;overflow-x:auto;white-space:nowrap}
+  .liste{width:100%}
+}
