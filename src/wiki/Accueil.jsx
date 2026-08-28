@@ -24,6 +24,7 @@ const ETAPES = [
   {
     titre: '5. Défini ton personnage',
     texte: "Origine, faction, traits de personnalité : ce qui rendra ton personnage vivant à la table.",
+    action: 'origines',
   },
   {
     titre: '6. Crée ta fiche',
@@ -35,20 +36,47 @@ const ETAPES = [
 export default function Accueil({ onNaviguer }) {
   return (
     <div className="wiki-page">
-      <div className="wiki-entete">
-        <h1>Codex de Sidéria</h1>
-        <p className="wiki-sous-titre">
-          Le manuel des joueurs, en version consultable. Plus besoin d'ouvrir le PDF.
-        </p>
+      <div className="wiki-entete" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <div>
+          <h1>Codex de Sidéria</h1>
+          <p className="wiki-sous-titre" style={{ marginBottom: 0 }}>
+            Le manuel des joueurs, en version consultable. Plus besoin d'ouvrir le PDF.
+          </p>
+        </div>
+        <button className="wiki-etape-lien" style={{
+          flex: 'none', background: 'var(--bleu)', color: '#fff', padding: '9px 16px',
+          borderRadius: 8, fontSize: '.85rem', whiteSpace: 'nowrap',
+        }} onClick={() => onNaviguer('connexion')}>
+          Se connecter
+        </button>
       </div>
 
-      <button className="wiki-carte-classe" style={{ marginBottom: 20 }} onClick={() => onNaviguer('classes')}>
+      <button className="wiki-carte-classe" style={{ marginBottom: 20, marginTop: 20 }} onClick={() => onNaviguer('classes')}>
         <div className="wiki-carte-tete">
           <span className="wiki-pastille" style={{ background: 'var(--or)' }} />
           <span className="wiki-carte-nom">Parcourir les 16 classes</span>
         </div>
         <p className="wiki-carte-accroche">Techniques complètes, spécialisations, capacités légendaires.</p>
       </button>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+        <button className="wiki-carte-classe" onClick={() => onNaviguer('origines')}>
+          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Origines</span>
+          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>Peuples & historiques</p>
+        </button>
+        <button className="wiki-carte-classe" onClick={() => onNaviguer('dons')}>
+          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Dons</span>
+          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>Génériques, maîtrise, classe</p>
+        </button>
+        <button className="wiki-carte-classe" onClick={() => onNaviguer('equipement')}>
+          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Équipement</span>
+          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>Armes, armures, services</p>
+        </button>
+        <button className="wiki-carte-classe" onClick={() => onNaviguer('progression')}>
+          <span className="wiki-carte-nom" style={{ fontSize: '.95rem' }}>Progression</span>
+          <p className="wiki-carte-accroche" style={{ marginBottom: 0, fontSize: '.8rem' }}>XP, Fragments, multiclassage</p>
+        </button>
+      </div>
 
       <h2 className="wiki-sous-titre-section" style={{ marginTop: 0 }}>Créer un personnage</h2>
       <div className="wiki-etapes">
@@ -60,6 +88,7 @@ export default function Accueil({ onNaviguer }) {
               <button className="wiki-etape-lien" onClick={() => onNaviguer(e.action)}>
                 {e.action === 'fiches' ? 'Aller créer ma fiche →'
                   : e.action === 'caracteristiques' ? 'Voir la méthode →'
+                  : e.action === 'origines' ? 'Voir les origines →'
                   : 'Voir les classes →'}
               </button>
             )}
