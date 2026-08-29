@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { authActif, sessionActuelle, surChangementSession, obtenirOuCreerPlayer, deconnexion } from './authClient.js'
 import Login from './Login.jsx'
 import Selection from './Selection.jsx'
+import CreationGuidee from './CreationGuidee.jsx'
 import FeuilleDePersonnage from './FeuilleDePersonnage.jsx'
 import BanniereMotDePasse from './BanniereMotDePasse.jsx'
 
@@ -66,6 +67,7 @@ export default function FichesApp() {
       <main className="fiches-main">
         <Routes>
           <Route path="/" element={<Selection player={player} estMJ={estMJ} />} />
+          <Route path="nouveau" element={<CreationGuidee player={player} />} />
           <Route path=":id" element={<FeuilleDePersonnage player={player} estMJ={estMJ} />} />
           <Route path="*" element={<Navigate to="." replace />} />
         </Routes>

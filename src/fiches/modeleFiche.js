@@ -4,7 +4,7 @@ export function nouvelleFiche(nom) {
     origin: '',
     level: 1,
     xp: 0,
-    stats: { for: 10, dex: 10, con: 10, int: 10, sag: 10, cha: 10 },
+    stats: { for: 10, dex: 10, con: 10, int: 10, sag: 10, cha: 10, ecl: 10 },
     skill_proficiencies: {},
     saving_throw_proficiencies: {},
     hp_max: 0, hp_current: 0, hp_temp: 0,
@@ -32,6 +32,10 @@ export function nouvelleFiche(nom) {
     spark: { die: '1d8', current: 0, max: 3 },
     oath: { faction: '', statut: '', termes: '' },
     relations: { allies: [], enemies: [], debts: [] },
+    peuple_id: null,
+    historique_id: null,
+    dons: [],
+    sorts_connus: [],
   }
 }
 
@@ -51,6 +55,7 @@ export const COMPETENCES_PAR_CARAC = {
   int: ['arcanes', 'histoire', 'investigation', 'nature'],
   sag: ['medecine', 'perception', 'perspicacite', 'religion', 'survie'],
   cha: ['tromperie', 'intimidation', 'persuasion', 'representation'],
+  ecl: [],
 }
 
 export const LIBELLES_COMPETENCES = {
@@ -64,7 +69,7 @@ export const LIBELLES_COMPETENCES = {
 
 export const LIBELLES_CARAC = {
   for: 'Force', dex: 'Dextérité', con: 'Constitution',
-  int: 'Intelligence', sag: 'Sagesse', cha: 'Charisme',
+  int: 'Intelligence', sag: 'Sagesse', cha: 'Charisme', ecl: 'Éclat',
 }
 
 export function modificateur(valeur) {

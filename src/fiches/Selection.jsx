@@ -1,15 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
-import { nouvelleFiche } from './modeleFiche.js'
 
 export default function Selection({ player, estMJ }) {
   const navigate = useNavigate()
   const [fiches, setFiches] = useState([])
   const [chargement, setChargement] = useState(true)
   const [erreur, setErreur] = useState(null)
-  const [creation, setCreation] = useState(false)
-  const [nomNouveau, setNomNouveau] = useState('')
 
   const charger = useCallback(async () => {
     setChargement(true)
@@ -23,19 +20,6 @@ export default function Selection({ player, estMJ }) {
   }, [])
 
   useEffect(() => { charger() }, [charger])
-
-  const creer = async (e) => {
-    e.preventDefault()
-    if (!nomNouveau.trim()) return
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data, error } = await supabase
-      .from('characters')
-      .insert({ ...nouvelleFiche(nomNouveau.trim()), user_id: user.id, player_id: player.id })
-      .select('id')
-      .single()
-    if (error) { setErreur(error.message); return }
-    navigate(data.id)
-  }
 
   if (chargement) return <div className="fiches-message">Chargement des fiches…</div>
 
@@ -63,18 +47,7 @@ export default function Selection({ player, estMJ }) {
         )}
 
         {!estMJ && (
-          creation ? (
-            <form onSubmit={creer} className="fiches-form fiches-form--inline">
-              <input
-                autoFocus type="text" placeholder="Nom du personnage" required
-                value={nomNouveau} onChange={e => setNomNouveau(e.target.value)}
-              />
-              <button type="submit" className="fiches-btn">Forger la fiche</button>
-              <button type="button" className="fiches-btn fiches-btn--discret" onClick={() => setCreation(false)}>Annuler</button>
-            </form>
-          ) : (
-            <button className="fiches-btn fiches-btn--discret" onClick={() => setCreation(true)}>+ Nouvelle fiche</button>
-          )
+          <button className="fiches-btn" onClick={() => navigate('nouveau')}>+ Créer un personnage</button>
         )}
       </div>
     </div>
