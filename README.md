@@ -23,7 +23,9 @@ Sans `.env`, seul le Studio fonctionne, en mode local (autosave navigateur). Le 
 
 ## Déploiement
 
-- Hébergement **Netlify**, branche `electronovae` du dépôt `Electronovae/sideria-codex-mj-dashboard`.
+- Hébergement **Netlify**. La production est déployée depuis la branche `main` du dépôt `Electronovae/sideria-codex-mj-dashboard` : tout push sur `main` part en ligne sur sideria.fr.
+- La branche `electronovae` sert de branche de test (déploiement de prévisualisation Netlify si les *Branch deploys* sont activés). La branche `romain` n'est pas à modifier.
+- En upload via l'interface GitHub, vérifier que `main` est bien sélectionnée avant de déposer les fichiers.
 - Variables d'environnement Netlify : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 - `public/_redirects` contient `/* /index.html 200`, indispensable pour que les URLs du routeur (`/classes/:id`, `/fiches/:id`...) fonctionnent au rechargement. Attention : un fichier statique placé dans `public/` passe avant les routes de l'application.
 - `public/_headers` désactive le cache de `index.html` pour que chaque déploiement soit pris immédiatement.
