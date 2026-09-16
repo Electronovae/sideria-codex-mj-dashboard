@@ -1,134 +1,187 @@
 # Sidéria Studio
 
-Studio de création pour l'univers **Sidéria : L'Ère de l'Éther**. Un seul outil pour créer et maintenir la méta-campagne, les campagnes, les PNJ (avec leurs arbres de décision), les personnages joueurs (réputations, interactions), les factions, le bestiaire et les événements, avec export vers Obsidian — plus le Codex public (wiki des joueurs) et les fiches de personnage, dans la même application.
+Application web de l'univers **Sidéria : L'Ère de l'Éther**, un JDR steampunk-fantasy homebrew. Une seule application React réunit trois pôles : le Codex public pour les joueurs, les fiches de personnage et le tableau de bord du MJ.
 
-Application disponible ici : **https://sideria.fr**
+Application en ligne : **https://sideria.fr**
 
-- `/` — Codex de Sidéria, wiki public du manuel des joueurs, sans connexion requise (voir ci-dessous)
-- `/studio` — MJ Dashboard (Sidéria Studio), réservé au MJ, protégé par connexion
-- `/fiches` — fiches de personnage des joueurs, accès par magic link
+| Route | Pôle | Accès |
+|---|---|---|
+| `/` | Codex de Sidéria, wiki public du manuel des joueurs | libre, sans connexion |
+| `/fiches` | Fiches de personnage et assistant de création | joueurs connectés (magic link ou mot de passe) |
+| `/studio` | Sidéria Studio, tableau de bord du MJ | MJ uniquement (email + mot de passe, allowlist) |
 
 ## Démarrage
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # produit dist/ (déployé sur Netlify)
+cp .env.example .env   # renseigner VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
+npm run dev            # http://localhost:5173
+npm run build          # produit dist/
 ```
 
-Aucune configuration n'est nécessaire pour le module Studio en mode local (autosave navigateur). Les modules Fiches, Studio (auth) et Codex nécessitent Supabase configuré (voir plus bas).
+Sans `.env`, seul le Studio fonctionne, en mode local (autosave navigateur). Le Codex, les fiches et l'authentification demandent Supabase.
 
-## Sauvegarde du module Studio (3 niveaux)
+## Déploiement
 
-1. **Autosave navigateur** : chaque modification est enregistrée localement (localStorage) après 800 ms. Confortable, mais lié au navigateur : ce n'est pas une sauvegarde de long terme.
-2. **Export / Import JSON** : le bouton "Exporter JSON" produit `sideria_univers.json`, à ranger dans le vault Obsidian. C'est la sauvegarde de référence, versionnable dans Git avec le vault.
-3. **Supabase** : copier `.env.example` en `.env`, renseigner l'URL et la clé anon du projet (`sharfzrgrjvbcdlentie`), exécuter `supabase/schema.sql` dans l'éditeur SQL de Supabase. Les boutons "Pousser / Tirer" apparaissent alors dans la barre.
+- Hébergement **Netlify**, branche `electronovae` du dépôt `Electronovae/sideria-codex-mj-dashboard`.
+- Variables d'environnement Netlify : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- `public/_redirects` contient `/* /index.html 200`, indispensable pour que les URLs du routeur (`/classes/:id`, `/fiches/:id`...) fonctionnent au rechargement. Attention : un fichier statique placé dans `public/` passe avant les routes de l'application.
+- `public/_headers` désactive le cache de `index.html` pour que chaque déploiement soit pris immédiatement.
 
-### Choix de conception Supabase
+## Base de données (Supabase)
 
-Deux modèles cohabitent :
+Projet Supabase : `sharfzrgrjvbcdlentie`. La base est la source canonique du contenu (le vault Obsidian n'est plus à jour).
 
-- **Univers du Studio** (factions, PNJ, campagnes, sessions, événements...) : une ligne JSONB dans la table `univers`. Simple, pas de conflits de fusion, pas de migration à chaque évolution du modèle. La normalisation complète (tables par entité, temps réel, multi-utilisateurs) reste sur la feuille de route.
-- **Contenu du manuel (Codex + fiches)** : normalisé, une table par domaine — `classes_sideria`, `subclasses_sideria`, `features_sideria`, `peuples_sideria`, `historiques_sideria`, `dons_sideria`, `objets_sideria`, `services_sideria`, `regles_sideria` (progression, multiclassage, règles de jeu de la partie « Jouer à Sidéria »), et `character_features_debloquees`. Toutes en lecture publique (RLS `using (true)`), écriture MJ.
-- **Comptes et fiches joueurs** : `Player`, `characters`. Ce schéma a été initié par Romain (ancien collaborateur, parti avant que le projet n'avance) ; il a depuis été repris entièrement côté MJ. Les tables `classes` et `spells` qu'il avait créées, restées vides et orphelines, ont été supprimées (RLS désactivé dessus, plus de raison de les garder).
+### Univers du Studio (12 tables normalisées)
 
-## Authentification
+`meta`, `factions`, `pnjs`, `pnj_factions`, `lieux`, `joueurs`, `joueurs_historique`, `campagnes`, `sessions`, `session_scenes`, `evenements`, `rapports`, plus `creatures` pour le bestiaire.
 
-- **`/studio`** : Supabase Auth (email + mot de passe), restreint à un seul compte via allowlist dans `src/studio/StudioGate.jsx`. Le compte se crée depuis le dashboard Supabase (Authentication → Users → Add user), pas depuis l'app — aucune inscription publique n'existe pour cette route.
-- **`/fiches`** : Supabase Auth par magic link (OTP email) envoyé via Brevo, avec possibilité de définir un mot de passe ensuite. Le domaine `sideria.fr` est authentifié côté Brevo (SPF/DKIM/code de vérification) pour éviter que les liens tombent en spam Gmail.
-- **`/`** : aucune connexion requise. Un bouton « Se connecter » sur l'accueil du Codex renvoie vers `/fiches`.
+`src/lib/storage.js` synchronise l'univers en mémoire avec ces tables : « Pousser vers Supabase » fait un upsert table par table et supprime les lignes absentes (en deux passes pour les clés étrangères circulaires : chef de faction, supérieur de PNJ, lieu parent), « Tirer depuis Supabase » relit tout et reconstruit l'objet univers. Les identifiants sont des UUID (`crypto.randomUUID()`).
 
-⚠️ Ce login protège l'accès à l'**interface**, pas encore les requêtes directes à l'API Supabase : les politiques RLS des tables MJ (`pnjs`, `sessions`, etc.) sont encore en `using (true)` pour la clé anonyme. Verrouillage plus strict (RLS liée à `auth.uid()`) à prévoir si l'URL `/studio` devenait publique.
+### Contenu du manuel (Codex)
 
-## Fusion avec Obsidian
+Parsé depuis le manuel LaTeX avec des scripts Python maison (macros `\feat`, `\sortbox`, `\sortchamp`, `\flavour`, `\lorebox`, `\mechbox`, `\subbox`, `\objetcourant`).
 
-Le bouton **Export Obsidian (.zip)** génère un fragment de vault :
+| Table | Contenu |
+|---|---|
+| `classes_sideria` | 16 classes (texte complet, kit de départ, réglages de sorts) |
+| `subclasses_sideria`, `features_sideria` | sous-classes et techniques débloquables par Fragments |
+| `peuples_sideria`, `historiques_sideria` | 12 peuples, 11 historiques |
+| `dons_sideria` | 79 dons |
+| `objets_sideria`, `services_sideria` | 103 objets, 40 services et train de vie |
+| `disciplines_sorts_sideria`, `sorts_sideria` | 11 disciplines, 339 sorts |
+| `regles_sideria` | progression, multiclassage, règles de « Jouer à Sidéria » |
 
-```
-Sideria Studio Export/
-├── PNJ/               un .md par PNJ (fiche + arbre en tableau + secrets)
-├── Factions/          un .md par faction (membres, direction, événements)
-├── PJ/                un .md par personnage (réputations, journal d'interactions)
-├── Campagnes/         un .md par campagne (actes, pivots, issues)
-├── Chronologie des evenements.md
-└── Meta-campagne.md
-```
+### Comptes et fiches joueurs
 
-Les fichiers utilisent des wikilinks et des noms ASCII : ils se fusionnent dans le vault existant. Le flux recommandé : **créer dans le Studio, exporter vers Obsidian, jouer depuis Obsidian.**
+- `Player` : un profil par compte Supabase Auth, avec un `role` (`player`, `mj`, `admin`). La fonction SQL `is_staff()` renvoie vrai pour `mj` et `admin`.
+- `characters` : les fiches. Chaque joueur voit et modifie les siennes, le staff voit tout.
+- `character_features_debloquees` : techniques de classe débloquées par personnage.
 
-## Compatibilité avec les outils de session
+Ce schéma a été initié par Romain. Toutes les migrations sur ces tables restent additives (`ADD COLUMN IF NOT EXISTS`).
 
-Le modèle de données reprend les schémas des outils autonomes déjà en usage :
+## Règles de jeu implémentées
 
-- `arbres_narratifs_sideria.html` : même schéma d'arbre (compteur, seuils, nœuds typés, transitions sombres).
-- `chroniques_sideria.html` : même calendrier sidérien (année de 350 jours, 5 saisons de 70 jours, dates en index de jour).
+### Points de vie
+
+- Au niveau 1 : **6 × (dé de vie de la classe + mod. CON)**, calculé par l'assistant de création.
+- À chaque montée de niveau : 1 dé de vie + mod. CON, minimum 1.
+
+### Sorts
+
+Chaque classe a deux réglages, éditables dans Studio > Classes > « Sorts : départ et progression » :
+
+- `sorts_max_depart` : sorts connus au niveau 1, de 0 à 5 ;
+- `sorts_intervalle_niveaux` : 0 (aucun gain), 1 (un sort par niveau), 2 ou 3 (un sort tous les 2 ou 3 niveaux).
+
+Quota de sorts connus = `sorts_max_depart` + `floor((niveau - 1) / intervalle)` + `sorts_bonus` accordés par le MJ.
+
+Le MJ peut aussi imposer un set de départ (`sorts_depart`), verrouillé dans l'assistant. Une classe accède au **tronc commun** et aux sorts **exclusifs** qui la mentionnent.
+
+### Fragments
+
+Gagnés à chaque niveau selon `fragments_cadence` de la classe (1d4 par défaut), plus les fragments donnés ponctuellement par le MJ. Ils servent à débloquer les techniques de classe.
+
+### Montée de niveau
+
+Gérée uniquement par le MJ depuis Studio > Joueurs, sur une fiche reliée :
+
+- PV et fragments lancés automatiquement, relançables ou modifiables avant validation ;
+- +1 dé de résistance, rappel des nouveaux sorts et des paliers de montée de caractéristique ;
+- annulation de la dernière montée, don ou retrait de fragments avec motif, sorts bonus ;
+- tout est tracé dans `characters.historique_niveaux`.
+
+Un trigger SQL (`proteger_progression_personnage`) empêche un joueur de modifier `level`, `sorts_bonus` et `historique_niveaux` : ses sauvegardes conservent les valeurs en base.
+
+## Authentification et sécurité
+
+- **`/studio`** : Supabase Auth email + mot de passe, limité aux adresses de `src/studio/StudioGate.jsx`. Le compte se crée depuis le dashboard Supabase (Authentication > Users), il n'existe pas d'inscription publique.
+- **`/fiches`** : magic link envoyé via Brevo (domaine `sideria.fr` authentifié SPF/DKIM), puis mot de passe facultatif.
+- **`/`** : aucune connexion. Un bouton « Se connecter » mène à `/fiches`.
+
+⚠️ Les RLS ne sont pas encore durcies partout. `characters`, `Player`, `character_features_debloquees`, `classes_sideria`, `subclasses_sideria` et `features_sideria` sont protégées par `auth.uid()` / `is_staff()`. En revanche, les tables de l'univers du Studio **et** plusieurs tables du manuel (sorts, dons, peuples, historiques, objets, services, règles, disciplines) acceptent encore l'écriture via la clé anonyme (`using (true)`). À remplacer par `is_staff()` pour l'écriture.
 
 ## Structure du code
 
 ```
 src/
-├── main.jsx                routage (/fiches, /studio, redirection racine)
-├── App.jsx                 Sidéria Studio : store global (Context + autosave), navigation, barre d'outils
-├── styles.css               design system du Studio (variables CSS, thèmes clair/sombre)
+├── main.jsx                  routage racine : /fiches, /studio, / (wiki)
+├── App.jsx                   Sidéria Studio : store global, autosave, navigation, écran scindé
+├── styles.css                design system du Studio (thèmes clair et sombre)
 ├── lib/
-│   ├── calendrier.js        calendrier sidérien
-│   ├── modele.js             gabarits d'entités + univers de départ
-│   ├── storage.js            local / fichier / Supabase (univers JSONB)
+│   ├── calendrier.js         calendrier sidérien (350 jours, 5 saisons de 70 jours)
+│   ├── modele.js             gabarits d'entités, normalisation, uid()
+│   ├── storage.js            autosave local, import JSON, synchronisation Supabase
 │   ├── supabase.js           client Supabase (null si non configuré)
-│   └── obsidian.js           génération Markdown + zip
-├── modules/                 modules du Studio (onglets)
-│   ├── Tableau.jsx           tableau de bord
-│   ├── Campagnes.jsx         méta-campagne (thèse, saisons) + campagnes (actes, pivots)
-│   ├── Pnjs.jsx               PNJ + éditeur d'arbre + aperçu SVG
-│   ├── Joueurs.jsx            PJ, réputations par faction, journal d'interactions
-│   ├── Factions.jsx           factions, direction, membres, événements liés
-│   ├── Evenements.jsx         événements datés au calendrier sidérien
-│   ├── Lieux.jsx               lieux
-│   ├── Bestiaire.jsx           créatures et stat blocks
-│   ├── Wiki.jsx                 codex des classes (lecture seule, coté MJ)
-│   └── communs.jsx             composants partagés (ListeFiche, Texte, Champ...)
+│   └── obsidian.js           génération Markdown + zip (plus exposé dans l'interface)
 ├── studio/
-│   └── StudioGate.jsx          portail de connexion + allowlist pour /studio
-├── wiki/                       Codex public (route /), sans connexion
-│   ├── WikiApp.jsx              racine du module wiki + routage interne par onglet
-│   ├── Accueil.jsx               page d'accueil : intro, rectangles de navigation, étapes de création
-│   ├── ListeClasses.jsx / FicheClasse.jsx   liste des 16 classes + fiche complète
-│   ├── PageCaracteristiques.jsx  méthode de répartition des caractéristiques
-│   ├── Origines.jsx               peuples & historiques (liste + fiche détaillée)
-│   ├── Dons.jsx                    dons génériques / maîtrise / classe, filtrables
-│   ├── Equipement.jsx              objets par catégorie + services & train de vie
-│   ├── Progression.jsx             XP, PV, Fragments, Indice de Discipline, multiclassage
-│   ├── JouerASideria.jsx           règles de base (partie VIII) : caractéristiques, compétences, combat, aventure, montures, marchandises
-│   ├── useWikiData.js               hooks Supabase (peuples, historiques, dons, objets, services, regles)
-│   ├── roleMeta.js / texteLeger.jsx  utilitaires d'affichage partagés
-│   └── wiki.css                     design system du Codex (distinct du Studio et des Fiches)
-└── fiches/                    module joueurs
-    ├── FichesApp.jsx            racine du module fiches
-    ├── Login.jsx / authClient.js  auth (magic link + mot de passe)
-    ├── Selection.jsx             sélection du personnage
-    ├── FeuilleDePersonnage.jsx    fiche complète
-    ├── SectionClasse.jsx         classe/sous-classe/features débloquées
-    ├── useClasses.js              hook Supabase (classes_sideria/subclasses_sideria/features_sideria)
-    ├── useFiche.js                 hook Supabase (character)
-    └── fiches.css                 design system des fiches
+│   └── StudioGate.jsx        connexion et allowlist du Studio
+├── modules/                  onglets du Studio
+│   ├── Tableau.jsx           tableau de bord
+│   ├── Codex.jsx             fiches de lecture de l'univers
+│   ├── Graphe.jsx            graphe des relations (+ MiniGraphe)
+│   ├── Factions.jsx          factions et organigramme (PNJ et PJ)
+│   ├── Lieux.jsx             lieux, hiérarchie, liens retour
+│   ├── Pnjs.jsx              PNJ
+│   ├── ArbreEditeur.jsx      arbres narratifs (plein écran)
+│   ├── Bestiaire.jsx         créatures, stat blocks, flag d'équilibre
+│   ├── Wiki.jsx              classes du manuel + réglages de sorts par classe
+│   ├── Campagnes.jsx         méta-campagne, saisons, campagnes, sessions
+│   ├── Evenements.jsx        événements datés
+│   ├── Joueurs.jsx           PJ, lien vers la fiche technique, panneau de progression
+│   ├── Frise.jsx             frise chronologique multi-échelles
+│   ├── Rapports.jsx          rapports
+│   ├── Recherche.jsx         recherche globale
+│   └── communs.jsx           composants partagés (ListeFiche, Texte markdown, Champ...)
+├── wiki/                     Codex public
+│   ├── WikiApp.jsx           routes : /classes, /classes/:id, /caracteristiques, /origines,
+│   │                         /dons, /equipement, /progression, /jouer, /sorts
+│   ├── Accueil.jsx           accueil et parcours de création
+│   ├── ListeClasses.jsx, FicheClasse.jsx
+│   ├── PageCaracteristiques.jsx, Origines.jsx, Dons.jsx, Equipement.jsx
+│   ├── Progression.jsx, JouerASideria.jsx
+│   ├── Sorts.jsx             339 sorts filtrables, ajout à sa fiche dans la limite du quota
+│   ├── useWikiData.js        hooks Supabase du contenu du manuel
+│   ├── roleMeta.js, texteLeger.jsx
+│   └── wiki.css
+└── fiches/                   module joueurs
+    ├── FichesApp.jsx         racine, profil Player, détection MJ
+    ├── Login.jsx, authClient.js, BanniereMotDePasse.jsx
+    ├── Selection.jsx         choix du personnage
+    ├── CreationGuidee.jsx    assistant en 8 étapes : nom, classe, peuple, historique,
+    │                         caractéristiques et or, dons, sorts, récapitulatif
+    ├── FeuilleDePersonnage.jsx  fiche à onglets : identité, caractéristiques, combat,
+    │                            sorts, rôle-play, inventaire, notes
+    ├── SectionClasse.jsx     classe, sous-classe, techniques débloquées
+    ├── SectionSorts.jsx      grimoire : sorts connus, quota, catalogue d'apprentissage
+    ├── modeleFiche.js        fiche vierge, modificateurs, calculs PV / sorts / fragments
+    ├── useClasses.js, useFiche.js
+    └── fiches.css
 ```
 
-## Pré-remplissage depuis Obsidian
+## Conventions de travail
 
-Un fichier `sideria_univers_prerempli.json` peut être généré depuis le vault (factions, PNJ, PJ, sessions datées, campagnes) et chargé via "Importer JSON". L'import direct du vault dans l'appli est sur la feuille de route.
+- Migrations Supabase toujours additives (`ADD COLUMN IF NOT EXISTS`), vérifiées ensuite via `information_schema.columns`.
+- En SQL, apostrophes doublées (`''`), pas d'échappement par `\`. Après chaque `replace()` de nettoyage, vérifier avec un `SELECT ... ILIKE '%motif%'` : les remplacements ratés ne lèvent aucune erreur.
+- Les factions viennent de la table `factions` (filtrer `nom != 'Monde'`), jamais codées en dur.
+- Surveiller les politiques RLS en double : une politique permissive en trop annule une politique stricte.
 
-## Feuille de route (à prioriser ensemble)
+## Feuille de route
 
-- [ ] **Horloge de la Déchirure** : module dédié (jalons M0-M24, saisons, avancement par table)
-- [x] **Frises intégrées** : module Frise chronologique (lignes PJ/PNJ, zoom multi-échelles, interactions PJ en losanges creux)
-- [ ] **Éditeur d'arbre graphique** : glisser-déposer des nœuds plutôt que le tableau
-- [ ] **Supabase normalisé** : étendre la normalisation au reste de l'univers (factions, PNJ, sessions), temps réel, comptes joueurs en lecture seule
-- [ ] **Import Obsidian** : lire le vault existant pour amorcer la base (parsing des fiches)
-- [x] **Codex des classes côté MJ** : module `Wiki.jsx`, 16 classes du manuel complet en base (texte intégral, sous-classes, capacités légendaires, multiclassage)
-- [x] **Wiki joueurs public** : route `/`, sans connexion, mobile-first — Classes, Origines (peuples & historiques), Dons, Équipement (+ services), Progression & multiclassage, Jouer à Sidéria (règles de base)
-- [ ] **Sorts (Partie VI du manuel)** : 86 sorts, 11 disciplines — même pipeline JSON→SQL que les classes et l'équipement
-- [ ] **Assistant de création guidé** : parcours pas-à-pas (classe → origine → dons) sur le Codex public, connecté à `/fiches`, qui remplit une vraie fiche en base au fil des choix
-- [ ] **Affichage mobile** : passage CSS dédié (drill-down liste → fiche) pour Studio et Fiches (fait pour le Wiki)
-- [ ] **RLS renforcée** : politiques liées à `auth.uid()` sur les tables MJ, au-delà du login `/studio`
-- [ ] **Compteurs en session** : mode "table" tactile pour manipuler les compteurs d'arbres en direct
-- [ ] **Vie visuelle du Codex** : thème dynamique et/ou images d'illustration (à traiter un point à la fois)
+- [x] Codex des classes côté MJ
+- [x] Wiki joueurs public avec vraies URLs par page
+- [x] Sorts : 339 sorts, 11 disciplines, page wiki filtrable
+- [x] Assistant de création guidé connecté à `/fiches`
+- [x] Frise chronologique
+- [x] Univers du Studio normalisé en 12 tables
+- [x] Grimoire sur la fiche, quotas de sorts par classe, montée de niveau côté MJ
+- [ ] Lien wiki vers la fiche de classe depuis l'assistant (bug à diagnostiquer)
+- [ ] Module Sessions : comptes-rendus écrits par le MJ, lecture côté joueurs
+- [ ] RLS durcies : `is_staff()` en écriture sur toutes les tables MJ et du manuel
+- [ ] Affichage mobile de Studio et Fiches (fait pour le Wiki)
+- [ ] Rafraîchissement de la fiche joueur après une montée de niveau faite par le MJ
+- [ ] Horloge de la Déchirure (jalons M0-M24)
+- [ ] Éditeur d'arbre graphique en glisser-déposer
+- [ ] Import direct du vault Obsidian
+- [ ] Mode table tactile pour les compteurs en session
+- [ ] Thème dynamique et illustrations du Codex
