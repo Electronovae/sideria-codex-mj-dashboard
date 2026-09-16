@@ -1,0 +1,124 @@
+.wiki-app{min-height:100vh;background:var(--parch);color:var(--encre);
+  font:15px/1.6 "Palatino Linotype",Palatino,"Book Antiqua",serif}
+
+.wiki-nav-croisee{max-width:640px;margin:0 auto;padding:10px 16px 0;display:flex;
+  justify-content:space-between;align-items:center;gap:10px;}
+.wiki-nav-lien{font-size:.8rem;color:var(--bleu);text-decoration:none;font-variant:small-caps;
+  letter-spacing:.03em;}
+.wiki-nav-lien--accent{background:var(--or);color:#26221a;padding:6px 12px;border-radius:6px;font-weight:700;}
+[data-theme="sombre"] .wiki-nav-lien{color:var(--or-clair)}
+
+.wiki-cta-creation{max-width:640px;margin:0 auto;padding:6px 0 24px;display:flex;justify-content:center;}
+
+.wiki-page{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+
+.wiki-retour{background:none;border:none;color:var(--bleu);font-size:.85rem;
+  padding:8px 0;margin-bottom:4px;cursor:pointer;font-family:inherit}
+[data-theme="sombre"] .wiki-retour{color:var(--or-clair)}
+
+.wiki-entete h1{font-size:1.5rem;color:var(--titre);font-variant:small-caps;
+  letter-spacing:.03em;margin-bottom:6px}
+.wiki-sous-titre{color:var(--gris);font-size:.85rem;margin-bottom:14px}
+
+.wiki-recherche{width:100%;padding:11px 14px;font-size:1rem;border:1px solid var(--champ-bord);
+  border-radius:8px;background:var(--champ);color:var(--encre);margin-bottom:18px}
+.wiki-recherche:focus{outline:2px solid var(--or);outline-offset:-1px}
+
+.wiki-liste-classes{display:flex;flex-direction:column;gap:10px}
+
+.wiki-carte-classe{display:block;width:100%;text-align:left;background:var(--carte);
+  border:1px solid var(--parch-mid);border-left:4px solid var(--or);border-radius:6px;
+  padding:14px 16px;font-family:inherit;color:inherit;cursor:pointer}
+.wiki-carte-classe:active{background:rgba(201,162,39,.12)}
+
+.wiki-carte-tete{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.wiki-pastille{width:12px;height:12px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.25)}
+.wiki-carte-nom{font-size:1.05rem;font-weight:600;color:var(--titre)}
+.wiki-libelle-discret{font-size:.72rem;color:var(--gris);text-transform:uppercase;letter-spacing:.04em}
+
+.wiki-carte-accroche{font-size:.88rem;color:var(--encre);line-height:1.5;margin-bottom:10px}
+
+.wiki-tags{display:flex;flex-wrap:wrap;gap:6px}
+.wiki-tag{font-size:.72rem;padding:3px 9px;border-radius:20px;
+  background:rgba(201,162,39,.14);color:var(--encre);border:1px solid var(--parch-mid)}
+
+.wiki-vide{padding:40px 0;text-align:center;color:var(--gris);font-style:italic}
+
+.wiki-citation{border-left:3px solid var(--or);padding:4px 10px;font-style:italic;
+  color:var(--gris);margin:6px 0 10px}
+
+.wiki-corps{margin-top:6px}
+.wiki-description{margin:0 0 14px;line-height:1.65}
+
+.wiki-encart{background:var(--carte);border:1px solid var(--parch-mid);border-left:4px solid var(--or-clair);
+  border-radius:6px;padding:12px 14px;margin-bottom:10px}
+.wiki-encart-titre{font-weight:600;color:var(--titre);margin-bottom:4px;font-size:.92rem}
+
+.wiki-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.wiki-stat{background:var(--fond2);border-radius:6px;padding:8px 10px}
+.wiki-stat-label{font-size:.7rem;color:var(--gris);text-transform:uppercase;letter-spacing:.03em}
+.wiki-stat-valeur{font-size:.88rem;margin-top:2px}
+
+.wiki-onglets{display:flex;gap:4px;border-bottom:2px solid var(--parch-mid);margin:16px 0 14px}
+.wiki-onglet{flex:1;background:none;border:none;padding:10px 4px;font-size:.85rem;font-weight:600;
+  color:var(--gris);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;font-family:inherit}
+.wiki-onglet.actif{color:var(--bleu);border-bottom-color:var(--or)}
+[data-theme="sombre"] .wiki-onglet.actif{color:var(--or-clair)}
+
+.wiki-sous-titre-section{font-size:1rem;color:var(--titre);margin:20px 0 10px;
+  border-bottom:1px solid var(--parch-mid);padding-bottom:4px}
+
+.wiki-feature{background:var(--carte);border:1px solid var(--parch-mid);border-radius:6px;
+  padding:12px 14px;margin-bottom:8px}
+.wiki-feature-nom{font-weight:600;color:var(--titre);margin-bottom:4px;font-size:.92rem}
+.wiki-feature-tete{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.wiki-feature-cout{font-size:.72rem;color:var(--gris);white-space:nowrap;font-variant:small-caps;}
+.wiki-feature-texte{font-size:.86rem;line-height:1.55;color:var(--encre)}
+
+.wiki-pastilles-sous-classes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.wiki-pastille-sous-classe{font-size:.78rem;padding:6px 12px;border-radius:20px;
+  background:var(--fond2);color:var(--gris);border:1px solid var(--parch-mid);cursor:pointer}
+.wiki-pastille-sous-classe.actif{background:var(--or);color:var(--bleu-nuit);border-color:var(--or);font-weight:600}
+
+/* ── Filtres multi-critères de l'onglet Sorts ── */
+.wiki-filtres-sorts{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.wiki-filtres-groupe{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.wiki-filtres-label{font-size:.72rem;color:var(--gris);font-variant:small-caps;letter-spacing:.03em;margin-right:2px;}
+.wiki-puce-filtre{font-size:.75rem;padding:4px 10px;border-radius:14px;background:var(--fond2);color:var(--gris);
+  border:1px solid var(--parch-mid);cursor:pointer;}
+.wiki-puce-filtre.actif{background:var(--bleu);color:#fff;border-color:var(--bleu);font-weight:600;}
+
+.wiki-selecteur-fiche{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;}
+.wiki-selecteur-fiche label{color:var(--gris);font-variant:small-caps;}
+
+.wiki-bouton-ajout-sort{margin-top:8px;font-size:.78rem;padding:6px 12px;border-radius:6px;
+  border:1px solid var(--or);background:none;color:var(--or);cursor:pointer;font-family:inherit;}
+.wiki-bouton-ajout-sort.actif{background:var(--or);color:var(--bleu-nuit);font-weight:600;}
+
+@media (min-width:720px){
+  .wiki-page{padding-top:32px}
+}
+
+.wiki-etapes{display:flex;flex-direction:column;gap:10px}
+.wiki-etape{background:var(--carte);border:1px solid var(--parch-mid);border-radius:6px;padding:12px 14px}
+.wiki-etape-titre{font-weight:600;color:var(--titre);margin-bottom:4px;font-size:.92rem}
+.wiki-etape-texte{font-size:.85rem;line-height:1.55;color:var(--encre);margin-bottom:6px}
+.wiki-etape-lien{background:none;border:none;color:var(--bleu);font-size:.82rem;font-weight:600;
+  padding:0;cursor:pointer;font-family:inherit}
+[data-theme="sombre"] .wiki-etape-lien{color:var(--or-clair)}
+
+/* ── Vraie page de présentation (hero) en haut de l'accueil ── */
+.wiki-hero{position:relative;padding:34px 22px 30px;text-align:center;background:
+  radial-gradient(ellipse at top, rgba(201,162,39,.14), transparent 70%), var(--carte);
+  border:1px solid var(--parch-mid);border-radius:10px;overflow:hidden;}
+.wiki-hero-fil{position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg, transparent, var(--or), transparent);}
+.wiki-hero-titre{font-size:1.7rem;font-variant:small-caps;letter-spacing:.04em;color:var(--titre);margin-bottom:4px;}
+.wiki-hero-titre span{color:var(--gris);font-size:.75em;font-variant:normal;letter-spacing:0;}
+.wiki-hero-baseline{color:var(--or);font-size:.82rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:16px;}
+.wiki-hero-pitch{max-width:520px;margin:0 auto 22px;font-size:.92rem;line-height:1.65;color:var(--encre);font-style:italic;}
+.wiki-hero-cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.wiki-hero-bouton{border:1px solid var(--champ-bord);background:var(--champ);color:var(--bleu);
+  padding:10px 18px;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;}
+.wiki-hero-bouton--principal{background:var(--or);color:#26221a;border-color:var(--or);}
+@media (max-width:520px){.wiki-hero{padding:26px 16px 22px;}.wiki-hero-titre{font-size:1.35rem;}}
