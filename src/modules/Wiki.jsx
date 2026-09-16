@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react'
 import { ListeFiche, Texte } from './communs.jsx'
 import { useClasses } from '../fiches/useClasses.js'
-import { useDisciplinesSorts, useSorts } from '../wiki/useWikiData.js'
+import { useSorts } from '../wiki/useWikiData.js'
+import { quotaSorts, sortsAccessibles } from '../fiches/modeleFiche.js'
 import { supabase } from '../lib/supabase.js'
 
 // ── Petits blocs de présentation, tous en lecture seule (le contenu du manuel n'est pas
@@ -102,52 +103,92 @@ function FicheSousClasse({ sc, forceOuvert }) {
 
 function EditeurSortsDepart({ classe }) {
   const { sorts, chargement: chargSorts } = useSorts()
-  const { disciplines, chargement: chargDisc } = useDisciplinesSorts()
   const [sortsDepart, setSortsDepart] = useState(classe.sorts_depart || [])
-  const [maxDepart, setMaxDepart] = useState(classe.sorts_max_depart ?? 3)
+  const [maxDepart, setMaxDepart] = useState(classe.sorts_max_depart ?? 0)
+  const [intervalle, setIntervalle] = useState(classe.sorts_intervalle_niveaux ?? 0)
+  const [recherche, setRecherche] = useState('')
   const [enregistrement, setEnregistrement] = useState(false)
-  const nomCourt = (classe.nom || '').replace(/^(Le |La |L')/, '')
+  const [erreur, setErreur] = useState(null)
 
-  const sortsDisponibles = useMemo(() => sorts.filter(s => (s.sous_type || '').includes(nomCourt)), [sorts, nomCourt])
+  const sortsDisponibles = useMemo(() => {
+    const liste = sortsAccessibles(sorts, classe)
+    const exclusif = s => !/tronc commun/i.test(s.sous_type || '')
+    return [...liste.filter(exclusif), ...liste.filter(s => !exclusif(s))]
+  }, [sorts, classe])
 
-  if (chargSorts || chargDisc) return <p className="aide">Chargement des sorts…</p>
-  if (!sortsDisponibles.length) return (
-    <p className="aide">Aucun sort exclusif trouvé pour « {nomCourt} » (rien à définir en set de départ, ou le sous_type des sorts ne correspond pas au nom de la classe).</p>
-  )
+  const filtres = useMemo(() => {
+    const q = recherche.trim().toLowerCase()
+    if (!q) return sortsDisponibles
+    return sortsDisponibles.filter(s => sortsDepart.includes(s.id)
+      || s.nom.toLowerCase().includes(q) || (s.sous_type || '').toLowerCase().includes(q))
+  }, [sortsDisponibles, recherche, sortsDepart])
 
-  const basculer = async (id) => {
+  if (chargSorts) return <p className="aide">Chargement des sorts…</p>
+
+  const enregistrer = async (champs) => {
+    setEnregistrement(true)
+    setErreur(null)
+    const { error } = await supabase.from('classes_sideria').update(champs).eq('id', classe.id)
+    if (error) setErreur(error.message)
+    else Object.assign(classe, champs) // garde la liste des classes en cache à jour si on change de classe puis revient
+    setEnregistrement(false)
+  }
+
+  const basculer = (id) => {
     const suivant = sortsDepart.includes(id) ? sortsDepart.filter(x => x !== id) : [...sortsDepart, id]
     setSortsDepart(suivant)
-    setEnregistrement(true)
-    await supabase.from('classes_sideria').update({ sorts_depart: suivant }).eq('id', classe.id)
-    setEnregistrement(false)
+    enregistrer({ sorts_depart: suivant })
+  }
+  const changerMax = (valeur) => {
+    const v = Math.max(0, Math.min(5, Number(valeur) || 0))
+    setMaxDepart(v)
+    enregistrer({ sorts_max_depart: v })
+  }
+  const changerIntervalle = (valeur) => {
+    const v = Number(valeur) || 0
+    setIntervalle(v)
+    enregistrer({ sorts_intervalle_niveaux: v })
   }
 
-  const changerMax = async (valeur) => {
-    const v = Math.max(0, Number(valeur) || 0)
-    setMaxDepart(v)
-    setEnregistrement(true)
-    await supabase.from('classes_sideria').update({ sorts_max_depart: v }).eq('id', classe.id)
-    setEnregistrement(false)
-  }
+  const exemple = [1, 5, 10, 20].map(n => `niv. ${n} : ${quotaSorts({ sorts_max_depart: maxDepart, sorts_intervalle_niveaux: intervalle }, { level: n })}`).join(', ')
 
   return (
     <div>
-      <div className="rangee" style={{ gap: 8, alignItems: 'baseline', marginBottom: 10 }}>
-        <label style={{ fontWeight: 600 }}>Nombre de sorts sélectionnables à la création :</label>
-        <input type="number" min="0" style={{ width: 60 }} value={maxDepart}
-          onChange={e => changerMax(e.target.value)} />
+      <div className="rangee" style={{ gap: 12, alignItems: 'end', marginBottom: 8, flexWrap: 'wrap' }}>
+        <span className="etroit"><label>Sorts au niveau 1</label>
+          <select value={maxDepart} onChange={e => changerMax(e.target.value)}>
+            {[0, 1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+          </select></span>
+        <span><label>Sorts gagnés en montant de niveau</label>
+          <select value={intervalle} onChange={e => changerIntervalle(e.target.value)}>
+            <option value={0}>Aucun</option>
+            <option value={1}>1 sort par niveau</option>
+            <option value={2}>1 sort tous les 2 niveaux</option>
+            <option value={3}>1 sort tous les 3 niveaux</option>
+          </select></span>
       </div>
-      <p className="aide">Coché ici, un sort est imposé (verrouillé) et compte dans le plafond ci-dessus à l'étape « Sorts » de l'assistant de création.
-        {enregistrement && ' Enregistrement…'}
-      </p>
-      {sortsDisponibles.map(s => (
-        <label key={s.id} className="rangee" style={{ gap: 8, alignItems: 'baseline', marginBottom: 4 }}>
-          <input type="checkbox" checked={sortsDepart.includes(s.id)} onChange={() => basculer(s.id)} />
-          <span>{s.nom}</span>
-          <span className="aide">{s.sous_type}</span>
-        </label>
-      ))}
+      <p className="aide">Sorts connus : {exemple}.{enregistrement && ' Enregistrement…'}</p>
+      {erreur && <p className="aide" style={{ color: 'var(--rouge)' }}>{erreur}</p>}
+
+      {maxDepart > 0 && (
+        <>
+          <p className="aide" style={{ marginTop: 10 }}>
+            Coché ici, un sort est imposé (verrouillé) et compte dans les {maxDepart} sorts de départ.
+            {sortsDepart.length > maxDepart && <strong style={{ color: 'var(--rouge)' }}> Plus de sorts imposés que de sorts de départ !</strong>}
+          </p>
+          <input type="text" placeholder="Rechercher un sort…" value={recherche}
+            onChange={e => setRecherche(e.target.value)} style={{ marginBottom: 8 }} />
+          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+            {filtres.map(s => (
+              <label key={s.id} className="rangee" style={{ gap: 8, alignItems: 'baseline', marginBottom: 4 }}>
+                <input type="checkbox" checked={sortsDepart.includes(s.id)} onChange={() => basculer(s.id)} />
+                <span>{s.nom}</span>
+                <span className="aide">{s.sous_type}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -183,12 +224,8 @@ function FicheClasse({ c }) {
         </>
       )}
 
-      {c.base?.fields?.some(f => f.label === 'Magie') && (
-        <>
-          <h3 style={{ marginTop: 24 }}>Set de sorts de départ</h3>
-          <EditeurSortsDepart classe={c} />
-        </>
-      )}
+      <h3 style={{ marginTop: 24 }}>Sorts : départ et progression</h3>
+      <EditeurSortsDepart classe={c} />
     </div>
   )
 }

@@ -75,3 +75,65 @@ export const LIBELLES_CARAC = {
 export function modificateur(valeur) {
   return Math.floor((Number(valeur ?? 10) - 10) / 2)
 }
+
+// ---------------------------------------------------------------------------
+// Progression : points de vie, sorts connus, montée de niveau
+// ---------------------------------------------------------------------------
+
+// PV au niveau 1 : 6 × (dé de vie de la classe + mod. CON), minimum 6.
+export function pvNiveau1(deVie, con) {
+  return Math.max(6, 6 * ((Number(deVie) || 8) + modificateur(con)))
+}
+
+// Gain de PV à la montée de niveau : 1 dé de vie + mod. CON, minimum 1.
+export function lancerPvNiveau(deVie, con) {
+  const de = 1 + Math.floor(Math.random() * (Number(deVie) || 8))
+  return { de, total: Math.max(1, de + modificateur(con)) }
+}
+
+// Fragments gagnés à la montée de niveau : lit « 1d4/niveau » dans fragments_cadence (1d4 par défaut).
+export function deFragments(classe) {
+  const m = /(\d+)d(\d+)/i.exec(classe?.fragments_cadence || '')
+  return m ? { nb: Number(m[1]), faces: Number(m[2]) } : { nb: 1, faces: 4 }
+}
+export function lancerFragments(classe) {
+  const { nb, faces } = deFragments(classe)
+  let total = 0
+  for (let i = 0; i < nb; i++) total += 1 + Math.floor(Math.random() * faces)
+  return total
+}
+
+export function estLanceurDeSorts(classe) {
+  return !!classe && ((classe.sorts_max_depart ?? 0) > 0 || (classe.sorts_intervalle_niveaux ?? 0) > 0)
+}
+
+// Nombre de sorts qu'un personnage peut connaître :
+// sorts de départ de sa classe + 1 sort tous les N niveaux au-delà du niveau 1 + bonus accordés par le MJ.
+export function quotaSorts(classe, fiche) {
+  if (!classe) return Math.max(0, fiche?.sorts_bonus ?? 0)
+  const depart = classe.sorts_max_depart ?? 0
+  const intervalle = classe.sorts_intervalle_niveaux ?? 0
+  const niveau = Math.max(1, Number(fiche?.level) || 1)
+  const gagnes = intervalle > 0 ? Math.floor((niveau - 1) / intervalle) : 0
+  return Math.max(0, depart + gagnes + (fiche?.sorts_bonus ?? 0))
+}
+
+export function libelleIntervalle(intervalle) {
+  if (!intervalle) return 'aucun sort gagné en montant de niveau'
+  if (intervalle === 1) return '1 sort par niveau'
+  return `1 sort tous les ${intervalle} niveaux`
+}
+
+export function nomCourtClasse(nomComplet) {
+  return (nomComplet || '').replace(/^(Le |La |L')/, '')
+}
+
+// Sorts accessibles à une classe : tronc commun + sorts exclusifs mentionnant la classe.
+export function sortsAccessibles(sorts, classes) {
+  const noms = (Array.isArray(classes) ? classes : [classes]).filter(Boolean).map(c => nomCourtClasse(c.nom))
+  return sorts.filter(s => {
+    const st = s.sous_type || ''
+    if (/tronc commun/i.test(st)) return true
+    return noms.some(n => n && st.includes(n))
+  })
+}

@@ -2,10 +2,11 @@ import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFiche } from './useFiche.js'
 import SectionClasse from './SectionClasse.jsx'
+import SectionSorts from './SectionSorts.jsx'
 import { useClasses, useFactionsMonde } from './useClasses.js'
 import {
   COMPETENCES_PAR_CARAC, LIBELLES_COMPETENCES, LIBELLES_CARAC,
-  PALIERS_MONTEE, ORIGINES, modificateur,
+  PALIERS_MONTEE, ORIGINES, modificateur, quotaSorts,
 } from './modeleFiche.js'
 
 const ETAPES_CRISTALLITE = [
@@ -181,6 +182,7 @@ export default function FeuilleDePersonnage({ estMJ }) {
     { id: 'identite', label: 'Identité' },
     { id: 'carac', label: 'Caractéristiques' },
     { id: 'combat', label: 'Combat' },
+    { id: 'sorts', label: `Sorts (${(fiche.sorts_connus ?? []).length}/${quotaSorts(classes.find(c => c.id === fiche.class_id), fiche)})` },
     { id: 'role', label: 'Rôle-play' },
     { id: 'sac', label: 'Inventaire' },
     { id: 'notes', label: 'Notes' },
@@ -290,7 +292,12 @@ export default function FeuilleDePersonnage({ estMJ }) {
               {ORIGINES.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </label>
-          {champ('Niveau Sidérien', 'level', 'number')}
+          {estMJ ? champ('Niveau Sidérien', 'level', 'number') : (
+            <div className="niveau-verrouille" title="Le niveau est géré par le MJ">
+              <span>Niveau Sidérien</span>
+              <strong>{fiche.level ?? 1}</strong>
+            </div>
+          )}
           {champ('Fragments', 'fragments_current', 'number')}
         </div>
         <div className="fc-grille fc-grille--4" style={{ marginTop: 6 }}>
@@ -445,6 +452,14 @@ export default function FeuilleDePersonnage({ estMJ }) {
           </div>
         </details>
       </section>
+
+      <div hidden={ongletActif !== 'sorts'}>
+        <SectionSorts
+          fiche={fiche} modifier={modifier} estMJ={estMJ}
+          classe={classes.find(c => c.id === fiche.class_id)}
+          classeSecondaire={classes.find(c => c.id === fiche.class_secondaire_id)}
+        />
+      </div>
 
       <section className="feuille-bloc" hidden={ongletActif !== 'role'}>
         <h2>Cristallite</h2>

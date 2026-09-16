@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { TexteLeger } from './texteLeger.jsx'
 import { supabase } from '../lib/supabase.js'
 import { sessionActuelle, surChangementSession } from '../fiches/authClient.js'
+import { quotaSorts } from '../fiches/modeleFiche.js'
 
 const CATEGORIES = [
   { id: 'attaque', label: 'Attaque' },
@@ -18,6 +19,7 @@ function useMesFiches() {
   const [session, setSession] = useState(undefined)
   const [fiches, setFiches] = useState([])
   const [ficheId, setFicheId] = useState(null)
+  const [classes, setClasses] = useState([])
 
   useEffect(() => {
     if (!supabase) { setSession(null); return }
@@ -27,7 +29,9 @@ function useMesFiches() {
 
   useEffect(() => {
     if (!supabase || !session) { setFiches([]); return }
-    supabase.from('characters').select('id, name, sorts_connus').eq('user_id', session.user.id).order('name')
+    supabase.from('classes_sideria').select('id, nom, sorts_max_depart, sorts_intervalle_niveaux')
+      .then(({ data }) => setClasses(data || []))
+    supabase.from('characters').select('id, name, sorts_connus, class_id, level, sorts_bonus').eq('user_id', session.user.id).order('name')
       .then(({ data }) => {
         setFiches(data || [])
         setFicheId(prev => prev && data?.some(f => f.id === prev) ? prev : (data?.[0]?.id ?? null))
@@ -35,11 +39,13 @@ function useMesFiches() {
   }, [session])
 
   const fiche = fiches.find(f => f.id === ficheId)
+  const quota = fiche ? quotaSorts(classes.find(c => c.id === fiche.class_id), fiche) : 0
+  const plein = !!fiche && (fiche.sorts_connus || []).length >= quota
 
   const ajouter = async (sortId) => {
     if (!fiche) return
     const connus = Array.isArray(fiche.sorts_connus) ? fiche.sorts_connus : []
-    if (connus.includes(sortId)) return
+    if (connus.includes(sortId) || connus.length >= quota) return
     const majConnus = [...connus, sortId]
     const { error } = await supabase.from('characters').update({ sorts_connus: majConnus }).eq('id', fiche.id)
     if (!error) setFiches(fs => fs.map(f => f.id === fiche.id ? { ...f, sorts_connus: majConnus } : f))
@@ -51,7 +57,7 @@ function useMesFiches() {
     if (!error) setFiches(fs => fs.map(f => f.id === fiche.id ? { ...f, sorts_connus: majConnus } : f))
   }
 
-  return { connecte: !!session, fiches, ficheId, setFicheId, fiche, ajouter, retirer }
+  return { connecte: !!session, fiches, ficheId, setFicheId, fiche, ajouter, retirer, quota, plein }
 }
 
 function CarteSort({ sort, mesFiches }) {
@@ -91,9 +97,14 @@ function CarteSort({ sort, mesFiches }) {
         <button
           type="button"
           className={'wiki-bouton-ajout-sort' + (dejaConnu ? ' actif' : '')}
+          disabled={!dejaConnu && mesFiches.plein}
           onClick={() => dejaConnu ? mesFiches.retirer(sort.id) : mesFiches.ajouter(sort.id)}
         >
-          {dejaConnu ? `✓ Sur la fiche de ${mesFiches.fiche.name}` : `+ Ajouter à la fiche de ${mesFiches.fiche.name}`}
+          {dejaConnu
+            ? `✓ Sur la fiche de ${mesFiches.fiche.name}`
+            : mesFiches.plein
+              ? `Grimoire de ${mesFiches.fiche.name} complet (${mesFiches.quota} sorts)`
+              : `+ Ajouter à la fiche de ${mesFiches.fiche.name}`}
         </button>
       )}
     </div>
@@ -149,6 +160,7 @@ export default function Sorts({ disciplines, sorts, chargement, onRetour }) {
           <select value={mesFiches.ficheId || ''} onChange={e => mesFiches.setFicheId(e.target.value)}>
             {mesFiches.fiches.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
+          {mesFiches.fiche && <span className="wiki-libelle-discret">{(mesFiches.fiche.sorts_connus || []).length} / {mesFiches.quota} sorts connus</span>}
         </div>
       )}
 

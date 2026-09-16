@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useClasses } from './useClasses.js'
 import { usePeuples, useHistoriques, useDons, useSorts } from '../wiki/useWikiData.js'
-import { nouvelleFiche, LIBELLES_CARAC } from './modeleFiche.js'
+import {
+  nouvelleFiche, LIBELLES_CARAC, pvNiveau1, estLanceurDeSorts as classeLanceuse,
+  sortsAccessibles, nomCourtClasse, libelleIntervalle, modificateur,
+} from './modeleFiche.js'
 
 const NOMS_CARAC = ['for', 'dex', 'con', 'int', 'sag', 'cha', 'ecl']
 const ETAPES = ['Nom', 'Classe', 'Peuple', 'Historique', 'Caractéristiques', 'Dons', 'Sorts', 'Récapitulatif']
-
-function nomCourtClasse(nomComplet) {
-  return (nomComplet || '').replace(/^(Le |La |L')/, '')
-}
 
 function lancer4d6DropLowest() {
   const des = []
@@ -55,12 +54,11 @@ export default function CreationGuidee({ player }) {
   const [pieces, setPieces] = useState(null)
   const [donsChoisis, setDonsChoisis] = useState([])
   const [sortsChoisis, setSortsChoisis] = useState([])
+  const [rechercheSort, setRechercheSort] = useState('')
 
   const classe = classes.find(c => c.id === classeId)
   const nomCourt = nomCourtClasse(classe?.nom)
-  const estLanceurDeSorts = !!classe?.base?.fields?.some(f =>
-    f.label === 'Magie' && !/^aucune\b|pas de convertisseur/i.test(f.value || '')
-  )
+  const estLanceurDeSorts = classeLanceuse(classe)
 
   const chargement = chargClasses || chargPeuples || chargHistoriques || chargDons || chargSorts
 
@@ -71,12 +69,22 @@ export default function CreationGuidee({ player }) {
 
   const sortsDisponibles = useMemo(() => {
     if (!classe || !estLanceurDeSorts) return []
-    return sorts.filter(s => s.sous_type?.includes(nomCourt))
-  }, [sorts, classe, estLanceurDeSorts, nomCourt])
+    // Exclusifs de la classe d'abord, puis tronc commun.
+    const liste = sortsAccessibles(sorts, classe)
+    const exclusif = s => !/tronc commun/i.test(s.sous_type || '')
+    return [...liste.filter(exclusif), ...liste.filter(s => !exclusif(s))]
+  }, [sorts, classe, estLanceurDeSorts])
+
+  const sortsFiltres = useMemo(() => {
+    const q = rechercheSort.trim().toLowerCase()
+    if (!q) return sortsDisponibles
+    return sortsDisponibles.filter(s => sortsChoisis.includes(s.id)
+      || s.nom.toLowerCase().includes(q) || (s.sous_type || '').toLowerCase().includes(q))
+  }, [sortsDisponibles, rechercheSort, sortsChoisis])
 
   // Pré-sélectionne le set de sorts de départ défini par le MJ pour cette classe.
   React.useEffect(() => {
-    if (classe?.sorts_depart?.length) setSortsChoisis(classe.sorts_depart)
+    setSortsChoisis(classe?.sorts_depart?.length ? classe.sorts_depart : [])
   }, [classeId])
 
   const peuple = peuples.find(p => p.id === peupleId)
@@ -104,7 +112,7 @@ export default function CreationGuidee({ player }) {
   const basculerDon = (id) => {
     setDonsChoisis(prev => prev.includes(id) ? prev.filter(x => x !== id) : (prev.length >= 1 ? prev : [...prev, id]))
   }
-  const capSorts = classe?.sorts_max_depart ?? 3
+  const capSorts = classe?.sorts_max_depart ?? 0
   const sortsVerrouilles = classe?.sorts_depart || []
   const basculerSort = (id) => {
     if (sortsVerrouilles.includes(id)) return // fait partie du set de départ imposé par le MJ, non désélectionnable
@@ -160,10 +168,10 @@ export default function CreationGuidee({ player }) {
       stats,
       hit_dice_type: classe?.de_vie ?? 8,
       hit_dice_remaining: 1,
-      hp_max: (classe?.de_vie ?? 8) + Math.floor((stats.con - 10) / 2),
-      hp_current: (classe?.de_vie ?? 8) + Math.floor((stats.con - 10) / 2),
+      hp_max: pvNiveau1(classe?.de_vie, stats.con),
+      hp_current: pvNiveau1(classe?.de_vie, stats.con),
       dons: donsChoisis,
-      sorts_connus: sortsChoisis,
+      sorts_connus: estLanceurDeSorts ? sortsChoisis : [],
       gold: pieces ?? 0,
     }
 
@@ -338,14 +346,16 @@ export default function CreationGuidee({ player }) {
         {etape === 6 && estLanceurDeSorts && (
           <div>
             <p style={{ fontSize: '.86rem', color: 'var(--gris, #8a8478)' }}>
-              Sorts exclusifs à ta classe. Les sorts « Tronc commun » de tes disciplines restent accessibles en jeu — vois ça avec ton MJ.
+              Sorts exclusifs à ta classe, puis sorts du tronc commun. {classe?.nom} commence avec {capSorts} sort{capSorts > 1 ? 's' : ''}, puis {libelleIntervalle(classe?.sorts_intervalle_niveaux)}.
               {sortsVerrouilles.length > 0 && <> Le <strong>set de départ</strong> défini par le MJ est déjà inclus et verrouillé ci-dessous.</>}
             </p>
             <p style={{ fontSize: '.82rem', fontWeight: 700, color: sortsChoisis.length >= capSorts ? 'var(--or, #c9a227)' : 'var(--bleu, #1d3350)' }}>
               {sortsChoisis.length} / {capSorts} sorts sélectionnés
             </p>
+            <input type="text" className="recherche-sorts" placeholder="Rechercher un sort, une discipline…"
+              value={rechercheSort} onChange={e => setRechercheSort(e.target.value)} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
-              {sortsDisponibles.map(s => {
+              {sortsFiltres.map(s => {
                 const verrouille = sortsVerrouilles.includes(s.id)
                 const selectionne = sortsChoisis.includes(s.id)
                 const desactive = !verrouille && !selectionne && sortsChoisis.length >= capSorts
@@ -388,6 +398,10 @@ export default function CreationGuidee({ player }) {
                 </div>
               ))}
             </div>
+            <p className="recap-ligne">
+              <strong>Points de vie :</strong> {pvNiveau1(classe?.de_vie, jets[assignation.con])}
+              {' '}<span style={{ color: 'var(--gris, #8a8478)' }}>(6 × (d{classe?.de_vie ?? 8} {modificateur(jets[assignation.con]) >= 0 ? '+' : '−'} {Math.abs(modificateur(jets[assignation.con]))}))</span>
+            </p>
             {pieces != null && <p className="recap-ligne"><strong>Pièces de départ :</strong> {pieces} po</p>}
             <p className="recap-ligne">
               <strong>Dons :</strong> {donsChoisis.map(id => dons.find(d => d.id === id)?.nom).join(', ') || 'aucun'}

@@ -294,3 +294,46 @@
 .recap-ligne{font-size:.88em;margin:6px 0;}
 .carte-choix-badge{display:inline-block;margin-left:6px;font-size:.68em;background:var(--or);color:#26221a;
   padding:1px 6px;border-radius:3px;font-weight:700;vertical-align:middle;}
+
+/* ---- Grimoire (onglet Sorts) ---- */
+.grimoire-tete{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.grimoire-tete h2{margin-bottom:0;}
+.grimoire-quota{display:flex;align-items:center;gap:10px;}
+.grimoire-quota-chiffres{font-size:1.5em;font-weight:700;color:var(--bleu);line-height:1;}
+.grimoire-quota-chiffres span{font-size:.55em;color:var(--gris);font-weight:400;}
+.grimoire-quota-pips{display:flex;flex-wrap:wrap;gap:4px;max-width:220px;}
+.grimoire-pip{width:11px;height:11px;transform:rotate(45deg);border:1px solid var(--or);background:transparent;}
+.grimoire-pip.plein{background:var(--or);}
+.grimoire-pip.exces{border-color:var(--rouge);background:var(--rouge);}
+.grimoire-alerte{color:var(--rouge);font-size:.85em;margin:6px 0;}
+.grimoire-liste{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.grimoire-liste--catalogue{max-height:60vh;overflow-y:auto;padding-right:2px;}
+.grimoire-sort{border:1px solid var(--champ-bord);border-left:3px solid var(--or);background:var(--champ);border-radius:2px;}
+.grimoire-sort.ouvert{border-left-color:var(--bleu);}
+.grimoire-sort--catalogue{border-left-color:var(--champ-bord);}
+.grimoire-sort-tete{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;background:none;border:none;
+  font-family:inherit;color:inherit;text-align:left;cursor:pointer;}
+.grimoire-sort--catalogue .grimoire-sort-tete{cursor:default;}
+.grimoire-sort-cout{flex:none;width:30px;height:30px;border-radius:50%;background:var(--bleu);color:var(--or-clair, #e6c65c);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9em;}
+.grimoire-sort-nom{flex:1;min-width:0;font-weight:700;color:var(--bleu);}
+.grimoire-sort-nom--bouton{background:none;border:none;font-family:inherit;font-size:inherit;text-align:left;cursor:pointer;padding:0;}
+.grimoire-sort-disc{display:block;font-weight:400;font-size:.78em;color:var(--gris);font-style:italic;}
+.grimoire-sort-fleche{color:var(--or);}
+.grimoire-sort-corps{padding:0 12px 10px 50px;font-size:.88em;}
+.sort-meta{font-style:italic;color:var(--gris);margin-bottom:6px;}
+.sort-champ{margin-bottom:4px;}
+.sort-description{font-style:italic;margin:6px 0;}
+.sort-progression{border-top:1px dashed var(--champ-bord);padding-top:6px;margin-bottom:8px;}
+.grimoire-catalogue{margin-top:14px;padding-top:12px;border-top:1px dashed var(--champ-bord);}
+.grimoire-filtres{display:flex;gap:6px;flex-wrap:wrap;}
+.grimoire-filtres input{flex:1 1 180px;}
+.grimoire-filtres select{flex:0 1 200px;background:var(--champ);border:1px solid var(--champ-bord);padding:6px;font-family:inherit;}
+@media (max-width:640px){
+  .grimoire-sort-corps{padding-left:12px;}
+  .grimoire-quota-pips{max-width:140px;}
+}
+.recherche-sorts{width:100%;margin:0 0 10px;background:var(--champ);border:1px solid var(--champ-bord);padding:6px 8px;font-family:inherit;}
+.niveau-verrouille{display:flex;flex-direction:column;gap:3px;font-size:.85em;}
+.niveau-verrouille span:first-child{font-weight:700;color:var(--bleu);font-variant:small-caps;letter-spacing:.03em;}
+.niveau-verrouille strong{padding:6px 8px;border:1px dashed var(--champ-bord);border-radius:2px;}
